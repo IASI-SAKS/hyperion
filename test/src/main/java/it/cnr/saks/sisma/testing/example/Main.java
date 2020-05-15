@@ -29,15 +29,17 @@ public class Main {
     }
 
     public static void m(int x) {
+        boolean val = getResult();
+
         if (x > 0) {
-            a = true;
+            a = val;
         } else {
-            a = false;
+            a = !val;
         }
         if (x > 0) {
-            b = true;
+            b = val;
         } else {
-            b = false;
+            b = !val;
         }
         ass3rt(a == b);
     }
