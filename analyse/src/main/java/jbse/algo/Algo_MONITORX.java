@@ -1,14 +1,16 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
-import jbse.val.Reference;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.throwNew;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.MONITORX_OFFSET;
+import static jbse.bc.Signatures.NULL_POINTER_EXCEPTION;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.*;
-import static jbse.bc.Offsets.MONITORX_OFFSET;
-import static jbse.bc.Signatures.NULL_POINTER_EXCEPTION;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
+import jbse.val.Reference;
 
 /**
  * {@link Algorithm} for the monitor* bytecodes
@@ -17,11 +19,11 @@ import static jbse.bc.Signatures.NULL_POINTER_EXCEPTION;
  * @author Pietro Braione
  */
 final class Algo_MONITORX extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE, 
-StrategyDecide<DecisionAlternative_NONE>,
-        StrategyRefine<DecisionAlternative_NONE>,
-        StrategyUpdate<DecisionAlternative_NONE>> {
+StrategyDecide<DecisionAlternative_NONE>, 
+StrategyRefine<DecisionAlternative_NONE>, 
+StrategyUpdate<DecisionAlternative_NONE>> {
 
     @Override
     protected Supplier<Integer> numOperands() {
@@ -38,11 +40,11 @@ StrategyDecide<DecisionAlternative_NONE>,
         return (state) -> {
             try {
                 if (state.isNull((Reference) this.data.operand(0))) {
-                    throwNew(state, NULL_POINTER_EXCEPTION);
+                    throwNew(state, this.ctx.getCalculator(), NULL_POINTER_EXCEPTION);
                     exitFromAlgorithm();
                 }
             } catch (ClassCastException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
         };

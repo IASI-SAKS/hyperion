@@ -1,23 +1,39 @@
 package jbse.algo;
 
-import jbse.bc.*;
-import jbse.bc.exc.BadClassFileException;
-import jbse.bc.exc.ClassFileNotAccessibleException;
-import jbse.bc.exc.InvalidIndexException;
-import jbse.common.exc.ClasspathException;
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.mem.exc.ThreadStackEmptyException;
-import jbse.tree.DecisionAlternative_NONE;
-import jbse.val.Value;
-
-import java.util.function.Supplier;
-
-import static jbse.algo.Util.*;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.failExecution;
+import static jbse.algo.Util.invokeClassLoaderLoadClass;
+import static jbse.algo.Util.throwNew;
+import static jbse.algo.Util.throwVerifyError;
 import static jbse.bc.Offsets.LDC_OFFSET;
 import static jbse.bc.Offsets.LDC_W_OFFSET;
 import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
+import static jbse.bc.Signatures.INCOMPATIBLE_CLASS_CHANGE_ERROR;
 import static jbse.bc.Signatures.NO_CLASS_DEFINITION_FOUND_ERROR;
+import static jbse.bc.Signatures.OUT_OF_MEMORY_ERROR;
+import static jbse.bc.Signatures.UNSUPPORTED_CLASS_VERSION_ERROR;
 import static jbse.common.Type.isCat_1;
+
+import java.util.function.Supplier;
+
+import jbse.bc.ClassFile;
+import jbse.bc.ConstantPoolClass;
+import jbse.bc.ConstantPoolPrimitive;
+import jbse.bc.ConstantPoolString;
+import jbse.bc.ConstantPoolValue;
+import jbse.bc.exc.BadClassFileVersionException;
+import jbse.bc.exc.ClassFileIllFormedException;
+import jbse.bc.exc.ClassFileNotAccessibleException;
+import jbse.bc.exc.ClassFileNotFoundException;
+import jbse.bc.exc.IncompatibleClassFileException;
+import jbse.bc.exc.InvalidIndexException;
+import jbse.bc.exc.PleaseLoadClassException;
+import jbse.bc.exc.WrongClassNameException;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.mem.exc.HeapMemoryExhaustedException;
+import jbse.tree.DecisionAlternative_NONE;
+import jbse.val.Calculator;
+import jbse.val.Value;
 
 /**
  * {@link Algorithm} for all the "push constant from 
@@ -64,43 +80,60 @@ StrategyUpdate<DecisionAlternative_NONE>> {
     protected BytecodeCooker bytecodeCooker() {
         return (state) -> {
             try {
-                final String currentClassName = state.getCurrentMethodSignature().getClassName();
-                ClassFile cf = null; //to keep the compiler happy
-                try {
-                    cf = state.getClassHierarchy().getClassFile(currentClassName);
-                } catch (BadClassFileException e) {
-                    //this should never happen
-                    failExecution(e);
-                }
+            	final Calculator calc = this.ctx.getCalculator();
+                final ClassFile currentClass = state.getCurrentClass();
                 final int index = (this.wide ? this.data.immediateUnsignedWord() : this.data.immediateUnsignedByte());
-                final ConstantPoolValue cpv = cf.getValueFromConstantPool(index);
+                final ConstantPoolValue cpv = currentClass.getValueFromConstantPool(index);
                 if (cpv instanceof ConstantPoolPrimitive) {
-                    this.val = state.getCalculator().val_(cpv.getValue());
+                    this.val = calc.val_(cpv.getValue());
                     if (this.cat1 != isCat_1(val.getType())) {
-                        throwVerifyError(state);
+                        throwVerifyError(state, this.ctx.getCalculator());
                         exitFromAlgorithm();
                     }
                 } else if (cpv instanceof ConstantPoolString) {
                     final String stringLit = ((ConstantPoolString) cpv).getValue();
-                    ensureStringLiteral(state, stringLit, this.ctx);
+                    state.ensureStringLiteral(calc, stringLit);
                     this.val = state.referenceToStringLiteral(stringLit);
-                } else { // cpv instanceof ConstantPoolClass
+                } else if (cpv instanceof ConstantPoolClass) {
                     final String classSignature = ((ConstantPoolClass) cpv).getValue();
-                    ensureInstance_JAVA_CLASS(state, currentClassName, classSignature, this.ctx);
-                    this.val = state.referenceToInstance_JAVA_CLASS(classSignature);
+                    final ClassFile resolvedClass = state.getClassHierarchy().resolveClass(currentClass, classSignature, state.bypassStandardLoading());
+                    state.ensureInstance_JAVA_CLASS(calc, resolvedClass);
+                    this.val = state.referenceToInstance_JAVA_CLASS(resolvedClass);
+                } else if (cpv instanceof ConstantPoolObject) {
+                    this.val = ((ConstantPoolObject) cpv).getValue();
+                } else {
+                    //this should never happen
+                    failExecution("Unexpected value from the constant pool.");
                 }
-            } catch (ClasspathException e) {
-                throwNew(state, NO_CLASS_DEFINITION_FOUND_ERROR); //TODO is it right? This is when java.lang.Class is missing, what if ((ConstantPoolClass) cpv).getValue() is missing?
+            } catch (PleaseLoadClassException e) {
+                invokeClassLoaderLoadClass(state, this.ctx.getCalculator(), e);
+                exitFromAlgorithm();
+            } catch (ClassFileNotFoundException e) {
+                //TODO this exception should wrap a ClassNotFoundException
+                throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR);
+                exitFromAlgorithm();
+            } catch (BadClassFileVersionException e) {
+                throwNew(state, this.ctx.getCalculator(), UNSUPPORTED_CLASS_VERSION_ERROR);
+                exitFromAlgorithm();
+            } catch (WrongClassNameException e) {
+                throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR); //without wrapping a ClassNotFoundException
+                exitFromAlgorithm();
+            } catch (IncompatibleClassFileException e) {
+                throwNew(state, this.ctx.getCalculator(), INCOMPATIBLE_CLASS_CHANGE_ERROR);
                 exitFromAlgorithm();
             } catch (ClassFileNotAccessibleException e) {
-                throwNew(state, ILLEGAL_ACCESS_ERROR);
+                throwNew(state, this.ctx.getCalculator(), ILLEGAL_ACCESS_ERROR);
                 exitFromAlgorithm();
-            } catch (InvalidIndexException | BadClassFileException e) {
-                throwVerifyError(state);
+            } catch (HeapMemoryExhaustedException e) {
+                throwNew(state, this.ctx.getCalculator(), OUT_OF_MEMORY_ERROR);
                 exitFromAlgorithm();
-            } catch (ThreadStackEmptyException e) {
-                //this should never happen
-                failExecution(e);
+            } catch (ClassFileIllFormedException e) {
+                //TODO throw LinkageError instead
+                throwVerifyError(state, this.ctx.getCalculator());
+                exitFromAlgorithm();
+            } catch (InvalidIndexException e) {
+                throwVerifyError(state, this.ctx.getCalculator());
+                exitFromAlgorithm();
             }
         };
     }

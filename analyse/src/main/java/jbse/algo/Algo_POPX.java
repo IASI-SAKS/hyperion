@@ -1,16 +1,16 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.mem.exc.InvalidNumberOfOperandsException;
-import jbse.tree.DecisionAlternative_NONE;
-import jbse.val.Value;
-
-import java.util.function.Supplier;
-
 import static jbse.algo.Util.exitFromAlgorithm;
 import static jbse.algo.Util.throwVerifyError;
 import static jbse.bc.Offsets.POP_OFFSET;
 import static jbse.common.Type.isCat_1;
+
+import java.util.function.Supplier;
+
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.mem.exc.InvalidNumberOfOperandsException;
+import jbse.tree.DecisionAlternative_NONE;
+import jbse.val.Value;
 
 /**
  * {@link Algorithm} managing the pop* bytecodes
@@ -19,7 +19,7 @@ import static jbse.common.Type.isCat_1;
  * @author Pietro Braione
  */
 final class Algo_POPX extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE, 
 StrategyDecide<DecisionAlternative_NONE>, 
 StrategyRefine<DecisionAlternative_NONE>, 
@@ -50,7 +50,7 @@ StrategyUpdate<DecisionAlternative_NONE>> {
     protected BytecodeCooker bytecodeCooker() {
         return (state) -> {
             if (this.cat1 && !isCat_1(this.data.operand(0).getType())) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
         };
@@ -82,11 +82,11 @@ StrategyUpdate<DecisionAlternative_NONE>> {
                     //pops and checks the second operand
                     final Value secondPopped = state.popOperand();
                     if (!isCat_1(secondPopped.getType())) {
-                        throwVerifyError(state);
+                        throwVerifyError(state, this.ctx.getCalculator());
                         exitFromAlgorithm();
                     }
                 } catch (InvalidNumberOfOperandsException e) {
-                    throwVerifyError(state);
+                    throwVerifyError(state, this.ctx.getCalculator());
                     exitFromAlgorithm();
                 }
             }

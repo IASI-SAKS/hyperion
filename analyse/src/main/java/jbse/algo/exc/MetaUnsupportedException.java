@@ -1,19 +1,19 @@
 package jbse.algo.exc;
 
 /**
- * Exception raised whenever the meta-overriding of 
+ * Exception raised whenever the meta-level overriding of 
  * a method fails. 
  *  
  * @author Pietro Braione
  *
  */
 public class MetaUnsupportedException extends CannotManageStateException {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 1826801410249226491L;
-	
-	public MetaUnsupportedException(String param) {
-		super(param);
-	}
+    /**
+     * 
+     */
+    private static final long serialVersionUID = 1826801410249226491L;
+
+    public MetaUnsupportedException(String param) {
+        super(param);
+    }
 }

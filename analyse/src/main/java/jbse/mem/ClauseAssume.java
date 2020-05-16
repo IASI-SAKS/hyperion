@@ -1,7 +1,10 @@
 package jbse.mem;
 
+import jbse.common.Type;
+import jbse.common.exc.InvalidInputException;
 import jbse.val.Expression;
 import jbse.val.Primitive;
+import jbse.val.Simplex;
 
 /**
  * A path condition {@link Clause}, an assumption 
@@ -16,10 +19,22 @@ public class ClauseAssume implements Clause {
 	/**
 	 * Constructor.
 	 * 
-	 * @param p a {@link Primitive}. It must not be {@code null}
+	 * @param p a {@link Primitive}. It must not be {@code null},
+	 * it must be an instance of either {@link Simplex} or {@link Expression}, 
 	 * and must have boolean type.
+	 * @throws NullPointerException if {@code p == null}.
+	 * @throws InvalidInputException if {@code p} has not boolean type, or
+	 * is not an instance of either {@link Simplex} or {@link Expression}.
 	 */
-	public ClauseAssume(Primitive p) { this.p = p; }
+	public ClauseAssume(Primitive p) throws InvalidInputException {
+		if (p == null) {
+			throw new NullPointerException("Tried to build a ClauseAssume with null Primitive value.");
+		}
+		if (p.getType() != Type.BOOLEAN || (! (p instanceof Simplex) && ! (p instanceof Expression))) {
+			throw new InvalidInputException("Tried to build a ClauseAssume with Primitive value " + p.toString() + ".");
+		}
+		this.p = p; 
+	}
 	
 	/**
 	 * Gets the assumption.
@@ -37,7 +52,7 @@ public class ClauseAssume implements Clause {
 	public int hashCode() {
 		final int prime = 31;
 		int result = 1;
-		result = prime * result + ((p == null) ? 0 : p.hashCode());
+		result = prime * result + ((this.p == null) ? 0 : this.p.hashCode());
 		return result;
 	}
 
@@ -52,12 +67,12 @@ public class ClauseAssume implements Clause {
 		if (getClass() != obj.getClass()) {
 			return false;
 		}
-		ClauseAssume other = (ClauseAssume) obj;
-		if (p == null) {
+		final ClauseAssume other = (ClauseAssume) obj;
+		if (this.p == null) {
 			if (other.p != null) {
 				return false;
 			}
-		} else if (!p.equals(other.p)) {
+		} else if (!this.p.equals(other.p)) {
 			return false;
 		}
 		return true;
@@ -65,7 +80,7 @@ public class ClauseAssume implements Clause {
 
 	@Override
 	public String toString() {
-		return p.toString();
+		return this.p.toString();
 	}
 	
 	@Override

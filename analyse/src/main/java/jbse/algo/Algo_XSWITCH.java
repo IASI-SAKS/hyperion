@@ -1,7 +1,14 @@
 package jbse.algo;
 
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.failExecution;
+import static jbse.algo.Util.throwVerifyError;
+
+import java.util.function.Supplier;
+
+import jbse.common.exc.ClasspathException;
+import jbse.common.exc.InvalidInputException;
 import jbse.dec.DecisionProcedureAlgorithms.Outcome;
-import jbse.dec.exc.InvalidInputException;
 import jbse.mem.State;
 import jbse.mem.SwitchTable;
 import jbse.tree.DecisionAlternative_XSWITCH;
@@ -11,23 +18,19 @@ import jbse.val.Primitive;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
 
-import java.util.function.Supplier;
-
-import static jbse.algo.Util.*;
-
 /**
- * {@link Algorithm} managing all the *switch bytecodes
+ * {@link Algorithm} managing all the *switch bytecodes 
  * (tableswitch, lookupswitch). 
  * It decides over the branch to be taken, a sheer numeric decision.
  * 
  * @author Pietro Braione
  */
 final class Algo_XSWITCH extends Algorithm<
-        BytecodeData_1ZSWITCH,
-        DecisionAlternative_XSWITCH,
-StrategyDecide<DecisionAlternative_XSWITCH>,
-        StrategyRefine<DecisionAlternative_XSWITCH>,
-        StrategyUpdate<DecisionAlternative_XSWITCH>> {
+BytecodeData_1ZSWITCH, 
+DecisionAlternative_XSWITCH,
+StrategyDecide<DecisionAlternative_XSWITCH>, 
+StrategyRefine<DecisionAlternative_XSWITCH>, 
+StrategyUpdate<DecisionAlternative_XSWITCH>> {
 
     private final boolean isTableSwitch; //set by constructor
 
@@ -60,7 +63,7 @@ StrategyDecide<DecisionAlternative_XSWITCH>,
             try {
                 this.selector = (Primitive) this.data.operand(0);
             } catch (ClassCastException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
         };
@@ -74,7 +77,7 @@ StrategyDecide<DecisionAlternative_XSWITCH>,
     @Override
     protected StrategyDecide<DecisionAlternative_XSWITCH> decider() {
         return (state, result) -> {
-            final Outcome o = this.ctx.decisionProcedure.decide_XSWITCH(state.getClassHierarchy(), this.selector, this.data.switchTable(), result);
+            final Outcome o = this.ctx.decisionProcedure.decide_XSWITCH(this.selector, this.data.switchTable(), result);
             return o;
         };
     }
@@ -83,21 +86,21 @@ StrategyDecide<DecisionAlternative_XSWITCH>,
     protected StrategyRefine<DecisionAlternative_XSWITCH> refiner() {
         return (state, alt) -> {
             //augments the path condition
+            final Calculator calc = this.ctx.getCalculator();
             Expression branchCondition = null; //to keep the compiler happy
             try {
                 final Primitive selector = (Primitive) this.data.operand(0);
                 if (alt.isDefault()) {
-                    branchCondition = (Expression) this.data.switchTable().getDefaultClause(selector);
+                    branchCondition = (Expression) this.data.switchTable().getDefaultClause(calc, selector);
                 } else {  
                     final int index = alt.value();
-                    final Calculator calc = state.getCalculator();
-                    branchCondition = (Expression) selector.eq(calc.valInt(index));
+                    branchCondition = (Expression) calc.push(selector).eq(calc.valInt(index)).pop();
                 }
             } catch (InvalidOperandException | InvalidTypeException e) {
                 //this should never happen after call to decideSwitch
                 failExecution(e);
             }
-            state.assume(this.ctx.decisionProcedure.simplify(branchCondition));
+            state.assume(calc.simplify(this.ctx.decisionProcedure.simplify(branchCondition)));
         };
     }
 
@@ -125,8 +128,8 @@ StrategyDecide<DecisionAlternative_XSWITCH>,
     }
 
     @Override
-    protected void onInvalidInputException(State state, InvalidInputException e) {
+    protected void onInvalidInputException(State state, InvalidInputException e) throws ClasspathException {
         //bad selector
-        throwVerifyError(state);
+        throwVerifyError(state, this.ctx.getCalculator());
     }
 }

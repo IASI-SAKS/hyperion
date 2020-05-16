@@ -1,10 +1,6 @@
 package jbse.algo;
 
-import jbse.mem.State;
-import jbse.mem.exc.ThreadStackEmptyException;
-import jbse.val.Reference;
-
-import static jbse.algo.Util.*;
+import jbse.tree.DecisionAlternative_NONE;
 
 /**
  * {@link Algorithm} implementing the instanceof bytecode.
@@ -12,22 +8,13 @@ import static jbse.algo.Util.*;
  * @author Pietro Braione
  */
 final class Algo_INSTANCEOF extends Algo_CASTINSTANCEOF {
-    @Override
-    protected void complete(State state, boolean isSubclass)
-    throws InterruptException {
-        try {
-            final Reference tmpValue = (Reference) this.data.operand(0);
-            if (!state.isNull(tmpValue) && isSubclass) { //note that null is not an instance of anything
-                state.pushOperand(state.getCalculator().valInt(1));
+    protected StrategyUpdate<DecisionAlternative_NONE> updater() {
+        return (state, alt) -> {
+            if (!this.isNull && this.isSubclass) { //TODO does the this.isSubclass check conform to the specification of the instanceof bytecode in the JVMS v8?
+                state.pushOperand(this.ctx.getCalculator().valInt(1));
             } else { 
-                state.pushOperand(state.getCalculator().valInt(0));
+                state.pushOperand(this.ctx.getCalculator().valInt(0));
             }
-        } catch (ClassCastException e) {
-            throwVerifyError(state);
-            exitFromAlgorithm();
-        } catch (ThreadStackEmptyException e) {
-            //this should never happen
-            failExecution(e);
-        }
+        };
     }
 }

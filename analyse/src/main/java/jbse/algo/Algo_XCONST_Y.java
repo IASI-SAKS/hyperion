@@ -1,13 +1,14 @@
 package jbse.algo;
 
-import jbse.common.Type;
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
+import static jbse.algo.Util.failExecution;
+import static jbse.bc.Offsets.XCONST_OFFSET;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.failExecution;
-import static jbse.bc.Offsets.XCONST_OFFSET;
+import jbse.common.Type;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
+import jbse.val.Calculator;
 
 /**
  * {@link Algorithm} for all the "push numeric constant" 
@@ -17,11 +18,11 @@ import static jbse.bc.Offsets.XCONST_OFFSET;
  *
  */
 final class Algo_XCONST_Y extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE, 
-StrategyDecide<DecisionAlternative_NONE>,
-        StrategyRefine<DecisionAlternative_NONE>,
-        StrategyUpdate<DecisionAlternative_NONE>> {
+StrategyDecide<DecisionAlternative_NONE>, 
+StrategyRefine<DecisionAlternative_NONE>, 
+StrategyUpdate<DecisionAlternative_NONE>> {
 
     private final char type; //set by constructor
     private final int value; //set by constructor
@@ -72,17 +73,18 @@ StrategyDecide<DecisionAlternative_NONE>,
 
     @Override
     protected StrategyUpdate<DecisionAlternative_NONE> updater() {
+    	final Calculator calc = this.ctx.getCalculator();
         return (state, alt) -> {
             if (this.type == Type.INT) {
-                state.pushOperand(state.getCalculator().valInt(this.value));
+                state.pushOperand(calc.valInt(this.value));
             } else if (this.type == Type.DOUBLE) {
-                state.pushOperand(state.getCalculator().valDouble((double) this.value));
+                state.pushOperand(calc.valDouble((double) this.value));
             } else if (this.type == Type.FLOAT) {
-                state.pushOperand(state.getCalculator().valFloat((float) this.value));
+                state.pushOperand(calc.valFloat((float) this.value));
             } else if (this.type == Type.LONG) {
-                state.pushOperand(state.getCalculator().valLong((long) this.value));
+                state.pushOperand(calc.valLong((long) this.value));
             } else {
-                failExecution("const bytecode with type " + this.type + " does not exist.");
+                failExecution("Const bytecode with type " + this.type + " does not exist.");
             }
         };
     }

@@ -1,9 +1,9 @@
 package jbse.algo;
 
-import java.util.function.Supplier;
-
-import static jbse.bc.Offsets.XLOADSTORE_IMMEDIATE_OFFSET;
 import static jbse.bc.Offsets.XLOADSTORE_IMMEDIATE_WIDE_OFFSET;
+import static jbse.bc.Offsets.XLOADSTORE_IMMEDIATE_OFFSET;
+
+import java.util.function.Supplier;
 
 /**
  * Algorithm managing all the *load (load from local variable) bytecodes 

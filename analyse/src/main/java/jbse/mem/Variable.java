@@ -17,17 +17,6 @@ public class Variable implements Cloneable {
     /** {@link Value} stored in the variable. */
     private Value value;
 
-    @Override
-    public Variable clone() {
-        final Variable o;
-        try {
-            o = (Variable) super.clone();
-        } catch (CloneNotSupportedException e) {
-			throw new InternalError(e);
-        }
-        return o;
-    }
-
     /**
      * Constructor setting the variable to its default value.
      * 
@@ -60,7 +49,7 @@ public class Variable implements Cloneable {
      * @param value value of variable
      */
     private Variable(Calculator calc, String type, String name, Value value) {
-        this.value = (value == null ? calc.createDefault(type) : value);
+        this.value = (value == null ? calc.valDefault(type.charAt(0)) : value);
         this.type = type;
         this.name = name;
     }
@@ -76,6 +65,7 @@ public class Variable implements Cloneable {
      * Set the value of variable
      */
     public void setValue(Value value) {
+        //TODO check type of value
     	this.value = value;
     }
 
@@ -93,12 +83,20 @@ public class Variable implements Cloneable {
         return this.type;
     }
 
+    @Override
+    public Variable clone() {
+        final Variable o;
+        try {
+            o = (Variable) super.clone();
+        } catch (CloneNotSupportedException e) {
+			throw new InternalError(e);
+        }
+        return o;
+    }
+
+    @Override
     public String toString() {
-        String tmp;
-        if (this.value == null)
-            tmp = "<UNASSIGNED>";
-        else
-            tmp = value.toString();
+        final String tmp = (this.value == null) ? "<UNASSIGNED>" : this.value.toString();
         return "[Name:" + this.name + ", Type:" + this.type + ", Value:" + tmp + "]";
     }
 }

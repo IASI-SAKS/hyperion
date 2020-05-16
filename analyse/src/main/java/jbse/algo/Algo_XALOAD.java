@@ -1,26 +1,66 @@
 package jbse.algo;
 
+import static jbse.algo.Util.getFromArray;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.failExecution;
+import static jbse.algo.Util.storeInArray;
+import static jbse.algo.Util.throwNew;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.XALOADSTORE_OFFSET;
+import static jbse.bc.Signatures.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION;
+import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
+import static jbse.bc.Signatures.INCOMPATIBLE_CLASS_CHANGE_ERROR;
+import static jbse.bc.Signatures.NO_CLASS_DEFINITION_FOUND_ERROR;
+import static jbse.bc.Signatures.NULL_POINTER_EXCEPTION;
+import static jbse.bc.Signatures.OUT_OF_MEMORY_ERROR;
+import static jbse.bc.Signatures.UNSUPPORTED_CLASS_VERSION_ERROR;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
+
+import jbse.algo.exc.MissingTriggerParameterException;
+import jbse.algo.exc.NotYetImplementedException;
+import jbse.algo.exc.SymbolicValueNotAllowedException;
+import jbse.bc.exc.BadClassFileVersionException;
+import jbse.bc.exc.ClassFileIllFormedException;
+import jbse.bc.exc.ClassFileNotAccessibleException;
+import jbse.bc.exc.ClassFileNotFoundException;
+import jbse.bc.exc.IncompatibleClassFileException;
+import jbse.bc.exc.RenameUnsupportedException;
+import jbse.bc.exc.WrongClassNameException;
+import jbse.common.Type;
+import jbse.common.exc.ClasspathException;
+import jbse.common.exc.InvalidInputException;
+import jbse.dec.DecisionProcedureAlgorithms.ArrayAccessInfo;
 import jbse.dec.DecisionProcedureAlgorithms.Outcome;
 import jbse.dec.exc.DecisionException;
 import jbse.mem.Array;
 import jbse.mem.State;
 import jbse.mem.exc.ContradictionException;
-import jbse.tree.*;
-import jbse.val.*;
+import jbse.mem.exc.FrozenStateException;
+import jbse.mem.exc.HeapMemoryExhaustedException;
+import jbse.mem.exc.ThreadStackEmptyException;
+import jbse.tree.DecisionAlternative_XALOAD;
+import jbse.tree.DecisionAlternative_XALOAD_Out;
+import jbse.tree.DecisionAlternative_XALOAD_Unresolved;
+import jbse.tree.DecisionAlternative_XALOAD_Aliases;
+import jbse.tree.DecisionAlternative_XALOAD_Null;
+import jbse.tree.DecisionAlternative_XALOAD_Expands;
+import jbse.tree.DecisionAlternative_XALOAD_Resolved;
+import jbse.val.Expression;
+import jbse.val.Primitive;
+import jbse.val.Reference;
+import jbse.val.ReferenceArrayImmaterial;
+import jbse.val.ReferenceConcrete;
+import jbse.val.ReferenceSymbolic;
+import jbse.val.SymbolicMemberArray;
+import jbse.val.Value;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
 
-import java.util.Collection;
-import java.util.function.Supplier;
-
-import static jbse.algo.Util.*;
-import static jbse.bc.Offsets.XALOADSTORE_OFFSET;
-import static jbse.bc.Signatures.ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION;
-import static jbse.bc.Signatures.NULL_POINTER_EXCEPTION;
-import static jbse.common.Type.getArrayMemberType;
-
 /**
- * {@link Algorithm} managing all the *aload (load from array) bytecodes
+ * {@link Algorithm} managing all the *aload (load from array) bytecodes 
  * ([a/b/c/d/f/i/l/s]aload). 
  * It decides over access index membership (inbound vs. outbound) 
  * which is a sheer numeric decision, and in the case of 
@@ -32,16 +72,14 @@ import static jbse.common.Type.getArrayMemberType;
  * @author Pietro Braione
  */
 final class Algo_XALOAD extends Algo_XYLOAD_GETX<
-        BytecodeData_0,
-        DecisionAlternative_XALOAD,
-        StrategyDecide<DecisionAlternative_XALOAD>,
-        StrategyRefine_XALOAD,
-        StrategyUpdate_XALOAD> {
+BytecodeData_0, 
+DecisionAlternative_XALOAD,
+StrategyDecide<DecisionAlternative_XALOAD>, 
+StrategyRefine_XALOAD,
+StrategyUpdate_XALOAD> {
 
     private Reference myObjectRef; //set by cooker
     private Primitive index; //set by cooker
-    private Array arrayObj; //set by cooker
-    private Collection<Array.AccessOutcome> entries; //set by cooker
 
     @Override
     protected Supplier<Integer> numOperands() {
@@ -57,29 +95,30 @@ final class Algo_XALOAD extends Algo_XYLOAD_GETX<
     protected BytecodeCooker bytecodeCooker() {
         return (state) -> { 
             try {
-                this.myObjectRef = (Reference) data.operand(0);
-                this.index = (Primitive) data.operand(1);
+                this.myObjectRef = (Reference) this.data.operand(0);
+                this.index = (Primitive) this.data.operand(1);
             } catch (ClassCastException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
 
             //null check
             if (state.isNull(this.myObjectRef)) {
-                throwNew(state, NULL_POINTER_EXCEPTION);
+                throwNew(state, this.ctx.getCalculator(), NULL_POINTER_EXCEPTION);
                 exitFromAlgorithm();
             }
 
-            //reads the array and its entries
-            try {
-                this.arrayObj = (Array) state.getObject(this.myObjectRef);
-                this.entries = this.arrayObj.get(this.index);
-            } catch (InvalidOperandException | InvalidTypeException |
-                     ClassCastException e) {
-                throwVerifyError(state);
+            //index check
+            if (this.index == null || this.index.getType() != Type.INT) {
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
 
+            //object check
+            if (!(state.getObject(this.myObjectRef) instanceof Array)) {
+                throwVerifyError(state, this.ctx.getCalculator());
+                exitFromAlgorithm();
+            }
         };
     }
 
@@ -91,77 +130,79 @@ final class Algo_XALOAD extends Algo_XYLOAD_GETX<
     @Override
     protected StrategyDecide<DecisionAlternative_XALOAD> decider() {
         return (state, result) -> { 
-            boolean shouldRefine = false;
-            boolean branchingDecision = false;
-            boolean first = true; //just for formatting
-            for (Array.AccessOutcome e : this.entries) {
-                //puts in val the value of the current entry, or a fresh symbol, 
-                //or null if the index is out of bound
-                Value val;
-                boolean fresh = false;  //true iff val is a fresh symbol
-                if (e instanceof Array.AccessOutcomeIn) {
-                    val = ((Array.AccessOutcomeIn) e).getValue();
-                    if (val == null) {
-                        val = state.createSymbol(getArrayMemberType(this.arrayObj.getType()), 
-                                                 this.arrayObj.getOrigin().thenArrayMember(this.index));
-                        fresh = true;
-                    }
-                } else { //e instanceof AccessOutcomeOut
-                    val = null;
-                }
-
-                final Outcome o = this.ctx.decisionProcedure.resolve_XALOAD(state, e.getAccessCondition(), val, fresh, result);
-
-                //if at least one reference has not been expanded, 
-                //sets someRefNotExpanded to true and stores data
-                //about the reference
-                this.someRefNotExpanded = this.someRefNotExpanded || o.noReferenceExpansion();
-                if (o.noReferenceExpansion()) {
-                    final ReferenceSymbolic refToLoad = (ReferenceSymbolic) val;
-                    this.nonExpandedRefTypes += (first ? "" : ", ") + refToLoad.getStaticType();
-                    this.nonExpandedRefOrigins += (first ? "" : ", ") + refToLoad.getOrigin();
+            //reads the array
+            final List<ArrayAccessInfo> arrayAccessInfos = getFromArray(state, this.ctx.getCalculator(), this.myObjectRef, this.index);
+            
+            //invokes the decision procedure
+            Outcome o = null; //to keep the compiler happy
+            final ArrayList<ReferenceSymbolic> nonExpandedRefs = new ArrayList<>();
+            try {
+                o = this.ctx.decisionProcedure.resolve_XALOAD(state, arrayAccessInfos, result, nonExpandedRefs);
+            //TODO the next catch blocks should disappear, see comments on removing exceptions in jbse.dec.DecisionProcedureAlgorithms.doResolveReference
+            } catch (ClassFileNotFoundException exc) {
+                //TODO this exception should wrap a ClassNotFoundException
+                throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR);
+                exitFromAlgorithm();
+            } catch (BadClassFileVersionException exc) {
+                throwNew(state, this.ctx.getCalculator(), UNSUPPORTED_CLASS_VERSION_ERROR);
+                exitFromAlgorithm();
+            } catch (WrongClassNameException exc) {
+                throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR); //without wrapping a ClassNotFoundException
+                exitFromAlgorithm();
+            } catch (IncompatibleClassFileException exc) {
+                throwNew(state, this.ctx.getCalculator(), INCOMPATIBLE_CLASS_CHANGE_ERROR);
+                exitFromAlgorithm();
+            } catch (ClassFileNotAccessibleException exc) {
+                throwNew(state, this.ctx.getCalculator(), ILLEGAL_ACCESS_ERROR);
+                exitFromAlgorithm();
+            } catch (ClassFileIllFormedException exc) {
+                throwVerifyError(state, this.ctx.getCalculator());
+                exitFromAlgorithm();
+            } catch (RenameUnsupportedException e) {
+            	//this should never happen
+            	failExecution(e);
+            }
+            
+            //stores info about the non expanded references
+            this.someRefNotExpanded = o.noReferenceExpansion();
+            if (this.someRefNotExpanded) {
+                boolean first = true; //just for formatting
+                this.nonExpandedRefTypes = "";
+                this.nonExpandedRefOrigins = "";
+                for (ReferenceSymbolic ref : nonExpandedRefs) {
+                    this.nonExpandedRefTypes += (first ? "" : ", ") + ref.getStaticType();
+                    this.nonExpandedRefOrigins += (first ? "" : ", ") + ref.asOriginString();
                     first = false;
                 }
-
-                //if at least one reference should be refined, then it should be refined
-                shouldRefine = shouldRefine || o.shouldRefine();
-
-                //if at least one decision is branching, then it is branching
-                branchingDecision = branchingDecision || o.branchingDecision();
             }
-
-            //also the size of the result matters to whether refine or not 
-            shouldRefine = shouldRefine || (result.size() > 1);
-
-            //for branchingDecision nothing to do: it will be false only if
-            //the access is concrete and the value obtained is resolved 
-            //(if a symbolic reference): in this case, result.size() must
-            //be 1. Note that branchingDecision must be invariant
-            //on the used decision procedure, so we cannot make it dependent
-            //on result.size().
-            return Outcome.val(shouldRefine, this.someRefNotExpanded, branchingDecision);
+            
+            return o;
         };
     }
 
-    private void writeBackToSource(State state, Value valueToStore)
+    private void writeBackToSource(State state, Reference refToSource, Primitive index, Value valueToStore) 
     throws DecisionException {
-        storeInArray(state, this.ctx, this.myObjectRef, this.index, valueToStore);
+        storeInArray(state, this.ctx, refToSource, index, valueToStore);
     }
 
     @Override   
-    protected Value possiblyMaterialize(State state, Value val)
-    throws DecisionException {
+    protected Value possiblyMaterialize(State state, Value val) 
+    throws DecisionException, InterruptException, ClasspathException, FrozenStateException {
         //calculates the actual value to push by materializing 
         //a member array, if it is the case, and then pushes it
         //on the operand stack
         if (val instanceof ReferenceArrayImmaterial) { //TODO eliminate manual dispatch
             try {
                 final ReferenceArrayImmaterial valRef = (ReferenceArrayImmaterial) val;
-                final ReferenceConcrete valMaterialized =
-                    state.createArray(valRef.getMember(), valRef.getLength(), valRef.getArrayType());
-                writeBackToSource(state, valMaterialized);
+                final ReferenceConcrete valMaterialized = 
+                    state.createArray(this.ctx.getCalculator(), valRef.getMember(), valRef.getLength(), valRef.getArrayType());
+                writeBackToSource(state, this.myObjectRef, this.index, valMaterialized); //TODO is the parameter this.myObjectRef correct?????
                 return valMaterialized;
-            } catch (InvalidTypeException e) {
+            } catch (HeapMemoryExhaustedException e) {
+                throwNew(state, this.ctx.getCalculator(), OUT_OF_MEMORY_ERROR);
+                exitFromAlgorithm();
+                return null; //to keep the compiler happy
+            } catch (InvalidInputException e) {
                 //this should never happen
                 failExecution(e);
                 return null; //to keep the compiler happy
@@ -175,65 +216,100 @@ final class Algo_XALOAD extends Algo_XYLOAD_GETX<
     protected StrategyRefine_XALOAD refiner() {
         return new StrategyRefine_XALOAD() {
             @Override
-            public void refineRefExpands(State state, DecisionAlternative_XALOAD_Expands altExpands)
-            throws DecisionException, ContradictionException, InvalidTypeException {
+            public void refineRefExpands(State state, DecisionAlternative_XALOAD_Expands altExpands) 
+            throws DecisionException, ContradictionException, InvalidTypeException, InvalidInputException, 
+            InterruptException, SymbolicValueNotAllowedException, ClasspathException {
                 //handles all the assumptions for reference resolution by expansion
-                Algo_XALOAD.this.refineRefExpands(state, altExpands); //implemented in MultipleStateGenerator_XYLOAD_GETX
+                Algo_XALOAD.this.refineRefExpands(state, altExpands); //implemented in Algo_XYLOAD_GETX
 
                 //assumes the array access expression (index in range)
-                final Primitive accessExpression = altExpands.getArrayAccessExpression();
-                state.assume(Algo_XALOAD.this.ctx.decisionProcedure.simplify(accessExpression));
+                final Expression accessExpression = altExpands.getArrayAccessExpressionSimplified();
+            	if (accessExpression != null) {
+            		state.assume(Algo_XALOAD.this.ctx.getCalculator().simplify(Algo_XALOAD.this.ctx.decisionProcedure.simplify(accessExpression)));
+            	}
 
-                //updates the array with the resolved reference
-                final ReferenceSymbolic referenceToExpand = altExpands.getValueToLoad();
-                writeBackToSource(state, referenceToExpand);                    
-            }
-
-            @Override
-            public void refineRefAliases(State state, DecisionAlternative_XALOAD_Aliases altAliases)
-            throws DecisionException, ContradictionException {
-                //handles all the assumptions for reference resolution by aliasing
-                Algo_XALOAD.this.refineRefAliases(state, altAliases); //implemented in MultipleStateGenerator_XYLOAD_GETX
-
-                //assumes the array access expression (index in range)
-                final Primitive accessExpression = altAliases.getArrayAccessExpression();
-                state.assume(Algo_XALOAD.this.ctx.decisionProcedure.simplify(accessExpression));
-
-                //updates the array with the resolved reference
-                final ReferenceSymbolic referenceToResolve = altAliases.getValueToLoad();
-                writeBackToSource(state, referenceToResolve);
-            }
-
-            @Override
-            public void refineRefNull(State state, DecisionAlternative_XALOAD_Null altNull)
-            throws DecisionException, ContradictionException {
-                Algo_XALOAD.this.refineRefNull(state, altNull); //implemented in MultipleStateGenerator_XYLOAD_GETX
-
-                //further augments the path condition 
-                final Primitive accessExpression = altNull.getArrayAccessExpression();
-                state.assume(Algo_XALOAD.this.ctx.decisionProcedure.simplify(accessExpression));
-
-                //updates the array with the resolved reference
-                final ReferenceSymbolic referenceToResolve = altNull.getValueToLoad();
-                writeBackToSource(state, referenceToResolve);
-            }
-
-            @Override
-            public void refineResolved(State state, DecisionAlternative_XALOAD_Resolved altResolved)
-            throws DecisionException {
-                //augments the path condition
-                state.assume(Algo_XALOAD.this.ctx.decisionProcedure.simplify(altResolved.getArrayAccessExpression()));
-
-                //if the value is fresh, it writes it back in the array
-                if (altResolved.isValueFresh()) {
-                    writeBackToSource(state, altResolved.getValueToLoad());
+                //if the value is fresh, writes it back in the array
+                if (altExpands.isValueFresh()) { //pleonastic: all unresolved symbolic references from an array are fresh
+                    final Reference source = altExpands.getArrayReference();
+                    final ReferenceSymbolic referenceToExpand = altExpands.getValueToLoad();
+                	final Primitive index = ((SymbolicMemberArray) referenceToExpand).getIndex();
+                    writeBackToSource(state, source, index, referenceToExpand);
                 }
             }
 
             @Override
-            public void refineOut(State state, DecisionAlternative_XALOAD_Out altOut) {
+            public void refineRefAliases(State state, DecisionAlternative_XALOAD_Aliases altAliases)
+            throws DecisionException, ContradictionException, InvalidInputException, ClasspathException, 
+            InterruptException {
+                //handles all the assumptions for reference resolution by aliasing
+                Algo_XALOAD.this.refineRefAliases(state, altAliases); //implemented in Algo_XYLOAD_GETX
+
+                //assumes the array access expression (index in range)
+                final Expression accessExpression = altAliases.getArrayAccessExpressionSimplified();
+            	if (accessExpression != null) {
+            		state.assume(Algo_XALOAD.this.ctx.getCalculator().simplify(Algo_XALOAD.this.ctx.decisionProcedure.simplify(accessExpression)));
+            	}
+
+                //if the value is fresh, writes it back in the array
+                if (altAliases.isValueFresh()) { //pleonastic: all unresolved symbolic references from an array are fresh
+                    final Reference source = altAliases.getArrayReference();
+                    final ReferenceSymbolic referenceToResolve = altAliases.getValueToLoad();
+                	final Primitive index = ((SymbolicMemberArray) referenceToResolve).getIndex();
+                    writeBackToSource(state, source, index, referenceToResolve);
+                }
+            }
+
+            @Override
+            public void refineRefNull(State state, DecisionAlternative_XALOAD_Null altNull) 
+            throws DecisionException, ContradictionException, InvalidInputException {
+                Algo_XALOAD.this.refineRefNull(state, altNull); //implemented in Algo_XYLOAD_GETX
+
+                //further augments the path condition 
+                final Expression accessExpression = altNull.getArrayAccessExpressionSimplified();
+            	if (accessExpression != null) {
+            		state.assume(Algo_XALOAD.this.ctx.getCalculator().simplify(Algo_XALOAD.this.ctx.decisionProcedure.simplify(accessExpression)));
+            	}
+
+                //if the value is fresh, writes it back in the array
+                if (altNull.isValueFresh()) { //pleonastic: all unresolved symbolic references from an array are fresh
+                    final Reference source = altNull.getArrayReference();
+                    final ReferenceSymbolic referenceToResolve = altNull.getValueToLoad();
+                	final Primitive index = ((SymbolicMemberArray) referenceToResolve).getIndex();
+                    writeBackToSource(state, source, index, referenceToResolve);
+                }
+            }
+
+            @Override
+            public void refineResolved(State state, DecisionAlternative_XALOAD_Resolved altResolved)
+            throws DecisionException, InvalidInputException {
                 //augments the path condition
-                state.assume(Algo_XALOAD.this.ctx.decisionProcedure.simplify(altOut.getArrayAccessExpression()));
+            	final Expression accessExpression = altResolved.getArrayAccessExpressionSimplified();
+            	if (accessExpression != null) {
+            		state.assume(Algo_XALOAD.this.ctx.getCalculator().simplify(Algo_XALOAD.this.ctx.decisionProcedure.simplify(accessExpression)));
+            	}
+
+                //if the value is fresh, writes it back in the array
+                if (altResolved.isValueFresh()) {
+                    final Reference source = altResolved.getArrayReference();
+                    final Value valueToLoad = altResolved.getValueToLoad();
+                	final Primitive index = ((SymbolicMemberArray) valueToLoad).getIndex();
+                    writeBackToSource(state, source, index, valueToLoad);
+                }
+            }
+
+            @Override
+            public void refineOut(State state, DecisionAlternative_XALOAD_Out altOut) 
+            throws InvalidInputException {
+                //augments the path condition
+                try {
+                	final Expression accessExpression = altOut.getArrayAccessExpressionSimplified();
+                	if (accessExpression != null) {
+                		state.assume(Algo_XALOAD.this.ctx.getCalculator().simplify(Algo_XALOAD.this.ctx.decisionProcedure.simplify(accessExpression)));
+                	}
+				} catch (DecisionException e) { //TODO propagate this exception (...and replace with a better exception)
+					//this should never happen
+					failExecution(e);
+				}
             }
         };
     }
@@ -241,21 +317,25 @@ final class Algo_XALOAD extends Algo_XYLOAD_GETX<
     protected StrategyUpdate_XALOAD updater() {
         return new StrategyUpdate_XALOAD() {
             @Override
-            public void updateResolved(State s, DecisionAlternative_XALOAD_Resolved dav)
-            throws DecisionException, InterruptException {
-                Algo_XALOAD.this.update(s, dav); //implemented in Algo_XYLOAD_GETX
-            }
-
-            @Override
-            public void updateReference(State s, DecisionAlternative_XALOAD_Unresolved dar)
-            throws DecisionException, InterruptException {
+            public void updateResolved(State s, DecisionAlternative_XALOAD_Resolved dar) 
+            throws DecisionException, InterruptException, MissingTriggerParameterException, 
+            ClasspathException, NotYetImplementedException, ThreadStackEmptyException, 
+            InvalidOperandException, InvalidInputException {
                 Algo_XALOAD.this.update(s, dar); //implemented in Algo_XYLOAD_GETX
             }
 
             @Override
-            public void updateOut(State s, DecisionAlternative_XALOAD_Out dao)
-            throws InterruptException {
-                throwNew(s, ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION);
+            public void updateUnresolved(State s, DecisionAlternative_XALOAD_Unresolved dau) 
+            throws DecisionException, InterruptException, MissingTriggerParameterException, 
+            ClasspathException, NotYetImplementedException, ThreadStackEmptyException, 
+            InvalidOperandException, InvalidInputException {
+                Algo_XALOAD.this.update(s, dau); //implemented in Algo_XYLOAD_GETX
+            }
+
+            @Override
+            public void updateOut(State s, DecisionAlternative_XALOAD_Out dao) 
+            throws InterruptException, ClasspathException {
+                throwNew(s, Algo_XALOAD.this.ctx.getCalculator(), ARRAY_INDEX_OUT_OF_BOUNDS_EXCEPTION);
                 exitFromAlgorithm();
             }
         };

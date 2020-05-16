@@ -1,13 +1,14 @@
 package jbse.rewr;
 
+import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
-import jbse.rewr.exc.NoResultException;
 import jbse.val.Expression;
-import jbse.val.FunctionApplication;
+import jbse.val.PrimitiveSymbolicApply;
+import jbse.val.Rewriter;
 import jbse.val.Operator;
 import jbse.val.Primitive;
-import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
+import jbse.val.exc.NoResultException;
 
 /**
  * A {@link Rewriter} which rewrites {@code sin(X) / cos(X)} to {@code tan(X)}.
@@ -16,7 +17,7 @@ import jbse.val.exc.InvalidTypeException;
  * @author Pietro Braione
  *
  */
-public class RewriterTan extends Rewriter {
+public class RewriterTan extends RewriterCalculatorRewriting {
 
 	public RewriterTan() { }
 	
@@ -27,15 +28,15 @@ public class RewriterTan extends Rewriter {
 		if (operator == Operator.DIV) {
 			final Primitive first = x.getFirstOperand();
 			final Primitive second = x.getSecondOperand();
-			if (first instanceof FunctionApplication && second instanceof FunctionApplication) {
-				final FunctionApplication firstFA = (FunctionApplication) first;
-				final FunctionApplication secondFA = (FunctionApplication) second;
-				if (firstFA.getOperator().equals(FunctionApplication.SIN) &&
-					secondFA.getOperator().equals(FunctionApplication.COS) &&
+			if (first instanceof PrimitiveSymbolicApply && second instanceof PrimitiveSymbolicApply) {
+				final PrimitiveSymbolicApply firstFA = (PrimitiveSymbolicApply) first;
+				final PrimitiveSymbolicApply secondFA = (PrimitiveSymbolicApply) second;
+				if (firstFA.getOperator().equals(PrimitiveSymbolicApply.SIN) &&
+					secondFA.getOperator().equals(PrimitiveSymbolicApply.COS) &&
 					firstFA.getArgs()[0].equals(secondFA.getArgs()[0])) {
 					try {
-						setResult(calc.applyFunction(x.getType(), FunctionApplication.TAN, firstFA.getArgs()[0]));
-					} catch (InvalidOperandException | InvalidTypeException e) {
+						setResult(this.calc.applyFunctionPrimitiveAndPop(x.getType(), firstFA.historyPoint(), PrimitiveSymbolicApply.TAN, firstFA.getArgs()[0]));
+					} catch (InvalidTypeException | InvalidInputException e) {
 						//this should never happen
 						throw new UnexpectedInternalException(e);
 					}
@@ -43,6 +44,6 @@ public class RewriterTan extends Rewriter {
 				}
 			}
 		}
-		super.rewriteExpression(x);
+		setResult(x);
 	}
 }

@@ -12,12 +12,17 @@ import jbse.val.ReferenceSymbolic;
  * @author Pietro Braione
  */
 public class TriggerRuleAliasesInstanceof extends TriggerRuleAliases {
-	/** Should not be {@code null}. */
+	/** If {@code null} means aliases nothing. */
 	private final String classAllowed;
+	
+	/** The toString version of this rule. */
+	private final String toString;
 
-	public TriggerRuleAliasesInstanceof(String originExp, String classAllowed, Signature triggerMethod, String triggerParameter) {
-		super(originExp, triggerMethod, triggerParameter);
+	public TriggerRuleAliasesInstanceof(String originExp, String classAllowed, Signature triggerMethodSignature, String triggerMethodParameter) {
+		super(originExp, triggerMethodSignature, triggerMethodParameter);
 		this.classAllowed = classAllowed;
+		this.toString = originExp + " aliases instanceof " + this.classAllowed + " triggers " + 
+		                triggerMethodSignature.toString() + (triggerMethodParameter == null ? "" : (":" + triggerMethodParameter));
 	}
 
 	@Override
@@ -27,7 +32,7 @@ public class TriggerRuleAliasesInstanceof extends TriggerRuleAliases {
 		}
 
 		//ref is not used
-		return o.getType().equals(this.classAllowed);
+		return this.classAllowed.equals(o.getType().getClassName());
 	}
 
 	@Override
@@ -37,7 +42,6 @@ public class TriggerRuleAliasesInstanceof extends TriggerRuleAliases {
 	
 	@Override
 	public String toString() {
-		return this.originExp + " ALIASES_INSTANCEOF " + this.classAllowed + " TRIGGERS " + 
-				this.getTriggerSignature() + "(" + this.getTriggerMethodParameter() + ")";
+		return this.toString;
 	}
 }

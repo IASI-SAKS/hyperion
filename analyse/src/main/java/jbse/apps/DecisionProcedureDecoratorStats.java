@@ -1,133 +1,173 @@
 package jbse.apps;
 
-import jbse.bc.ClassHierarchy;
+import java.util.Collection;
+import java.util.Map;
+
+import jbse.bc.ClassFile;
+import jbse.common.exc.InvalidInputException;
 import jbse.dec.DecisionProcedure;
 import jbse.dec.DecisionProcedureDecorator;
 import jbse.dec.exc.DecisionException;
-import jbse.dec.exc.InvalidInputException;
 import jbse.mem.Clause;
 import jbse.mem.Objekt;
 import jbse.val.Expression;
+import jbse.val.Primitive;
+import jbse.val.PrimitiveSymbolic;
 import jbse.val.ReferenceSymbolic;
-
-import java.util.Collection;
+import jbse.val.Simplex;
 
 /**
- * A {@link DecisionProcedureDecorator} that logs the time spent
+ * A {@link DecisionProcedureDecorator} that logs the time spent 
  * by each method invocation for its component.
  *  
  * @author Pietro Braione
  */
-public class DecisionProcedureDecoratorStats extends DecisionProcedureDecorator {
-	private long start;
-	
-	private void startTimer() {
-		this.start = System.currentTimeMillis();
-	}
+public final class DecisionProcedureDecoratorStats extends DecisionProcedureDecorator {
+    private long start;
 
-	private long elapsed() {
-		final long elapsed = System.currentTimeMillis() - this.start;
-		return elapsed;
-	}
+    private void startTimer() {
+        this.start = System.currentTimeMillis();
+    }
 
-	public DecisionProcedureDecoratorStats(DecisionProcedure component) {
-		super(component);
-	}
-	
-	@Override
-	public void pushAssumption(Clause c) 
-	throws InvalidInputException, DecisionException {
-		this.startTimer();
-		super.pushAssumption(c);
-		final long elapsed = this.elapsed();
-		System.err.println("PUSH\t" + c + "\t\t" + elapsed);
-	}
-	
-	@Override
-	public void clearAssumptions() 
-	throws DecisionException {
-		this.startTimer();
-		super.clearAssumptions();
-		final long elapsed = this.elapsed();
-		System.err.println("CLEAR\t\t\t" + elapsed);
-	}
-	
-	@Override
-	public void setAssumptions(Collection<Clause> newAssumptions) 
-	throws InvalidInputException, DecisionException {
-		this.startTimer();
-		super.setAssumptions(newAssumptions);
-		final long elapsed = this.elapsed();
-		System.err.println("SETASSUMPTIONS\t\t\t" + elapsed);
-	}
+    private long elapsed() {
+        final long elapsed = System.currentTimeMillis() - this.start;
+        return elapsed;
+    }
 
-	@Override
-	public Collection<Clause> getAssumptions() 
-	throws DecisionException {
-		this.startTimer();
-		final Collection<Clause> result = super.getAssumptions();
-		final long elapsed = this.elapsed();
-		System.err.println("GETASSUMPTIONS\t\t" + result + "\t" + elapsed);
-		return result;
-	}
+    public DecisionProcedureDecoratorStats(DecisionProcedure component) throws InvalidInputException {
+        super(component);
+    }
 
-	@Override
-	public boolean isSat(ClassHierarchy hier, Expression exp)
-	throws InvalidInputException, DecisionException {
-		this.startTimer();
-		final boolean result = super.isSat(hier, exp);
-		final long elapsed = this.elapsed();
-		System.err.println("ISSAT\t" + exp + "\t" + result + "\t" + elapsed);
+    @Override
+    public void pushAssumption(Clause c) 
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        super.pushAssumption(c);
+        final long elapsed = elapsed();
+        System.err.println("PUSH\t" + c + "\t\t" + elapsed);
+    }
+
+    @Override
+    public void clearAssumptions() 
+    throws DecisionException {
+        startTimer();
+        super.clearAssumptions();
+        final long elapsed = elapsed();
+        System.err.println("CLEAR\t\t\t" + elapsed);
+    }
+    
+    @Override
+    public void addAssumptions(Iterable<Clause> assumptionsToAdd) 
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        super.addAssumptions(assumptionsToAdd);
+        final long elapsed = elapsed();
+        System.err.println("ADD\t\t\t" + elapsed);
+    }
+    
+    @Override
+    public void addAssumptions(Clause... assumptionsToAdd) 
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        super.addAssumptions(assumptionsToAdd);
+        final long elapsed = elapsed();
+        System.err.println("ADD\t\t\t" + elapsed);
+    }
+
+    @Override
+    public void setAssumptions(Collection<Clause> newAssumptions) 
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        super.setAssumptions(newAssumptions);
+        final long elapsed = elapsed();
+        System.err.println("SETASSUMPTIONS\t\t\t" + elapsed);
+    }
+
+    @Override
+    public Collection<Clause> getAssumptions() 
+    throws DecisionException {
+        startTimer();
+        final Collection<Clause> result = super.getAssumptions();
+        final long elapsed = elapsed();
+        System.err.println("GETASSUMPTIONS\t\t" + result + "\t" + elapsed);
         return result;
-	}
-	
-	@Override
-	public boolean isSatAliases(ClassHierarchy hier, ReferenceSymbolic r, long heapPos, Objekt o)
-	throws InvalidInputException, DecisionException {
-		this.startTimer();
-		final boolean result = super.isSatAliases(hier, r, heapPos, o);
-		final long elapsed = this.elapsed();
-		System.err.println("ISSATALIASES\t" + r + "\t" + heapPos + "\t" + o + "\t" + result + "\t" + elapsed);
+    }
+
+    @Override
+    public boolean isSat(Expression exp) 
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        final boolean result = super.isSat(exp);
+        final long elapsed = elapsed();
+        System.err.println("ISSAT\t" + exp + "\t" + result + "\t" + elapsed);
         return result;
-	}
-	
-	@Override
-	public boolean isSatExpands(ClassHierarchy hier, ReferenceSymbolic r, String className)
-	throws InvalidInputException, DecisionException {
-		this.startTimer();
-		final boolean result = super.isSatExpands(hier, r, className);
-		final long elapsed = this.elapsed();
-		System.err.println("ISSATEXPANDS\t" + r + "\t" + className + "\t" + result + "\t" + elapsed);
+    }
+
+    @Override
+    public boolean isSatAliases(ReferenceSymbolic r, long heapPos, Objekt o)
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        final boolean result = super.isSatAliases(r, heapPos, o);
+        final long elapsed = elapsed();
+        System.err.println("ISSATALIASES\t" + r + "\t" + heapPos + "\t" + o + "\t" + result + "\t" + elapsed);
         return result;
-	}
-	
-	@Override
-	public boolean isSatNull(ClassHierarchy hier, ReferenceSymbolic r)
-	throws InvalidInputException, DecisionException {
-		this.startTimer();
-		final boolean result = super.isSatNull(hier, r);
-		final long elapsed = this.elapsed();
-		System.err.println("ISSATNULL\t" + r + "\t" + result + "\t" + elapsed);
+    }
+
+    @Override
+    public boolean isSatExpands(ReferenceSymbolic r, ClassFile classFile)
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        final boolean result = super.isSatExpands(r, classFile);
+        final long elapsed = elapsed();
+        System.err.println("ISSATEXPANDS\t" + r + "\t" + classFile.getClassName() + "\t" + result + "\t" + elapsed);
         return result;
-	}
-	
-	@Override
-	public boolean isSatInitialized(ClassHierarchy hier, String className)
-	throws InvalidInputException, DecisionException {
-		this.startTimer();
-		final boolean result = super.isSatInitialized(hier, className);
-		final long elapsed = this.elapsed();
-		System.err.println("ISSATINITIALIZED\t" + className + "\t" + result + "\t" + elapsed);
+    }
+
+    @Override
+    public boolean isSatNull(ReferenceSymbolic r) 
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        final boolean result = super.isSatNull(r);
+        final long elapsed = elapsed();
+        System.err.println("ISSATNULL\t" + r + "\t" + result + "\t" + elapsed);
         return result;
-	}
-	
-	@Override
-	public boolean isSatNotInitialized(ClassHierarchy hier, String className)
-	throws InvalidInputException, DecisionException {
-		this.startTimer();
-		final boolean result = super.isSatInitialized(hier, className);
-		final long elapsed = this.elapsed();
-		System.err.println("ISSATNOTINITIALIZED\t" + className + "\t" + result + "\t" + elapsed);
+    }
+
+    @Override
+    public boolean isSatInitialized(ClassFile classFile) 
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        final boolean result = super.isSatInitialized(classFile);
+        final long elapsed = elapsed();
+        System.err.println("ISSATINITIALIZED\t" + classFile.getClassName() + "\t" + result + "\t" + elapsed);
         return result;
-	}
+    }
+
+    @Override
+    public boolean isSatNotInitialized(ClassFile classFile)
+    throws InvalidInputException, DecisionException {
+        startTimer();
+        final boolean result = super.isSatInitialized(classFile);
+        final long elapsed = elapsed();
+        System.err.println("ISSATNOTINITIALIZED\t" + classFile.getClassName() + "\t" + result + "\t" + elapsed);
+        return result;
+    }
+    
+    @Override
+    public Map<PrimitiveSymbolic, Simplex> getModel() throws DecisionException {
+        startTimer();
+        final Map<PrimitiveSymbolic, Simplex> result = super.getModel();
+        final long elapsed = elapsed();
+        System.err.println("GETMODEL\t\t" + result + "\t" + elapsed);
+        return result;
+    }
+    
+    @Override
+    public Primitive simplify(Primitive c) throws DecisionException {
+        startTimer();
+        final Primitive result = super.simplify(c);
+        final long elapsed = elapsed();
+        System.err.println("SIMPLIFY\t" + c + "\t" + result + "\t" + elapsed);
+        return result;
+    }
 }

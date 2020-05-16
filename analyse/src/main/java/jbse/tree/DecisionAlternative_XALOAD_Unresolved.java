@@ -1,7 +1,10 @@
 package jbse.tree;
 
 import jbse.val.Expression;
+import jbse.val.Primitive;
+import jbse.val.Reference;
 import jbse.val.ReferenceSymbolic;
+import jbse.val.Term;
 
 /**
  * {@link DecisionAlternative_XALOAD} for the case where
@@ -12,33 +15,33 @@ import jbse.val.ReferenceSymbolic;
  */
 public abstract class DecisionAlternative_XALOAD_Unresolved 
 extends DecisionAlternative_XALOAD_In implements DecisionAlternative_XYLOAD_GETX_Unresolved {
-	private final ReferenceSymbolic valueToLoad;
-	private final int hashCode;
+    private final ReferenceSymbolic valueToLoad;
+    private final int hashCode;
 
-	public DecisionAlternative_XALOAD_Unresolved(String branchId, Expression arrayAccessExpression, ReferenceSymbolic valueToLoad, int branchNumber) {
-		super(branchId, arrayAccessExpression, branchNumber);
-		this.valueToLoad = valueToLoad;
+    public DecisionAlternative_XALOAD_Unresolved(String branchId, Expression arrayAccessExpression, Term indexFormal, Primitive indexActual, Expression arrayAccessExpressionSimplified, ReferenceSymbolic valueToLoad, boolean fresh, Reference arrayReference, int branchNumber) {
+        super(branchId, arrayAccessExpression, indexFormal, indexActual, arrayAccessExpressionSimplified, fresh, arrayReference, branchNumber);
+        this.valueToLoad = valueToLoad;
         final int prime = 683;
         int result = super.hashCode();
         result = prime * result +
             ((this.valueToLoad == null) ? 0 : this.valueToLoad.hashCode());
         this.hashCode = result;
-	}
+    }
 
-	@Override
-	public ReferenceSymbolic getValueToLoad() {
-		return this.valueToLoad;
-	}
+    @Override
+    public ReferenceSymbolic getValueToLoad() {
+        return this.valueToLoad;
+    }
 
     @Override
     public final boolean trivial() {
         return false;
     }
-	
-	@Override
-	public final boolean concrete() {
-		return false;
-	}
+
+    @Override
+    public final boolean concrete() {
+        return false;
+    }
 
     @Override
     public int hashCode() {
@@ -50,8 +53,7 @@ extends DecisionAlternative_XALOAD_In implements DecisionAlternative_XYLOAD_GETX
         if (!super.equals(obj)) {
             return false;
         }
-        final DecisionAlternative_XALOAD_Unresolved other =
-            (DecisionAlternative_XALOAD_Unresolved) obj;
+        final DecisionAlternative_XALOAD_Unresolved other = (DecisionAlternative_XALOAD_Unresolved) obj;
         if (this.valueToLoad == null) {
             if (other.valueToLoad != null) {
                 return false;

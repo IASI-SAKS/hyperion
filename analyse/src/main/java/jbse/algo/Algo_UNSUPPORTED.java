@@ -1,10 +1,10 @@
 package jbse.algo;
 
+import java.util.function.Supplier;
+
 import jbse.algo.exc.NotYetImplementedException;
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.tree.DecisionAlternative_NONE;
-
-import java.util.function.Supplier;
 
 /**
  * {@link Algorithm} handling all the unsupported
@@ -13,7 +13,7 @@ import java.util.function.Supplier;
  * @author Pietro Braione
  */
 final class Algo_UNSUPPORTED extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE,
 StrategyDecide<DecisionAlternative_NONE>, 
 StrategyRefine<DecisionAlternative_NONE>, 

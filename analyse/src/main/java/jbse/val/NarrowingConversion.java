@@ -1,110 +1,129 @@
 package jbse.val;
 
+import static jbse.val.HistoryPoint.unknown;
+
 import jbse.common.Type;
+import jbse.common.exc.InvalidInputException;
+import jbse.common.exc.UnexpectedInternalException;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
-import jbse.val.exc.ValueDoesNotSupportNativeException;
 
 /**
  * Class representing the values resulting from a narrowing
  * conversion between numeric primitive types.
  * 
  * @author Pietro Braione
- *
  */
-public final class NarrowingConversion extends Primitive {
-	private final Primitive arg;
-	private final String toString;
-	private final int hashCode;
+public final class NarrowingConversion extends PrimitiveSymbolicComputed {
+    private final Primitive arg;
+    private final String toString;
+    private final String asOriginString;
+    private final int hashCode;
 
-	private NarrowingConversion(char type, Calculator calc, Primitive arg) 
-	throws InvalidOperandException, InvalidTypeException {
-		super(type, calc);
+    private NarrowingConversion(char type, Primitive arg) 
+    throws InvalidOperandException, InvalidTypeException, InvalidInputException {
+        super(type, unknown()); //TODO put sensible history point?
 
-		//checks on parameters
+        //checks on parameters
         if (arg == null) {
-    		throw new InvalidOperandException("null operand in narrowing construction");
+            throw new InvalidOperandException("Null operand in narrowing construction.");
         }
-		if (!Type.narrows(type, arg.getType())) {
-			throw new InvalidTypeException("cannot narrow type " + arg.getType() + " to type " + type);
-		}
-		this.arg = arg;
-		
+        if (!Type.narrows(type, arg.getType())) {
+            throw new InvalidTypeException("Cannot narrow type " + arg.getType() + " to type " + type + ".");
+        }
+
+        this.arg = arg;
+
+        //calculates toString
+        this.toString = "NARROW-"+ getType() + "(" + arg.toString() + ")";
+
+        //calculates asOriginString
+        this.asOriginString = "NARROW-"+ getType() + "(" + (arg.isSymbolic() ? ((Symbolic) arg).asOriginString(): arg.toString()) + ")";
+
         //calculates hashCode
-		final int prime = 311;
-		int result = 1;
-		result = prime * result + arg.hashCode();
-		result = prime * result + type;
-		this.hashCode = result;
+        final int prime = 311;
+        int result = 1;
+        result = prime * result + arg.hashCode();
+        result = prime * result + type;
+        this.hashCode = result;
+    }
 
-		//calculates toString
-		this.toString = "NARROW-"+ this.getType() + "(" + arg.toString() + ")";
-}
-	
-	public static NarrowingConversion make(char type, Calculator calc, Primitive arg) 
-	throws InvalidOperandException, InvalidTypeException {
-		return new NarrowingConversion(type, calc, arg);
-	}
-	
-	public Primitive getArg() {
-		return this.arg;
-	}
-
-	@Override
-	public void accept(PrimitiveVisitor v) throws Exception {
-		v.visitNarrowingConversion(this);
-	}
-
-	@Override
-	public boolean surelyTrue() {
-		return false;
-	}
-
-	@Override
-	public boolean surelyFalse() {
-		return false;
-	}
-
-	@Override
-	public boolean isSymbolic() {
-		return true;
-	}
-
-	@Override
-	public Object getValueForNative() throws ValueDoesNotSupportNativeException {
-		throw new ValueDoesNotSupportNativeException();
-	}
-
-	@Override
-	public String toString() {
-		return this.toString;
-	}
-
-	@Override
-	public int hashCode() {
-		return this.hashCode;
-	}
-
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
+    /**
+     * Constructs a {@link NarrowingConversion}.
+     * 
+     * @param type a {@code char}, the destination type of the conversion.
+     * @param arg a {@link Primitive}, the value that is being narrowed. 
+     *        It must not be {@code null}.
+     * @return a {@link NarrowingConversion}.
+     * @throws InvalidOperandException if {@code arg == null}.
+     * @throws InvalidTypeException if {@code arg} cannot be narrowed to {@code type},
+     *         or {@code type} is not a valid primitive type.
+     */
+    public static NarrowingConversion make(char type, Primitive arg) 
+    throws InvalidOperandException, InvalidTypeException {
+        try {
+			return new NarrowingConversion(type, arg);
+		} catch (InvalidInputException e) {
+			//this should never happen
+			throw new UnexpectedInternalException(e);
 		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		final NarrowingConversion other = (NarrowingConversion) obj;
-		if (arg == null) {
-			if (other.arg != null) {
-				return false;
-			}
-		} else if (!arg.equals(other.arg)) {
-			return false;
-		}
-		return true;
+    }
+
+    public Primitive getArg() {
+        return this.arg;
+    }
+
+	@Override
+	public String asOriginString() {
+		return this.asOriginString;
 	}
 
+	@Override
+	public Symbolic root() {
+		return this;
+	}
+
+	@Override
+	public boolean hasContainer(Symbolic s) {
+		if (s == null) {
+			throw new NullPointerException();
+		}
+		return equals(s);
+	}
+
+    @Override
+    public void accept(PrimitiveVisitor v) throws Exception {
+        v.visitNarrowingConversion(this);
+    }
+
+    @Override
+    public String toString() {
+        return this.toString;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.hashCode;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final NarrowingConversion other = (NarrowingConversion) obj;
+        if (this.getType() != other.getType()) {
+        	return false;
+        }
+        if (!this.arg.equals(other.arg)) {
+            return false;
+        }
+        return true;
+    }
 }

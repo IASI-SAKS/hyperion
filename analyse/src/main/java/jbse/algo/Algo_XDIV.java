@@ -1,5 +1,14 @@
 package jbse.algo;
 
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.throwNew;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.MATH_LOGICAL_OP_OFFSET;
+import static jbse.bc.Signatures.ARITHMETIC_EXCEPTION;
+import static jbse.common.Type.isPrimitiveIntegralOpStack;
+
+import java.util.function.Supplier;
+
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.tree.DecisionAlternative_NONE;
 import jbse.val.Primitive;
@@ -7,15 +16,7 @@ import jbse.val.Simplex;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
 
-import java.util.function.Supplier;
-
-import static jbse.algo.Util.*;
-import static jbse.bc.Offsets.MATH_LOGICAL_OP_OFFSET;
-import static jbse.bc.Signatures.ARITHMETIC_EXCEPTION;
-import static jbse.common.Type.isPrimitiveIntegralOpStack;
-
 //TODO this implementation of division works only for concrete values, add the case for symbolic ones with multiple successors
-
 /**
  * {@link Algorithm} managing all the *div bytecodes
  * ([i/l/f/d]div).
@@ -23,11 +24,11 @@ import static jbse.common.Type.isPrimitiveIntegralOpStack;
  * @author Pietro Braione
  */
 final class Algo_XDIV extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE,
-StrategyDecide<DecisionAlternative_NONE>,
-        StrategyRefine<DecisionAlternative_NONE>,
-        StrategyUpdate<DecisionAlternative_NONE>> {
+StrategyDecide<DecisionAlternative_NONE>, 
+StrategyRefine<DecisionAlternative_NONE>, 
+StrategyUpdate<DecisionAlternative_NONE>> {
 
     @Override
     protected Supplier<Integer> numOperands() {
@@ -72,14 +73,14 @@ StrategyDecide<DecisionAlternative_NONE>,
                     if (val2 instanceof Simplex) {
                         final Simplex op0_S = (Simplex) val2;
                         if (op0_S.isZeroOne(true)) {
-                            throwNew(state, ARITHMETIC_EXCEPTION);
+                            throwNew(state, this.ctx.getCalculator(), ARITHMETIC_EXCEPTION);
                             return;
                         }
                     }
                 }
-                state.pushOperand(val1.div(val2));
+                state.pushOperand(this.ctx.getCalculator().push(val1).div(val2).pop());
             } catch (ClassCastException | InvalidTypeException | InvalidOperandException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
         };

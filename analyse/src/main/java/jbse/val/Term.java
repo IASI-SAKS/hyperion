@@ -1,7 +1,6 @@
 package jbse.val;
 
 import jbse.val.exc.InvalidTypeException;
-import jbse.val.exc.ValueDoesNotSupportNativeException;
 
 /**
  * An arbitrary {@link Primitive} value, on which 
@@ -16,122 +15,118 @@ import jbse.val.exc.ValueDoesNotSupportNativeException;
  * handled by some decision procedures, and are therefore consistently
  * replaced by suitable terms). <br />
  * 
- * Terms are symbolic but do not implement the Symbolic interface. This 
- * because they are not identified by the state: A {@link String} name 
- * must be provided upon construction, and the name 
- * identifies them. A term stands for itself and is never replaced by 
- * another term. Also, a term has no origin.
+ * Terms are identified by a {@link String} name that 
+ * must be provided upon construction.
  * 
  * @author Pietro Braione
  */
-public final class Term extends Primitive {
+public final class Term extends Primitive implements Symbolic {
     /** The conventional value of the {@link Term}, a {@link String}. */
-	private final String value;
-	
-	/** Cached hash code. */
-	private final int hashCode;
-	
-	/**
-	 * Constructor.
-	 * 
-	 * @param type
-	 * @param calc
-	 * @param value
-	 * @throws InvalidTypeException 
-	 */
-	Term(char type, Calculator calc, String value) throws InvalidTypeException {
-		super(type, calc);
-		this.value = value;
-		
-		//calculates the hash code
-		final int prime = 293;
-		int tmpHashCode = 1;
-		tmpHashCode = prime * tmpHashCode + ((value == null) ? 0 : value.hashCode());
-		this.hashCode = tmpHashCode;
-	}
+    private final String value;
 
+    /** Cached hash code. */
+    private final int hashCode;
+
+    /**
+     * Constructor.
+     * 
+     * @param type a {@code char}, the type of this value.
+     * @param value a {@code String}, the name of the term. Two 
+     *        {@link Term}s with same name will be considered the
+     *        same {@link Term}.
+     * @throws InvalidTypeException if {@code type} is not primitive. 
+     */
+    Term(char type, String value) throws InvalidTypeException {
+        super(type);
+        this.value = value;
+
+        //calculates the hash code
+        final int prime = 293;
+        int tmpHashCode = 1;
+        tmpHashCode = prime * tmpHashCode + ((value == null) ? 0 : value.hashCode());
+        this.hashCode = tmpHashCode;
+    }
+
+    @Override
     public String getValue() {
         return this.value;
+    }
+
+    @Override
+    public String asOriginString() {
+        return this.value;
+    }
+
+    @Override
+    public HistoryPoint historyPoint() {
+        return null;
+    }
+
+    @Override
+    public Symbolic root() {
+        return this;
+    }
+
+    @Override
+    public boolean hasContainer(Symbolic s) {
+        if (s == null) {
+            throw new NullPointerException();
+        }
+        return s.equals(this);
+    }
+
+    @Override
+    public void accept(PrimitiveVisitor v) throws Exception {
+        v.visitTerm(this);
+    }
+
+    @Override
+    public boolean surelyTrue() {
+        return false;
+    }
+
+    @Override
+    public boolean surelyFalse() {
+        return false;
+    }
+
+    @Override
+    public boolean isSymbolic() {
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return this.hashCode;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (obj == null) {
+            return false;
+        }
+        if (getClass() != obj.getClass()) {
+            return false;
+        }
+        final Term other = (Term) obj;
+        if (this.value == null) {
+            if (other.value != null) { 
+                return false;
+            }
+        } else if (!this.value.equals(other.value)) {
+            return false;
+        }
+        return true;
     }
 
     /**
      * {@inheritDoc}
      */
-	@Override
-	public void accept(PrimitiveVisitor v) throws Exception {
-		v.visitTerm(this);
-	}
-
-    /**
-     * {@inheritDoc}
-     */
-	@Override
-	public boolean surelyTrue() {
-		return false;
-	}
-
-    /**
-     * {@inheritDoc}
-     */
-	@Override
-	public boolean surelyFalse() {
-		return false;
-	}
-
-    /**
-     * {@inheritDoc}
-     */
-	@Override
-	public Object getValueForNative() throws ValueDoesNotSupportNativeException {
-		throw new ValueDoesNotSupportNativeException();
-	}
-
-    /**
-     * {@inheritDoc}
-     */
-	@Override
-	public boolean isSymbolic() {
-		return true;
-	}
-
-    /**
-     * {@inheritDoc}
-     */
-	@Override
-	public int hashCode() {
-		return this.hashCode;
-	}
-
-    /**
-     * {@inheritDoc}
-     */
-	@Override
-	public boolean equals(Object obj) {
-		if (this == obj) {
-			return true;
-		}
-		if (obj == null) {
-			return false;
-		}
-		if (getClass() != obj.getClass()) {
-			return false;
-		}
-		Term other = (Term) obj;
-		if (value == null) {
-			if (other.value != null) { 
-				return false;
-			}
-		} else if (!value.equals(other.value)) {
-			return false;
-		}
-		return true;
-	}
-
-    /**
-     * {@inheritDoc}
-     */
-	@Override
-	public String toString() {
-		return this.value;
-	}
+    @Override
+    public String toString() {
+        return this.value;
+    }
 }

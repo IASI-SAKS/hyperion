@@ -1,9 +1,12 @@
 package jbse.val;
 
+import static jbse.val.HistoryPoint.unknown;
+
 import jbse.common.Type;
+import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
+import jbse.val.PrimitiveSymbolic;
 import jbse.val.exc.InvalidTypeException;
-import jbse.val.exc.ValueDoesNotSupportNativeException;
 
 /**
  * The boolean value on the top of the information lattice of booleans.
@@ -13,57 +16,65 @@ import jbse.val.exc.ValueDoesNotSupportNativeException;
  * 
  * @author Pietro Braione
  */
-public final class Any extends Primitive {
-	private Any(Calculator calc) throws InvalidTypeException {
-		super(Type.BOOLEAN, calc);
+public final class Any extends PrimitiveSymbolic {
+	private static final Any THE_ANY;
+	static {
+        try {
+        	THE_ANY = new Any();
+        } catch (InvalidTypeException | InvalidInputException e) {
+            //this should never happen
+            throw new UnexpectedInternalException(e);
+        }
 	}
 	
-	public static Any make(Calculator calc) {
-		try {
-			return new Any(calc);
-		} catch (InvalidTypeException e) {
-			//this should never happen
-			throw new UnexpectedInternalException(e);
+    private Any() throws InvalidTypeException, InvalidInputException {
+        super(Type.BOOLEAN, unknown());
+    }
+
+    /**
+     * Makes an {@link Any} value.
+     * 
+     * @return an {@link Any} instance.
+     */
+    public static Any make() {
+    	return THE_ANY;
+    }
+    
+    @Override
+    public String asOriginString() {
+        return "*";
+    }
+    
+    @Override
+    public Symbolic root() {
+    	return this;
+    }
+    
+    @Override
+    public boolean hasContainer(Symbolic s) {
+		if (s == null) {
+			throw new NullPointerException();
 		}
-	}
+		return equals(s);
+    }
 
-	@Override
-	public Object getValueForNative() throws ValueDoesNotSupportNativeException {
-		throw new ValueDoesNotSupportNativeException();
-	}
+    @Override
+    public void accept(PrimitiveVisitor v) throws Exception { 
+        v.visitAny(this);
+    }
 
-	@Override
-	public boolean surelyTrue() {
-		return false;
-	}
+    @Override
+    public boolean equals(Object o) {
+        return this == o; //TODO should all any's be equal? Now they are all different.
+    }
 
-	@Override
-	public boolean surelyFalse() {
-		return false;
-	}
+    @Override
+    public int hashCode() {
+        return 0;
+    }
 
-	@Override
-	public void accept(PrimitiveVisitor v) throws Exception { 
-		v.visitAny(this);
-	}
-
-	@Override
-	public boolean isSymbolic() {
-		return true;
-	}
-
-	@Override
-	public boolean equals(Object o) {
-		return this == o;
-	}
-
-	@Override
-	public int hashCode() {
-		return 0;
-	}
-
-	@Override
-	public String toString() {
-		return "*";
-	}
+    @Override
+    public String toString() {
+        return "*";
+    }
 }

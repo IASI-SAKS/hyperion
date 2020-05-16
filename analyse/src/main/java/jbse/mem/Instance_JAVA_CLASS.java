@@ -1,32 +1,45 @@
 package jbse.mem;
 
-import jbse.bc.Signature;
-import jbse.val.Calculator;
-import jbse.val.MemoryPath;
 
-import static jbse.bc.Signatures.JAVA_CLASS;
+import jbse.bc.ClassFile;
+import jbse.common.exc.InvalidInputException;
+import jbse.val.ReferenceConcrete;
 
 /**
  * Class that represent an instance of an object with class {@code java.lang.Class} 
  * in the heap.
  */
-public final class Instance_JAVA_CLASS extends Instance {
-    /** The java class it represents. Immutable. */
-    private final String representedClass;
-
-    protected Instance_JAVA_CLASS(Calculator calc, MemoryPath origin, Epoch epoch, String representedClass, Signature... fieldSignatures) {
-        super(calc, JAVA_CLASS, origin, epoch, fieldSignatures);
-        this.representedClass = representedClass;
-    }
-    
+public interface Instance_JAVA_CLASS extends Instance {
     /**
-     * Returns the name of the class this {@code Instance}
+     * Returns the class this {@code Instance}
      * of {@code java.lang.Class} represents.
      * 
-     * @return a {@code String}, the name of the 
+     * @return a {@link ClassFile}, the  
      * represented class.
      */
-    public String representedClass() {
-        return this.representedClass;
-    }
+    ClassFile representedClass();
+    
+    /**
+     * Sets the signers of this {@code Instance}
+     * of {@code java.lang.Class}.
+     * 
+     * @param signers a {@link ReferenceConcrete} to
+     *        a monodimensional array of objects.
+     * @throws InvalidInputException if {@code signers == null}.
+     */
+    void setSigners(ReferenceConcrete signers) throws InvalidInputException;
+    
+    /**
+     * Returns the signers of this {@code Instance}
+     * of {@code java.lang.Class}.
+     * 
+     * @return the {@link ReferenceConcrete} to
+     *        a monodimensional array of objects
+     *        previously set with {@link #setSigners}, 
+     *        or {@code null} if {@link #setSigners}
+     *        was not invoked before.
+     */
+    ReferenceConcrete getSigners();
+    
+    Instance_JAVA_CLASS clone();
 }

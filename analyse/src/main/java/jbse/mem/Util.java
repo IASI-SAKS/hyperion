@@ -1,12 +1,15 @@
 package jbse.mem;
 
-import jbse.val.*;
-import jbse.val.exc.InvalidTypeException;
-
-import java.util.ArrayList;
-
 import static jbse.common.Type.isPrimitive;
 import static jbse.common.Type.isReference;
+
+import jbse.val.Null;
+import jbse.val.Primitive;
+import jbse.val.Reference;
+import jbse.val.ReferenceArrayImmaterial;
+import jbse.val.ReferenceConcrete;
+import jbse.val.ReferenceSymbolic;
+import jbse.val.Value;
 
 /**
  * Some utility functions and constants.
@@ -36,7 +39,7 @@ public class Util {
 	}
 	
 	/**
-	 * Checks whether a {@link Value} is a resolved symbolic
+	 * Checks whether a {@link Value} is a resolved symbolic 
 	 * {@link Reference}.
 	 * 
 	 * @param s a {@link State}. It must not be {@code null}.
@@ -51,12 +54,12 @@ public class Util {
 	}
 	
 	/**
-	 * Checks whether a {@link Reference} is null.
+	 * Checks whether a {@link Reference} is null. 
 	 * 
 	 * @param s a {@link State}. It must not be {@code null}.
 	 * @param r a {@link Reference}. It must not be {@code null}.
 	 * @return {@code true} iff {@code r} is a symbolic 
-	 * {@link Reference} resolved to null in {@code s}, or the
+	 * {@link Reference} resolved to null in {@code s}, or the 
 	 * {@link Null} concrete reference.
 	 */
 	public static boolean isNull(State s, Reference r) {
@@ -65,26 +68,55 @@ public class Util {
 	}
 	
 	/**
-	 * Checks whether two {@link Reference}s are alias.
+	 * Checks whether two {@link Reference}s are surely alias. 
 	 * 
 	 * @param s a {@link State}. It must not be {@code null}.
 	 * @param r1 a {@link Reference}. It must not be {@code null}.
 	 * @param r2 a {@link Reference}. It must not be {@code null}.
-	 * @return {@code true} if {@code r1} and {@code r2} denote 
-	 *         the same heap position or both denote {@code null}, 
-	 *         {@code false} if they do not, 
-	 *         or if at least one is an unresolved symbolic reference.
+	 * @return {@code true} if {@code r1} and {@code r2} surely denote 
+	 *         the same heap position (i.e. either {@code r1 == r2}
+	 *         or they are both resolved to the same heap position), 
+	 *         {@code false} otherwise.
 	 */
 	public static boolean areAlias(State s, Reference r1, Reference r2) {
 		final long r1Pos = heapPosition(s, r1);
 		final long r2Pos = heapPosition(s, r2);
 		if (r1Pos == POS_UNKNOWN || r2Pos == POS_UNKNOWN) {
-			return false;
+			return (r1 == r2);
 		} else {
 			return (r1Pos == r2Pos);
 		}
 	}
 	
+	/**
+	 * Checks whether two {@link Reference}s are surely not alias. 
+	 * 
+	 * @param s a {@link State}. It must not be {@code null}.
+	 * @param r1 a {@link Reference}. It must not be {@code null}.
+	 * @param r2 a {@link Reference}. It must not be {@code null}.
+	 * @return {@code true} if {@code r1} and {@code r2} surely denote 
+	 *         different heap position (i.e. they are both resolved 
+	 *         to different heap position), {@code false} otherwise.
+	 */
+	public static boolean areNotAlias(State s, Reference r1, Reference r2) {
+		final long r1Pos = heapPosition(s, r1);
+		final long r2Pos = heapPosition(s, r2);
+		if (r1Pos == POS_UNKNOWN || r2Pos == POS_UNKNOWN) {
+			return false;
+		} else {
+			return (r1Pos != r2Pos);
+		}
+	}
+	
+	/**
+	 * Returns the position in the heap a {@link Reference} points to
+	 * 
+	 * @param s a {@link State}.
+	 * @param r a {@link Reference}.
+	 * @return a {@code long}, the position in the heap of {@code s} to
+	 *         which {@code r} points, or {@link #POS_UNKNOWN} if
+	 *         {@code r} is not resolved.
+	 */
 	public static long heapPosition(State s, Reference r) {
 		if (isResolved(s, r)) {
 	        return (r.isSymbolic() ? s.getResolution((ReferenceSymbolic) r) : ((ReferenceConcrete) r).getHeapPosition());
@@ -93,13 +125,13 @@ public class Util {
 	}
 	
 	/**
-	 * Checks whether a {@link Value} is resolved.
+	 * Checks whether a {@link Value} is resolved. 
 	 * 
 	 * @param s a {@link State}. It must not be {@code null}.
 	 * @param v a {@link Value}. It must not be {@code null}.
 	 * @return {@code true} iff {@code v} is resolved, i.e., 
-	 * either is a {@link Primitive} (symbolic or not), or a
-	 * concrete {@link Reference}, or a symbolic
+	 * either is a {@link Primitive} (symbolic or not), or a 
+	 * concrete {@link Reference}, or a symbolic 
 	 * {@link Reference} resolved in {@code s}.
 	 */
 	public static boolean isResolved(State s, Value v) {
@@ -108,27 +140,6 @@ public class Util {
 		v instanceof ReferenceConcrete ||
         v instanceof ReferenceArrayImmaterial ||
 		isResolvedSymbolicReference(s, v);
-	}
-	
-	/**
-	 * Casts an array of {@link Value}s into an array of
-	 * {@link Primitive}s.
-	 * 
-	 * @param args an array of {@link Value}s.
-	 * @return the array of the elements in {@code args} cast to
-	 *         {@link Primitive}, in same order.
-	 */
-	private static final Primitive[] ARRAY_OF_PRIMITIVES = new Primitive[] { }; //foo
-	public static Primitive[] toPrimitive(Value[] args) throws InvalidTypeException {
-		final ArrayList<Primitive> retVal = new ArrayList<Primitive>();
-		for (Value arg : args) {
-			if (arg instanceof Primitive) {
-				retVal.add((Primitive) arg);
-			} else {
-				throw new InvalidTypeException("not all the arguments are primitive");
-			}
-		}
-		return retVal.toArray(ARRAY_OF_PRIMITIVES);
 	}
 	
 	/**

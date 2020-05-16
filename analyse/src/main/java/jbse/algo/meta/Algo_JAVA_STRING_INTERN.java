@@ -1,56 +1,68 @@
 package jbse.algo.meta;
 
-import jbse.algo.Algo_INVOKEMETA_Nonbranching;
-import jbse.algo.InterruptException;
-import jbse.algo.exc.SymbolicValueNotAllowedException;
-import jbse.bc.exc.ClassFileIllFormedException;
-import jbse.common.exc.ClasspathException;
-import jbse.dec.exc.DecisionException;
-import jbse.mem.State;
-import jbse.mem.exc.ThreadStackEmptyException;
-import jbse.val.Reference;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.throwNew;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.algo.Util.valueString;
+import static jbse.bc.Signatures.OUT_OF_MEMORY_ERROR;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.*;
+import jbse.algo.Algo_INVOKEMETA_Nonbranching;
+import jbse.algo.InterruptException;
+import jbse.algo.StrategyUpdate;
+import jbse.algo.exc.SymbolicValueNotAllowedException;
+import jbse.common.exc.ClasspathException;
+import jbse.common.exc.InvalidInputException;
+import jbse.dec.exc.DecisionException;
+import jbse.mem.State;
+import jbse.mem.exc.HeapMemoryExhaustedException;
+import jbse.tree.DecisionAlternative_NONE;
+import jbse.val.Calculator;
+import jbse.val.Reference;
 
 /**
- * Meta-level implementation of {@link String#intern()}.
+ * Meta-level implementation of {@link java.lang.String#intern()}.
  * 
  * @author Pietro Braione
  */
 public final class Algo_JAVA_STRING_INTERN extends Algo_INVOKEMETA_Nonbranching {
     private String valueString; //set by cookMore
-    
+
     @Override
     protected Supplier<Integer> numOperands() {
         return () -> 1;
     }
-    
+
     @Override
-    protected void cookMore(State state)
-    throws ThreadStackEmptyException, DecisionException,
-    ClasspathException, SymbolicValueNotAllowedException,
-    InterruptException {
+    protected void cookMore(State state) 
+    throws DecisionException, ClasspathException, 
+    SymbolicValueNotAllowedException, InterruptException, InvalidInputException {
+    	final Calculator calc = this.ctx.getCalculator();
         try {
             this.valueString = valueString(state, (Reference) this.data.operand(0));
             if (this.valueString == null) {
                 //TODO remove this limitation
-                throw new SymbolicValueNotAllowedException("Cannot intern a symbolic String object.");
+                throw new SymbolicValueNotAllowedException("Cannot intern a String object that is not simple.");
             }
             if (state.hasStringLiteral(this.valueString)) {
                 //nothing to do
             } else {
-                ensureStringLiteral(state, this.valueString, this.ctx);
+                state.ensureStringLiteral(calc, this.valueString);
             }
-        } catch (ClassCastException | ClassFileIllFormedException e) {
-            throwVerifyError(state);
+        } catch (HeapMemoryExhaustedException e) {
+            throwNew(state, calc, OUT_OF_MEMORY_ERROR);
+            exitFromAlgorithm();
+        } catch (ClassCastException e) {
+            throwVerifyError(state, calc);
             exitFromAlgorithm();
         }
     }
-    
+
     @Override
-    protected void update(State state) throws ThreadStackEmptyException {
-        state.pushOperand(state.referenceToStringLiteral(this.valueString));
+    protected StrategyUpdate<DecisionAlternative_NONE> updater() {
+        return (state, alt) -> {
+            state.pushOperand(state.referenceToStringLiteral(this.valueString));
+        };
     }
 }

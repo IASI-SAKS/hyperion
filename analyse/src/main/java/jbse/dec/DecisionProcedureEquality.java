@@ -1,16 +1,23 @@
 package jbse.dec;
 
-import jbse.bc.ClassHierarchy;
+import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
 import jbse.dec.exc.DecisionException;
 import jbse.mem.ClauseAssume;
-import jbse.rewr.CalculatorRewriting;
-import jbse.rewr.Rewriter;
-import jbse.rewr.exc.NoResultException;
-import jbse.val.*;
-
-import java.util.LinkedHashMap;
-
+import jbse.val.Any;
+import jbse.val.Expression;
+import jbse.val.PrimitiveSymbolicApply;
+import jbse.val.PrimitiveSymbolicAtomic;
+import jbse.val.NarrowingConversion;
+import jbse.val.Operator;
+import jbse.val.Primitive;
+import jbse.val.PrimitiveSymbolic;
+import jbse.val.PrimitiveVisitor;
+import jbse.val.Rewriter;
+import jbse.val.Simplex;
+import jbse.val.Term;
+import jbse.val.WideningConversion;
+import jbse.val.exc.NoResultException;
 
 /**
  * A poor man decision procedure for equalities and inequalities 
@@ -20,10 +27,11 @@ import java.util.LinkedHashMap;
  *
  */
 public final class DecisionProcedureEquality extends DecisionProcedureChainOfResponsibility {
-	private final Partition equivalence = new Partition();
+	private final Partition<Primitive> equivalence = new Partition<>();
 
-	public DecisionProcedureEquality(DecisionProcedure component, CalculatorRewriting calc) {
-		super(component, calc);
+	public DecisionProcedureEquality(DecisionProcedure component) 
+	throws InvalidInputException {
+		super(component);
 		this.rewriters = new Rewriter[] { new RewriterUnify() }; //explicit assignment: no constructor call is allowed before super()
 	}
 
@@ -48,7 +56,7 @@ public final class DecisionProcedureEquality extends DecisionProcedureChainOfRes
 	}
 
 	@Override
-	protected boolean isSatLocal(ClassHierarchy hier, Expression exp, Expression expSimpl) 
+	protected boolean isSatLocal(Expression exp, Expression expSimpl) 
 	throws DecisionException {
 		final PrimitiveVisitorEquality vEq = new PrimitiveVisitorEquality();
 		try {
@@ -74,7 +82,7 @@ public final class DecisionProcedureEquality extends DecisionProcedureChainOfRes
 		}
 	}
 
-	private static class PrimitiveVisitorEquality implements PrimitiveVisitor {
+	private class PrimitiveVisitorEquality implements PrimitiveVisitor {
 		boolean isEquality, negated;
 		Primitive first, second;
 
@@ -141,12 +149,12 @@ public final class DecisionProcedureEquality extends DecisionProcedureChainOfRes
 								final Primitive toCheckFirstFirst = toCheckFirstExp.getFirstOperand();
 								final Primitive toCheckFirstSecond = toCheckFirstExp.getSecondOperand();
 								if (toCheckFirstFirst instanceof Simplex &&
-										((Simplex) toCheckFirstFirst.neg()).isZeroOne(false)) {
+								    ((Simplex) DecisionProcedureEquality.this.calc.push(toCheckFirstFirst).neg().pop()).isZeroOne(false)) {
 									this.first = toCheckFirstSecond;
 									this.second = toCheckSecond;
 									return;
 								} else if (toCheckFirstSecond instanceof Simplex &&
-										((Simplex) toCheckFirstSecond.neg()).isZeroOne(false)) {
+								           ((Simplex) DecisionProcedureEquality.this.calc.push(toCheckFirstSecond).neg().pop()).isZeroOne(false)) {
 									this.first = toCheckFirstFirst;
 									this.second = toCheckSecond;
 									return;
@@ -164,12 +172,12 @@ public final class DecisionProcedureEquality extends DecisionProcedureChainOfRes
 								final Primitive toCheckSecondFirst = toCheckSecondExp.getFirstOperand();
 								final Primitive toCheckSecondSecond = toCheckSecondExp.getSecondOperand();
 								if (toCheckSecondFirst instanceof Simplex &&
-										((Simplex) toCheckSecondFirst.neg()).isZeroOne(false)) {
+										((Simplex) DecisionProcedureEquality.this.calc.push(toCheckSecondFirst).neg().pop()).isZeroOne(false)) {
 									this.first = toCheckFirst;
 									this.second = toCheckSecondSecond;
 									return;
 								} else if (toCheckSecondSecond instanceof Simplex &&
-										((Simplex) toCheckSecondSecond.neg()).isZeroOne(false)) {
+										((Simplex) DecisionProcedureEquality.this.calc.push(toCheckSecondSecond).neg().pop()).isZeroOne(false)) {
 									this.first = toCheckFirst;
 									this.second = toCheckSecondFirst;
 									return;						
@@ -177,7 +185,7 @@ public final class DecisionProcedureEquality extends DecisionProcedureChainOfRes
 							}
 						}
 						//manages a + b == 0 (by default)
-						this.first = toCheckFirst.neg();
+						this.first = DecisionProcedureEquality.this.calc.push(toCheckFirst).neg().pop();
 						this.second = toCheckSecond;
 						return;
 					}
@@ -192,7 +200,7 @@ public final class DecisionProcedureEquality extends DecisionProcedureChainOfRes
 		}
 
 		@Override
-		public void visitFunctionApplication(FunctionApplication x) {
+		public void visitPrimitiveSymbolicApply(PrimitiveSymbolicApply x) {
 			this.isEquality = false;
 			this.first = this.second = null;
 		}
@@ -210,7 +218,7 @@ public final class DecisionProcedureEquality extends DecisionProcedureChainOfRes
 		}
 
 		@Override
-		public void visitPrimitiveSymbolic(PrimitiveSymbolic s)
+		public void visitPrimitiveSymbolicAtomic(PrimitiveSymbolicAtomic s)
 		throws Exception {
 			this.isEquality = false;
 			this.first = this.second = null;
@@ -250,11 +258,11 @@ public final class DecisionProcedureEquality extends DecisionProcedureChainOfRes
 		}
 
 		@Override
-		protected void rewriteFunctionApplication(FunctionApplication x)
+		protected void rewritePrimitiveSymbolicApply(PrimitiveSymbolicApply x)
 		throws NoResultException {
 			final Primitive xEq = equivalence.find(x);
 			if (x.equals(xEq)) {
-				super.rewriteFunctionApplication(x);
+				super.rewritePrimitiveSymbolicApply(x);
 				final Primitive xSub = this.getResult();
 				if (x.equals(xSub)) {
 					return;
@@ -319,104 +327,6 @@ public final class DecisionProcedureEquality extends DecisionProcedureChainOfRes
 				super.rewriteTerm(x);
 			} else {
 				setResult(rewrite(xEq));
-			}
-		}
-	}
-	
-	/**
-	 * Union-find partition of primitives.
-	 * 
-	 * @author Pietro Braione
-	 */
-	private static class Partition {
-		private final LinkedHashMap<Primitive, PartitionNode> nodes = new LinkedHashMap<Primitive, PartitionNode>();
-		
-		void union(Primitive elemFirst, Primitive elemSecond) {
-			if (elemFirst.equals(elemSecond)) {
-				return;
-			}
-			final int firstLength = elemFirst.toString().length();
-			final int secondLength = elemSecond.toString().length();
-			final boolean firstShorter = (firstLength < secondLength);
-			final PartitionNode partitionFirst = (firstShorter ? rootNode(elemFirst) : rootNode(elemSecond));
-			final PartitionNode partitionSecond = (firstShorter ? rootNode(elemSecond) : rootNode(elemFirst));
-			final PartitionNode partitionLower, partitionHigher; 
-			if (partitionFirst.rank < partitionSecond.rank) {
-				partitionLower = partitionFirst;
-				partitionHigher = partitionSecond;
-			} else { 
-				partitionLower = partitionSecond;
-				partitionHigher = partitionFirst;
-				if (partitionLower.rank == partitionHigher.rank) {
-					++partitionHigher.rank;
-				}
-			}
-			partitionLower.parent = partitionHigher;
-		}
-		
-		Primitive find (Primitive elem) {
-			PartitionNode node = this.nodes.get(elem);
-			if (node == null) {
-				return elem;
-			}
-			return findRootAndCompress(node).element;
-		}
-		
-		/* aggressive closure, seemingly offers no advantage
-		private static class PrimitivePair {
-			Primitive oldValue;
-			Primitive newValue;
-			PrimitivePair(Primitive oldValue, Primitive newValue) {
-				this.oldValue = oldValue;
-				this.newValue = newValue;
-			}
-		}
-		
-		void close(CalculatorRewriting calc, Rewriter[] rewriters) {
-			final ArrayList<PrimitivePair> normalized = new ArrayList<PrimitivePair>();
-			for (final Primitive oldValue : this.nodes.keySet()) {
-				final Primitive newValue = calc.applyRewriters(oldValue, rewriters); 		//TODO may cause divergence!!!!!!!!!
-				normalized.add(new PrimitivePair(oldValue, newValue));
-			}
-			for (final PrimitivePair p : normalized) {
-				this.union(p.oldValue, p.newValue);
-			}
-		}*/
-		
-		void reset() {
-			this.nodes.clear();
-		}
-
-		private PartitionNode findRootAndCompress(PartitionNode node) {
-			if (node.parent != node) {
-				node.parent = findRootAndCompress(node.parent);
-			}
-			return node.parent;
-		}
-		
-		private PartitionNode rootNode(Primitive elem) {
-			PartitionNode elemNode = this.nodes.get(elem);
-			if (elemNode == null) {
-				elemNode = new PartitionNode(elem);
-				this.nodes.put(elem, elemNode);
-			}
-			return findRootAndCompress(elemNode);
-		}
-		
-		private static class PartitionNode {
-			final Primitive element;
-			PartitionNode parent;
-			int rank;
-			
-			PartitionNode(Primitive element) {
-				this.element = element;
-				this.parent = this;
-				this.rank = 0;
-			}
-			
-			@Override
-			public String toString() {
-				return ">" + this.parent.element +"(r" + this.rank + ")";
 			}
 		}
 	}

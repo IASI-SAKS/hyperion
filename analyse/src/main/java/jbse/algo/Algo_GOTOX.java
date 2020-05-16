@@ -1,9 +1,9 @@
 package jbse.algo;
 
+import java.util.function.Supplier;
+
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.tree.DecisionAlternative_NONE;
-
-import java.util.function.Supplier;
 
 /**
  * {@link Algorithm} managing the goto* bytecodes

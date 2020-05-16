@@ -1,12 +1,12 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
+import static jbse.bc.Offsets.JSR_OFFSET;
+import static jbse.bc.Offsets.JSR_W_OFFSET;
 
 import java.util.function.Supplier;
 
-import static jbse.bc.Offsets.JSR_OFFSET;
-import static jbse.bc.Offsets.JSR_W_OFFSET;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
 
 /**
  * {@link Algorithm} for the "jump subroutine"
@@ -68,9 +68,9 @@ StrategyUpdate<DecisionAlternative_NONE>> {
     @Override
     protected StrategyUpdate<DecisionAlternative_NONE> updater() {
         return (state, alt) -> {
-            final int programCounter = state.getPC();
+            final int programCounter = state.getCurrentProgramCounter();
             final int bytecodeOffset = (this.wide ? JSR_W_OFFSET : JSR_OFFSET);
-            state.pushOperand(state.getCalculator().valInt(programCounter + bytecodeOffset));
+            state.pushOperand(this.ctx.getCalculator().valInt(programCounter + bytecodeOffset));
         };
     }
 

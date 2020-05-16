@@ -33,6 +33,7 @@ public class Main {
 
     public static void m(int x) {
         boolean val = getResult();
+        //boolean val = true;
 
         if (x > 0) {
             a = val;

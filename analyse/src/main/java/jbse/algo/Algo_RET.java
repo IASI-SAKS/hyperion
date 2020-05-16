@@ -1,12 +1,12 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
-import jbse.val.Simplex;
+import static jbse.algo.Util.throwVerifyError;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.throwVerifyError;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
+import jbse.val.Simplex;
 
 /**
  * {@link Algorithm} managing the "return from subroutine"
@@ -15,7 +15,7 @@ import static jbse.algo.Util.throwVerifyError;
  * @author Pietro Braione
  */
 final class Algo_RET extends Algorithm<
-        BytecodeData_1LV,
+BytecodeData_1LV,
 DecisionAlternative_NONE, 
 StrategyDecide<DecisionAlternative_NONE>, 
 StrategyRefine<DecisionAlternative_NONE>, 
@@ -64,7 +64,7 @@ StrategyUpdate<DecisionAlternative_NONE>> {
                 final Simplex localVariableValueAsSimplex = (Simplex) this.data.localVariableValue();
                 this.pcReturn = ((Integer) localVariableValueAsSimplex.getActualValue()).intValue();
             } catch (ClassCastException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
             }
         };
     }

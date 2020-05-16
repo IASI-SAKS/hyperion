@@ -1,8 +1,11 @@
 package jbse.algo;
 
-import jbse.mem.State;
-
 import static jbse.mem.Array.arrayPrimitiveType;
+
+import jbse.common.exc.ClasspathException;
+import jbse.mem.State;
+import jbse.mem.exc.FrozenStateException;
+import jbse.val.Calculator;
 
 /**
  * Zero implicits,
@@ -12,9 +15,10 @@ import static jbse.mem.Array.arrayPrimitiveType;
  */
 public final class BytecodeData_1AT extends BytecodeData {
     @Override
-    protected void readImmediates(State state) throws InterruptException {
-        readImmediateUnsignedByte(state, 1);
-        setPrimitiveType(state, arrayPrimitiveType(immediateUnsignedByte()));
+    protected void readImmediates(State state, Calculator calc) 
+    throws InterruptException, ClasspathException, FrozenStateException {
+        readImmediateUnsignedByte(state, calc, 1);
+        setPrimitiveType(state, calc, arrayPrimitiveType(immediateUnsignedByte()));
     }
 
     /**

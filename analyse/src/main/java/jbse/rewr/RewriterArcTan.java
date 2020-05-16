@@ -1,7 +1,8 @@
 package jbse.rewr;
 
-import jbse.rewr.exc.NoResultException;
-import jbse.val.FunctionApplication;
+import jbse.val.PrimitiveSymbolicApply;
+import jbse.val.Rewriter;
+import jbse.val.exc.NoResultException;
 import jbse.val.Primitive;
 
 /**
@@ -10,24 +11,24 @@ import jbse.val.Primitive;
  * @author Pietro Braione
  *
  */
-public class RewriterArcTan extends Rewriter {
+public class RewriterArcTan extends RewriterCalculatorRewriting {
 
 	public RewriterArcTan() { }
 	
 	@Override
-	protected void rewriteFunctionApplication(FunctionApplication x)
+	protected void rewritePrimitiveSymbolicApply(PrimitiveSymbolicApply x)
 	throws NoResultException {
 		final String operator = x.getOperator();
-		if (operator == FunctionApplication.TAN) {
-			final Primitive arg = x.getArgs()[0];
-			if (arg instanceof FunctionApplication) {
-				final FunctionApplication argFA = (FunctionApplication) arg;
-				if (argFA.getOperator().equals(FunctionApplication.ATAN)) {
-					setResult(calc.applyRewriters(argFA.getArgs()[0]));
+		if (operator == PrimitiveSymbolicApply.TAN) {
+			final Primitive arg = (Primitive) x.getArgs()[0];
+			if (arg instanceof PrimitiveSymbolicApply) {
+				final PrimitiveSymbolicApply argFA = (PrimitiveSymbolicApply) arg;
+				if (argFA.getOperator().equals(PrimitiveSymbolicApply.ATAN)) {
+					setResult(this.calc.simplify((Primitive) argFA.getArgs()[0]));
 					return;
 				}
 			}
 		}
-		super.rewriteFunctionApplication(x);
+		setResult(x);
 	}
 }

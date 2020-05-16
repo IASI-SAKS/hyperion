@@ -1,11 +1,11 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
+import static jbse.bc.Offsets.WIDE_OFFSET;
 
 import java.util.function.Supplier;
 
-import static jbse.bc.Offsets.WIDE_OFFSET;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
 
 /**
  * {@link Algorithm} managing the wide bytecode.
@@ -13,11 +13,11 @@ import static jbse.bc.Offsets.WIDE_OFFSET;
  * @author Pietro Braione
  */
 final class Algo_WIDE extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE, 
-StrategyDecide<DecisionAlternative_NONE>,
-        StrategyRefine<DecisionAlternative_NONE>,
-        StrategyUpdate<DecisionAlternative_NONE>> {
+StrategyDecide<DecisionAlternative_NONE>, 
+StrategyRefine<DecisionAlternative_NONE>, 
+StrategyUpdate<DecisionAlternative_NONE>> {
 
     @Override
     protected Supplier<Integer> numOperands() {

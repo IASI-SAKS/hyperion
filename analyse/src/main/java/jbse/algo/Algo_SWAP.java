@@ -1,11 +1,11 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
+import static jbse.bc.Offsets.SWAP_OFFSET;
 
 import java.util.function.Supplier;
 
-import static jbse.bc.Offsets.SWAP_OFFSET;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
 
 /**
  * {@link Algorithm} handling the swap bytecode.
@@ -13,7 +13,7 @@ import static jbse.bc.Offsets.SWAP_OFFSET;
  * @author Pietro Braione
  */
 final class Algo_SWAP extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE, 
 StrategyDecide<DecisionAlternative_NONE>, 
 StrategyRefine<DecisionAlternative_NONE>, 

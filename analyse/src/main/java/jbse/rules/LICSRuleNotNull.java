@@ -9,13 +9,25 @@ import jbse.val.ReferenceSymbolic;
  * 
  * @author Pietro Braione
  */
-public class LICSRuleNotNull extends LICSRule {
+public final class LICSRuleNotNull extends LICSRule {
+	/** The toString version of this rule. */
+	private final String toString;
+
+	/**
+	 * Constructor.
+	 * 
+	 * @param originExp a regular expression over origin
+	 *        {@link String}s: If an origin {@link String} 
+	 *        matches it, then this rule fires. A {@code null} 
+	 *        value is equivalent to "match all".
+	 */
 	public LICSRuleNotNull(String originExp) {
 		super(originExp);
+		this.toString = originExp + " not null";
 	}
 	
 	@Override
 	public String toString() {
-		return this.originExp + " NOT_NULL";
+		return this.toString;
 	}
 }

@@ -1,10 +1,10 @@
 package jbse.algo;
 
-import jbse.tree.DecisionAlternative;
-
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.continueWith;
+import jbse.algo.BytecodeData_1KME.Kind;
+import jbse.bc.Signature;
+import jbse.tree.DecisionAlternative;
 
 /**
  * Abstract {@link Algorithm} implementing the effect of 
@@ -18,32 +18,24 @@ R extends DecisionAlternative,
 DE extends StrategyDecide<R>, 
 RE extends StrategyRefine<R>, 
 UP extends StrategyUpdate<R>> 
-extends Algorithm<BytecodeData_1ZME, R, DE, RE, UP> {
+extends Algorithm<BytecodeData_1KME, R, DE, RE, UP> {
 
-    protected boolean isInterface; //set by setter (called by Algo_INVOKEX)
-    protected boolean isSpecial; //set by setter (called by Algo_INVOKEX)
-    protected boolean isStatic; //set by setter (called by Algo_INVOKEX)
+    protected boolean isInterface; //set by setter (called by Algo_INVOKEX_Abstract)
+    protected boolean isSpecial; //set by setter (called by Algo_INVOKEX_Abstract)
+    protected boolean isStatic; //set by setter (called by Algo_INVOKEX_Abstract)
+    protected boolean isOverriddenMethodNative; //set by setter (called by Algo_INVOKEX_Abstract)
+    protected Signature methodSignatureImplementation; //set by setter (called by Algo_INVOKEX_Abstract)
 
-    public final void setFeatures(boolean isInterface, boolean isSpecial, boolean isStatic) {
+    public final void setFeatures(boolean isInterface, boolean isSpecial, boolean isStatic, boolean isOverriddenMethodNative, Signature methodSignatureImplementation) {
         this.isInterface = isInterface;
         this.isSpecial = isSpecial;
         this.isStatic = isStatic;
+        this.isOverriddenMethodNative = isOverriddenMethodNative;
+        this.methodSignatureImplementation = methodSignatureImplementation;
     }
 
     @Override
-    protected final Supplier<BytecodeData_1ZME> bytecodeData() {
-        return () -> BytecodeData_1ZME.withInterfaceMethod(this.isInterface).get();
+    protected final Supplier<BytecodeData_1KME> bytecodeData() {
+        return () -> BytecodeData_1KME.withMethod(Kind.kind(this.isInterface, this.isSpecial, this.isStatic)).get();
     }
-
-    /**
-     * Cleanly interrupts the execution and schedules 
-     * the base-level implementation of the method
-     * for execution. 
-     */
-    protected final void continueWithBaseLevelImpl() 
-    throws InterruptException {
-        final Algo_INVOKEX_Completion continuation = 
-        new Algo_INVOKEX_Completion(this.isInterface, this.isSpecial, this.isStatic);
-        continueWith(continuation);
-    }    
 }

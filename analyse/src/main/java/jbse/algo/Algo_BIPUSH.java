@@ -1,11 +1,11 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
+import static jbse.bc.Offsets.BIPUSH_OFFSET;
 
 import java.util.function.Supplier;
 
-import static jbse.bc.Offsets.BIPUSH_OFFSET;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
 
 /**
  * Algorithm managing the "push byte immediate" 
@@ -14,11 +14,11 @@ import static jbse.bc.Offsets.BIPUSH_OFFSET;
  * @author Pietro Braione
  */
 final class Algo_BIPUSH extends Algorithm<
-        BytecodeData_1SB,
+BytecodeData_1SB,
 DecisionAlternative_NONE,
 StrategyDecide<DecisionAlternative_NONE>,
-        StrategyRefine<DecisionAlternative_NONE>,
-        StrategyUpdate<DecisionAlternative_NONE>> {
+StrategyRefine<DecisionAlternative_NONE>,
+StrategyUpdate<DecisionAlternative_NONE>> {
 
     @Override
     protected Supplier<Integer> numOperands() {
@@ -56,7 +56,7 @@ StrategyDecide<DecisionAlternative_NONE>,
     @Override
     protected StrategyUpdate<DecisionAlternative_NONE> updater() {
         return (state, alt) -> { 
-            state.pushOperand(state.getCalculator().valInt(this.data.immediateSignedByte()));
+            state.pushOperand(this.ctx.getCalculator().valInt(this.data.immediateSignedByte()));
         };
     }
 

@@ -1,6 +1,9 @@
 package jbse.tree;
 
 import jbse.val.Expression;
+import jbse.val.Primitive;
+import jbse.val.Reference;
+import jbse.val.Term;
 
 /**
  * {@link DecisionAlternative_XALOAD} for the case a read access to an array
@@ -10,7 +13,20 @@ import jbse.val.Expression;
  */
 public abstract class DecisionAlternative_XALOAD_In 
 extends DecisionAlternative_XALOAD implements DecisionAlternative_XYLOAD_GETX_Loads {
-	protected DecisionAlternative_XALOAD_In(String branchId, Expression arrayAccessExpression, int branchNumber) {
-		super(branchId, arrayAccessExpression, branchNumber);
-	}
+    private final boolean fresh;
+    private final Reference arrayReference;
+
+    protected DecisionAlternative_XALOAD_In(String branchId, Expression arrayAccessExpression, Term indexFormal, Primitive indexActual, Expression arrayAccessExpressionSimplified, boolean fresh, Reference arrayReference, int branchNumber) {
+        super(branchId, arrayAccessExpression, indexFormal, indexActual, arrayAccessExpressionSimplified, branchNumber);
+        this.fresh = fresh;
+        this.arrayReference = arrayReference;
+    }
+
+    public final boolean isValueFresh() {
+        return this.fresh;
+    }
+
+    public final Reference getArrayReference() {
+        return this.arrayReference;
+    }
 }

@@ -1,34 +1,25 @@
 package jbse.mem;
 
-import jbse.bc.Signature;
-import jbse.val.Calculator;
-import jbse.val.MemoryPath;
-
 /**
- * Class that represents a Java class in the static
- * method area, i.e., its static fields.
+ * Class that represents the shared portion of an object 
+ * in the static method area, i.e., its static fields.
  */
-public final class Klass extends Objekt {
+public interface Klass extends Objekt {
     /**
-     * Constructor.
+     * Checks whether this {@link Klass} is initialized.
      * 
-     * @param calc a {@link Calculator}.
-     * @param origin a {@link MemoryPath}, the
-     *        chain of memory accesses which allowed to discover
-     *        the object for the first time. It can be null when
-     *        {@code epoch == }{@link Epoch#EPOCH_AFTER_START}.
-     * @param epoch the creation {@link Epoch} of this {@link Klass}.
-     * @param fieldSignatures varargs of field {@link Signature}s.
+     * @return {@code true} iff this {@link Klass} is initialized.
      */
-    Klass(Calculator calc, MemoryPath origin, Epoch epoch, Signature... fieldSignatures) {
-    	super(calc, "KLASS", origin, epoch, fieldSignatures);
-    }
+    boolean isInitialized();
+
+    /**
+     * Sets this {@link Klass} to the
+     * initialized status. After the 
+     * invocation of this method an 
+     * invocation to {@link #isInitialized()} 
+     * will return {@code true}.
+     */
+    void setInitialized();
     
-    @Override
-    public Klass clone() {
-    	final Klass o = (Klass) super.clone();
-        o.fields = fieldsDeepCopy();
-        
-        return o;
-    }
+    Klass clone();
 }

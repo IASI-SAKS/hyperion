@@ -1,15 +1,18 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
-import jbse.val.Primitive;
-import jbse.val.exc.InvalidTypeException;
-
-import java.util.function.Supplier;
-
 import static jbse.algo.Util.exitFromAlgorithm;
 import static jbse.algo.Util.throwVerifyError;
 import static jbse.bc.Offsets.X2Y_OFFSET;
+import static jbse.common.Type.INT;
+import static jbse.common.Type.isPrimitiveOpStack;
+
+import java.util.function.Supplier;
+
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
+import jbse.val.Calculator;
+import jbse.val.Primitive;
+import jbse.val.exc.InvalidTypeException;
 
 /**
  * {@link Algorithm} implementing all the *2* bytecodes 
@@ -19,7 +22,7 @@ import static jbse.bc.Offsets.X2Y_OFFSET;
  *
  */
 final class Algo_X2Y extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE, 
 StrategyDecide<DecisionAlternative_NONE>, 
 StrategyRefine<DecisionAlternative_NONE>, 
@@ -51,12 +54,19 @@ StrategyUpdate<DecisionAlternative_NONE>> {
             try {
                 final Primitive primitiveFrom  = (Primitive) this.data.operand(0);
                 if (primitiveFrom.getType() != this.fromType) {
-                    throwVerifyError(state);
+                    throwVerifyError(state, this.ctx.getCalculator());
                     exitFromAlgorithm();
                 }
-                this.primitiveTo = primitiveFrom.to(this.toType);
+                final Calculator calc = this.ctx.getCalculator();
+                if (isPrimitiveOpStack(this.toType)) {
+                    this.primitiveTo = calc.push(primitiveFrom).to(this.toType).pop();
+                } else {
+                    //i2b, i2s, i2c case:
+                    //must widen to an operand stack type
+                    this.primitiveTo = calc.push(primitiveFrom).to(this.toType).widen(INT).pop();
+                }
             } catch (ClassCastException | InvalidTypeException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
         };

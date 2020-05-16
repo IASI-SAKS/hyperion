@@ -22,7 +22,7 @@ public class ClauseAssumeAliases extends ClauseAssumeReferenceSymbolic {
 	 *        the position of an object assumed by a previous expansion. 
 	 * @param object the {@link Objekt} at position {@code heapPosition}, 
 	 *        as it was at the beginning of symbolic execution (equivalently, 
-	 *        as it was when it was assumed.
+	 *        as it was when it was assumed).
 	 */
 	public ClauseAssumeAliases(ReferenceSymbolic r, long heapPosition, Objekt object) { 
 		super(r);
@@ -56,7 +56,7 @@ public class ClauseAssumeAliases extends ClauseAssumeReferenceSymbolic {
 	@Override
 	public String toString() {
 		final ReferenceSymbolic r = this.getReference();
-		return r.toString() + " == " + "Object[" + this.heapPosition + "] (aliases " + this.object.getOrigin() + ")";
+		return r.toString() + " == " + "Object[" + this.heapPosition + "] (aliases " + this.object.getOrigin().toString() + ")";
 	}
 
 	@Override

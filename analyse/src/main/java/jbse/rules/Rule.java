@@ -1,11 +1,11 @@
 package jbse.rules;
 
-import jbse.val.ReferenceSymbolic;
+import static jbse.rules.Util.makeOriginPatternAbsolute;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static jbse.rules.Util.makeOriginPattern;
+import jbse.val.ReferenceSymbolic;
 
 /**
  * A rule predicating on the origin of a symbolic reference
@@ -16,16 +16,18 @@ import static jbse.rules.Util.makeOriginPattern;
  *
  */
 public abstract class Rule {
-	protected final String originExp;
+	protected final Pattern originPattern;
 	
 	/**
 	 * Constructor.
 	 * 
-	 * @param originExp a regular expression; {@code null} 
-	 *        is equivalent to "match all".
+	 * @param originExp a regular expression over origin
+	 *        {@link String}s: If an origin {@link String} 
+	 *        matches it, then this rule fires. A {@code null} 
+	 *        value is equivalent to "match all".
 	 */
 	public Rule(String originExp) { 
-		this.originExp = (originExp == null ? Util.ANY : originExp);
+		this.originPattern = makeOriginPatternAbsolute(originExp == null ? Util.ANY : originExp);
 	}
 	
 	/**
@@ -36,10 +38,9 @@ public abstract class Rule {
 	 *         matches this rule.
 	 */
 	public final boolean matches(ReferenceSymbolic ref) {
-		// checks ref's origin matches the pattern
-		final Pattern p = makeOriginPattern(this.originExp);
-		final String originReference = ref.getOrigin().toString();
-		final Matcher m = p.matcher(originReference);
+		//checks if the origin of ref origin matches the pattern
+		final String originString = ref.asOriginString();
+		final Matcher m = this.originPattern.matcher(originString);
 		final boolean retVal = m.matches();
 		return retVal;
 	}

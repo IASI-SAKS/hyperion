@@ -1,12 +1,12 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
-import jbse.val.Null;
+import static jbse.bc.Offsets.XCONST_OFFSET;
 
 import java.util.function.Supplier;
 
-import static jbse.bc.Offsets.XCONST_OFFSET;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
+import jbse.val.Null;
 
 /**
  * {@link Algorithm} implementing the aconst_null bytecode.
@@ -14,7 +14,7 @@ import static jbse.bc.Offsets.XCONST_OFFSET;
  * @author Pietro Braione
  */
 final class Algo_ACONST_NULL extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE,
 StrategyDecide<DecisionAlternative_NONE>, 
 StrategyRefine<DecisionAlternative_NONE>, 

@@ -1,17 +1,17 @@
 package jbse.algo;
 
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.XLOADSTORE_IMPLICIT_OFFSET;
+
+import java.util.function.Supplier;
+
 import jbse.common.exc.UnexpectedInternalException;
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.mem.exc.InvalidSlotException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.tree.DecisionAlternative_NONE;
 import jbse.val.Value;
-
-import java.util.function.Supplier;
-
-import static jbse.algo.Util.exitFromAlgorithm;
-import static jbse.algo.Util.throwVerifyError;
-import static jbse.bc.Offsets.XLOADSTORE_IMPLICIT_OFFSET;
 
 /**
  * Algorithm managing all the *store_* (store into local variable) bytecodes 
@@ -20,11 +20,11 @@ import static jbse.bc.Offsets.XLOADSTORE_IMPLICIT_OFFSET;
  * @author Pietro Braione
  */
 final class Algo_XSTORE_Y extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE,
-StrategyDecide<DecisionAlternative_NONE>,
-        StrategyRefine<DecisionAlternative_NONE>,
-        StrategyUpdate<DecisionAlternative_NONE>> {
+StrategyDecide<DecisionAlternative_NONE>, 
+StrategyRefine<DecisionAlternative_NONE>, 
+StrategyUpdate<DecisionAlternative_NONE>> {
 
     private final int index; //set by constructor
 
@@ -77,7 +77,7 @@ StrategyDecide<DecisionAlternative_NONE>,
             try {
                 state.setLocalVariable(this.index, valTemp);
             } catch (InvalidSlotException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             } catch (ThreadStackEmptyException e) {
                 throw new UnexpectedInternalException(e);

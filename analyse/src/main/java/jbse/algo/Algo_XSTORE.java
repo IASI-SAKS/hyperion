@@ -1,16 +1,18 @@
 package jbse.algo;
 
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.failExecution;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.XLOADSTORE_IMMEDIATE_WIDE_OFFSET;
+import static jbse.bc.Offsets.XLOADSTORE_IMMEDIATE_OFFSET;
+
+import java.util.function.Supplier;
+
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.mem.exc.InvalidSlotException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.tree.DecisionAlternative_NONE;
 import jbse.val.Value;
-
-import java.util.function.Supplier;
-
-import static jbse.algo.Util.*;
-import static jbse.bc.Offsets.XLOADSTORE_IMMEDIATE_OFFSET;
-import static jbse.bc.Offsets.XLOADSTORE_IMMEDIATE_WIDE_OFFSET;
 
 /**
  * Algorithm managing all the *store (store into local variable) bytecodes 
@@ -66,7 +68,7 @@ StrategyUpdate<DecisionAlternative_NONE>> {
             try {
                 state.setLocalVariable(index, valTemp);
             } catch (InvalidSlotException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             } catch (ThreadStackEmptyException e) {
                 failExecution(e);

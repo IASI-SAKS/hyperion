@@ -1,14 +1,14 @@
 package jbse.dec;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+
 import jbse.common.exc.UnexpectedInternalException;
-import jbse.rewr.CalculatorRewriting;
+import jbse.val.Calculator;
 import jbse.val.Expression;
 import jbse.val.Primitive;
 import jbse.val.Term;
 import jbse.val.exc.InvalidTypeException;
-
-import java.util.ArrayList;
-import java.util.HashMap;
 
 /**
  * A class for renaming {@link Expression}s into 
@@ -24,10 +24,12 @@ public class ExpressionMangler {
 	private HashMap<Primitive, Term> mangling = new HashMap<Primitive, Term>();
 	private int symId = 0;
 	private String pre, post;
-	private CalculatorRewriting calc;
+	private Calculator calc;
 	
-	public ExpressionMangler(String pre, String post, CalculatorRewriting calc) {
-		this.pre = pre; this.post = post; this.calc = calc;
+	public ExpressionMangler(String pre, String post, Calculator calc) {
+		this.pre = pre; 
+		this.post = post; 
+		this.calc = calc;
 	}
 	
 	/**
@@ -50,14 +52,14 @@ public class ExpressionMangler {
 	 * @param p the {@link Primitive} to mangle.
 	 * @return a {@link Term}; if another {@link Primitive}
 	 *         {@code q} was mangled before by this mangler, 
-	 *         and {@code p.toString().equals(q.toString())}, then
+	 *         and {@code p.equals(q)}, then
 	 *         {@code mangle(p).equals(mangle(q))}. 
 	 */
 	public Term mangle(Primitive p) {
     	Term retVal = this.mangling.get(p);
     	if (retVal == null) {
     		final int nextId = Integer.valueOf(this.symId);
-    		symId++;
+    		this.symId++;
     		try {
 				retVal = this.calc.valTerm(p.getType(), this.pre + nextId + this.post);
 			} catch (InvalidTypeException e) {

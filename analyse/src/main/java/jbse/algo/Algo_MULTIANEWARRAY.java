@@ -1,18 +1,31 @@
 package jbse.algo;
 
-import jbse.bc.exc.BadClassFileException;
-import jbse.bc.exc.ClassFileNotAccessibleException;
-import jbse.bc.exc.ClassFileNotFoundException;
-import jbse.mem.State;
-import jbse.mem.exc.ThreadStackEmptyException;
-import jbse.val.Primitive;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.invokeClassLoaderLoadClass;
+import static jbse.algo.Util.throwNew;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.MULTIANEWARRAY_OFFSET;
+import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
+import static jbse.bc.Signatures.INCOMPATIBLE_CLASS_CHANGE_ERROR;
+import static jbse.bc.Signatures.NO_CLASS_DEFINITION_FOUND_ERROR;
+import static jbse.bc.Signatures.UNSUPPORTED_CLASS_VERSION_ERROR;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.*;
-import static jbse.bc.Offsets.MULTIANEWARRAY_OFFSET;
-import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
-import static jbse.bc.Signatures.NO_CLASS_DEFINITION_FOUND_ERROR;
+import jbse.bc.ClassFile;
+import jbse.bc.exc.BadClassFileVersionException;
+import jbse.bc.exc.ClassFileIllFormedException;
+import jbse.bc.exc.ClassFileNotAccessibleException;
+import jbse.bc.exc.ClassFileNotFoundException;
+import jbse.bc.exc.IncompatibleClassFileException;
+import jbse.bc.exc.PleaseLoadClassException;
+import jbse.bc.exc.RenameUnsupportedException;
+import jbse.bc.exc.WrongClassNameException;
+import jbse.common.exc.ClasspathException;
+import jbse.common.exc.InvalidInputException;
+import jbse.mem.State;
+import jbse.mem.exc.ThreadStackEmptyException;
+import jbse.val.Primitive;
 
 /**
  * Algorithm managing the multianewarray bytecode.
@@ -32,11 +45,13 @@ final class Algo_MULTIANEWARRAY extends Algo_XNEWARRAY<BytecodeData_2CLUB> {
     }
 
     @Override
-    protected void preCook(State state) throws InterruptException {
+    protected void preCook(State state) 
+    throws InterruptException, ThreadStackEmptyException, InvalidInputException, 
+    ClasspathException, RenameUnsupportedException {
         //checks the number of dimensions
         final int ndims = this.data.immediateUnsignedByte();
         if (ndims <= 0) {
-            throwVerifyError(state);
+            throwVerifyError(state, this.ctx.getCalculator());
             exitFromAlgorithm();
         }
 
@@ -48,29 +63,36 @@ final class Algo_MULTIANEWARRAY extends Algo_XNEWARRAY<BytecodeData_2CLUB> {
                 //TODO length check?
             }
         } catch (ClassCastException e) {
-            throwVerifyError(state);
+            throwVerifyError(state, this.ctx.getCalculator());
             exitFromAlgorithm();
         }
 
-        //sets the array type
-        this.arrayType = this.data.className();
-
-        //resolves the member class
         try {
-            final String currentClassName = state.getCurrentMethodSignature().getClassName();
-            state.getClassHierarchy().resolveClass(currentClassName, this.data.className()); //same as resolving the member class
+            //performs resolution
+            final ClassFile currentClass = state.getCurrentClass();
+            this.arrayType = state.getClassHierarchy().resolveClass(currentClass, this.data.className(), state.bypassStandardLoading());
+        } catch (PleaseLoadClassException e) {
+            invokeClassLoaderLoadClass(state, this.ctx.getCalculator(), e);
+            exitFromAlgorithm();
         } catch (ClassFileNotFoundException e) {
-            throwNew(state, NO_CLASS_DEFINITION_FOUND_ERROR);
+            //TODO this exception should wrap a ClassNotFoundException
+            throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR);
+            exitFromAlgorithm();
+        } catch (BadClassFileVersionException e) {
+            throwNew(state, this.ctx.getCalculator(), UNSUPPORTED_CLASS_VERSION_ERROR);
+            exitFromAlgorithm();
+        } catch (WrongClassNameException e) {
+            throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR); //without wrapping a ClassNotFoundException
+            exitFromAlgorithm();
+        } catch (IncompatibleClassFileException e) {
+            throwNew(state, this.ctx.getCalculator(), INCOMPATIBLE_CLASS_CHANGE_ERROR);
             exitFromAlgorithm();
         } catch (ClassFileNotAccessibleException e) {
-            throwNew(state, ILLEGAL_ACCESS_ERROR);
+            throwNew(state, this.ctx.getCalculator(), ILLEGAL_ACCESS_ERROR);
             exitFromAlgorithm();
-        } catch (BadClassFileException e) {
-            throwVerifyError(state);
+        } catch (ClassFileIllFormedException e) {
+            throwVerifyError(state, this.ctx.getCalculator());
             exitFromAlgorithm();
-        } catch (ThreadStackEmptyException e) {
-            //this should never happen
-            failExecution(e);
         }
     }
 

@@ -1,21 +1,40 @@
 package jbse.algo;
 
-import jbse.algo.exc.MetaUnsupportedException;
-import jbse.bc.ClassHierarchy;
-import jbse.bc.exc.*;
-import jbse.dec.exc.InvalidInputException;
-import jbse.tree.DecisionAlternative_NONE;
+import static jbse.algo.Util.continueWith;
+import static jbse.algo.Util.ensureClassInitialized;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.invokeClassLoaderLoadClass;
+import static jbse.algo.Util.throwNew;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.offsetInvoke;
+import static jbse.bc.Opcodes.OP_INVOKEHANDLE;
+import static jbse.bc.Signatures.ABSTRACT_METHOD_ERROR;
+import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
+import static jbse.bc.Signatures.INCOMPATIBLE_CLASS_CHANGE_ERROR;
+import static jbse.bc.Signatures.NO_CLASS_DEFINITION_FOUND_ERROR;
+import static jbse.bc.Signatures.NO_SUCH_METHOD_ERROR;
+import static jbse.bc.Signatures.OUT_OF_MEMORY_ERROR;
+import static jbse.bc.Signatures.UNSUPPORTED_CLASS_VERSION_ERROR;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.*;
-import static jbse.bc.Signatures.*;
+import jbse.algo.exc.NotYetImplementedException;
+import jbse.bc.exc.BadClassFileVersionException;
+import jbse.bc.exc.ClassFileIllFormedException;
+import jbse.bc.exc.ClassFileNotAccessibleException;
+import jbse.bc.exc.ClassFileNotFoundException;
+import jbse.bc.exc.IncompatibleClassFileException;
+import jbse.bc.exc.MethodAbstractException;
+import jbse.bc.exc.MethodNotAccessibleException;
+import jbse.bc.exc.MethodNotFoundException;
+import jbse.bc.exc.PleaseLoadClassException;
+import jbse.bc.exc.WrongClassNameException;
+import jbse.mem.exc.HeapMemoryExhaustedException;
+import jbse.tree.DecisionAlternative_NONE;
 
 /**
  * Algorithm for the invoke* bytecodes
  * (invoke[interface/special/static/virtual]).
- * Should be followed by the execution of 
- * {@link Algo_INVOKEX_Completion}.
  *  
  * @author Pietro Braione
  */
@@ -28,28 +47,36 @@ final class Algo_INVOKEX extends Algo_INVOKEX_Abstract {
     }
 
     @Override
-    protected BytecodeCooker bytecodeCooker() {
+    protected final BytecodeCooker bytecodeCooker() {
         return (state) -> {
             //performs method resolution
             try {
                 resolveMethod(state);
+            } catch (PleaseLoadClassException e) {
+                invokeClassLoaderLoadClass(state, this.ctx.getCalculator(), e);
+                exitFromAlgorithm();
             } catch (ClassFileNotFoundException e) {
-                throwNew(state, NO_CLASS_DEFINITION_FOUND_ERROR);
+                //TODO this exception should wrap a ClassNotFoundException
+                throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR);
+                exitFromAlgorithm();
+            } catch (BadClassFileVersionException e) {
+                throwNew(state, this.ctx.getCalculator(), UNSUPPORTED_CLASS_VERSION_ERROR);
+                exitFromAlgorithm();
+            } catch (WrongClassNameException e) {
+                throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR); //without wrapping a ClassNotFoundException
                 exitFromAlgorithm();
             } catch (IncompatibleClassFileException e) {
-                throwNew(state, INCOMPATIBLE_CLASS_CHANGE_ERROR);
-                exitFromAlgorithm();
-            } catch (MethodAbstractException e) {
-                throwNew(state, ABSTRACT_METHOD_ERROR);
+                throwNew(state, this.ctx.getCalculator(), INCOMPATIBLE_CLASS_CHANGE_ERROR);
                 exitFromAlgorithm();
             } catch (MethodNotFoundException e) {
-                throwNew(state, NO_SUCH_METHOD_ERROR);
+                throwNew(state, this.ctx.getCalculator(), NO_SUCH_METHOD_ERROR);
                 exitFromAlgorithm();
-            } catch (MethodNotAccessibleException e) {
-                throwNew(state, ILLEGAL_ACCESS_ERROR);
+            } catch (ClassFileNotAccessibleException | MethodNotAccessibleException e) {
+                throwNew(state, this.ctx.getCalculator(), ILLEGAL_ACCESS_ERROR);
                 exitFromAlgorithm();
-            } catch (BadClassFileException e) {
-                throwVerifyError(state);
+            } catch (ClassFileIllFormedException e) {
+                //TODO is it ok?
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
 
@@ -57,78 +84,95 @@ final class Algo_INVOKEX extends Algo_INVOKEX_Abstract {
             //are done later when the frame is pushed
             check(state);
 
-            //possibly creates and initializes the class of the resolved method
-            //TODO should we do it in the invoke[interface/special/virtual] cases? If so, isn't the same doing on methodSignatureImpl?
-            if (this.isStatic) { 
+            //creates and initializes the class of the resolved method in the invokestatic case
+            if (this.isStatic && this.methodResolvedClass != null) { 
                 try {
-                    ensureClassCreatedAndInitialized(state, this.methodSignatureResolved.getClassName(), this.ctx);
-                } catch (InvalidInputException | BadClassFileException e) {
-                    //this should never happen after resolution 
-                    failExecution(e);
+                    ensureClassInitialized(state, this.methodResolvedClass, this.ctx);
+                } catch (HeapMemoryExhaustedException e) {
+                    throwNew(state, this.ctx.getCalculator(), OUT_OF_MEMORY_ERROR);
+                    exitFromAlgorithm();
                 }
             }
-
-            //looks for the method implementation and determines
-            //whether it is native
+            
+            //looks for the method implementation with standard lookup
             try {
-                findImplAndCalcNative(state);
+                findImpl(state);
             } catch (IncompatibleClassFileException e) {
-                //TODO is it ok?
-                throwNew(state, INCOMPATIBLE_CLASS_CHANGE_ERROR);
+                throwNew(state, this.ctx.getCalculator(), INCOMPATIBLE_CLASS_CHANGE_ERROR);
                 exitFromAlgorithm();
-            } catch (NullPointerException | BadClassFileException e) {
-                throwVerifyError(state);
+            } catch (MethodNotAccessibleException e) {
+                throwNew(state, this.ctx.getCalculator(), ILLEGAL_ACCESS_ERROR);
+                exitFromAlgorithm();
+            } catch (MethodAbstractException e) {
+                throwNew(state, this.ctx.getCalculator(), ABSTRACT_METHOD_ERROR);
                 exitFromAlgorithm();
             }
 
-            //looks for a meta-level implementation, and in case 
-            //delegates the responsibility to the dispatcherMeta
-            final ClassHierarchy hier = state.getClassHierarchy();
-            try {
-                if (this.ctx.dispatcherMeta.isMeta(hier, this.methodSignatureImpl)) {
-                    final Algo_INVOKEMETA<?, ?, ?, ?> algo =
-                        this.ctx.dispatcherMeta.select(this.methodSignatureImpl);
-                    algo.setFeatures(this.isInterface, this.isSpecial, this.isStatic);
-                    continueWith(algo);
+            //looks for a base-level or meta-level overriding implementation, 
+            //and in case considers it instead
+            findOverridingImpl(state);
+
+            //if no implementation exists, reacts accordingly
+            if (this.methodImplClass == null) {
+                if (this.methodImplSignature == null) {
+                    //standard lookup failed
+                    throwNew(state, this.ctx.getCalculator(), NO_SUCH_METHOD_ERROR);
+                    exitFromAlgorithm();
+                } else {
+                    //a classless method has not an implementation
+                    throw new NotYetImplementedException("The classless method " + this.methodImplSignature.toString() + " has no implementation.");
                 }
-            } catch (BadClassFileException | MethodNotFoundException |
-                     MetaUnsupportedException e) {
-                //this should never happen after resolution 
-                failExecution(e);
             }
-
+            
             //otherwise, concludes the execution of the bytecode algorithm
-            continueWith(this.algo_INVOKEX_Completion);
+            if (this.isMethodImplSignaturePolymorphic) {
+                state.getCurrentFrame().patchCode(OP_INVOKEHANDLE);
+                exitFromAlgorithm();
+            } else {
+                this.algo_INVOKEX_Completion.setImplementation(this.methodImplClass, this.methodImplSignature);
+                this.algo_INVOKEX_Completion.setProgramCounterOffset(returnPcOffset());                
+                continueWith(this.algo_INVOKEX_Completion);
+            }
         };
     }
+    
+    /**
+     * Override to change the default policy for calculating the PC
+     * offset after returning from the invoked method.
+     * 
+     * @return an {@code int}, the PC offset.
+     */
+    protected int returnPcOffset() {
+        return offsetInvoke(this.isInterface);
+    }
 
     @Override
-    protected Class<DecisionAlternative_NONE> classDecisionAlternative() {
+    protected final Class<DecisionAlternative_NONE> classDecisionAlternative() {
         return null; //never used
     }
 
     @Override
-    protected StrategyDecide<DecisionAlternative_NONE> decider() {
+    protected final StrategyDecide<DecisionAlternative_NONE> decider() {
         return null; //never used
     }
 
     @Override
-    protected StrategyRefine<DecisionAlternative_NONE> refiner() {
+    protected final StrategyRefine<DecisionAlternative_NONE> refiner() {
         return null; //never used
     }
 
     @Override
-    protected StrategyUpdate<DecisionAlternative_NONE> updater() {
+    protected final StrategyUpdate<DecisionAlternative_NONE> updater() {
         return null; //never used
     }
 
     @Override
-    protected Supplier<Boolean> isProgramCounterUpdateAnOffset() {
+    protected final Supplier<Boolean> isProgramCounterUpdateAnOffset() {
         return null; //never used
     }
 
     @Override
-    protected Supplier<Integer> programCounterUpdate() {
+    protected final Supplier<Integer> programCounterUpdate() {
         return null; //never used
     }
 }

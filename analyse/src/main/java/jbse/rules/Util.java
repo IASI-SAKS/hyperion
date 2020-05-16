@@ -1,82 +1,96 @@
 package jbse.rules;
 
-import jbse.mem.Objekt;
-import jbse.mem.State;
-import jbse.val.MemoryPath;
-import jbse.val.ReferenceConcrete;
-import jbse.val.ReferenceSymbolic;
-
-import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import jbse.mem.Clause;
+import jbse.mem.ClauseAssumeExpands;
+import jbse.mem.Objekt;
+import jbse.mem.State;
+import jbse.mem.exc.FrozenStateException;
+import jbse.val.ReferenceSymbolic;
+
 public final class Util {
-	static final String NOTHING = "{NOTHING}";
+	//These must match the analogous definitions in SettingsParser.jj
 	static final String MAX = "{MAX}";
-	static final String REF = "{REF}";
+	static final String ANY = "{R_ANY}";
+	static final String REF = "{$REF}";
+	static final String REFANY = "{$R_ANY}";
 	static final String UP = "{UP}";
-	static final String ANY = "{ANY}";
+	static final String REGEX_ALLCHARS = "{°}";
+	static final String REGEX_ENDLINE = "\\{EOL\\}"; //braces must be escaped because REGEX_ENDLINE substitution comes after brace substitution
 
 	/**
-	 * Makes a regular expression pattern from an origin expression
+	 * Makes a regular expression pattern from an absolute origin expression
 	 * in a rule.
 	 * 
-	 * @param s a {@link String}, the origin expression of a rule.
-	 * @return a {@link Pattern} for {@code s} against which the 
-	 *         origin strings contained in the objects can match.
+	 * @param originExpAbsolute a {@link String}, the absolute origin expression.
+	 * @return a {@link Pattern} for {@code originExpAbsolute}.
 	 */
-	public static Pattern makeOriginPattern(String s) {
-		return Pattern.compile(translateToOriginPattern(s));
+	static Pattern makeOriginPatternAbsolute(String originExpAbsolute) {
+		return Pattern.compile(translateToOriginPatternString(originExpAbsolute));
 	}
 	
 	/**
-	 * Makes absolute a relative pattern in a origin expression in 
+	 * Makes a {@link Pattern} for a relative origin expression in 
 	 * a rule.
 	 * 
-	 * @param s The relative origin expression in the rule.
-	 * @param origin The origin w.r.t. we want to make the origin
-	 *        absolute.
-	 * @return {@code s} where all the occurrences of {REF} and 
-	 *         {UP} are
-	 *         resolved using {@code origin}.
+	 * @param originExpRelative a {@link String}, the relative origin 
+	 *        expression.
+	 * @param origin a {@link ReferenceSymbolic}, the origin that 
+	 *        all the occurrences of {$R_ANY} and {$REF} in 
+	 *        {@code originExpRelative} refer to.
+	 * @param originPattern a {@link Pattern} that is used to detect 
+	 *        the {$R_ANY} in {@code originExpRelative}; {@code originExpRelative}
+	 *        must match it, and the first capture group will be used as
+	 *        {$R_ANY}.
+	 * @return a {@link Pattern} for {@code originExpRelative}.
 	 */
-	static Pattern makePatternRelative(String s, MemoryPath origin) {
-		return Pattern.compile(translateToOriginPattern(translateRelativeToAbsolute(s, origin.toString())));
+	static Pattern makeOriginPatternRelative(String originExpRelative, ReferenceSymbolic origin, Pattern originPattern) {
+		final String valueForAny = findAny(originPattern, origin);
+		final String specializedOriginExpRelative = specializeAny(originExpRelative, valueForAny);
+		return makeOriginPatternAbsolute(translateOriginExpressionRelativeToAbsolute(specializedOriginExpRelative, origin));
 	}
 	
 	/* TODO this is really ugly, but it works with the current 
 	 * implementation of origins as strings. Improve it later to a 
 	 * separate language. 
 	 */
-	private static String translateToOriginPattern(String s) {
-		String retVal = s.replace(ANY, "(.*)");
-		retVal = retVal.replace("/", "\\."); 
+	private static String translateToOriginPatternString(String originExpAbsolute) {
+		String retVal = originExpAbsolute.replace(".", "\\."); 
+		retVal = retVal.replace(ANY, "(.*)");
+		retVal = retVal.replace(REGEX_ALLCHARS, "."); 
 		retVal = retVal.replace("{", "\\{"); //this is for {ROOT}
 		retVal = retVal.replace("}", "\\}"); //this also is for {ROOT}
+		retVal = retVal.replace("[", "\\["); //this is for [<className>]
+		retVal = retVal.replace("]", "\\]"); //this also is for [<className>]
+		retVal = retVal.replace("$", "\\$"); //this is for names of inner classes
+		retVal = retVal.replace(REGEX_ENDLINE, "$"); 
 		return retVal;
 	}
 
 	/* TODO this also is really ugly, and it does not work with 
 	 * multiple candidate origins for the same object.
 	 */
-	private static String translateRelativeToAbsolute(String s, String originString) {
-		// replaces REF with ref.origin
-		String retVal = s.replace(REF, originString.replace(".", "/"));
+	private static String translateOriginExpressionRelativeToAbsolute(String originExpRelative, ReferenceSymbolic origin) {
+		final String originString = origin.asOriginString();
 		
-		// eats all /whatever/UP pairs 
+		//replaces {$REF} with ref.origin
+		String retVal = originExpRelative.replace(REF, originString);
+		
+		//eats all /whatever/UP pairs 
 		String retValOld;
 		do {
 			retValOld = retVal;
-			retVal = retVal.replaceFirst("/[^/]+/\\Q" + UP + "\\E", "");
+			retVal = retVal.replaceFirst("\\.[^\\.]+\\.\\Q" + UP + "\\E", "");
 		} while (!retVal.equals(retValOld));
 		return retVal;
 	}
 	
-	static String findAny(String pattern, MemoryPath origin) {
-		final Pattern p = makeOriginPattern(pattern);
-		final Matcher m = p.matcher(origin.toString());
+	static String findAny(Pattern originPattern, ReferenceSymbolic origin) {
+		final Matcher m = originPattern.matcher(origin.asOriginString());
 		if (m.matches() && m.pattern().pattern().startsWith("(.*)") && m.groupCount() >= 1) {
-			final String valueForAny = m.group(1).replace(".","/");
+			final String valueForAny = m.group(1);
 			return valueForAny;
 		} else {
 			return null;
@@ -84,31 +98,36 @@ public final class Util {
 	}
 	
 	static String specializeAny(String expression, String valueForAny) {
-		return (valueForAny == null ? expression : expression.replace(ANY, valueForAny));	
+		return (valueForAny == null ? expression : expression.replace(REFANY, valueForAny));	
 	}
 
 	/**
 	 * Searches for the actual parameter of a trigger rule.
 	 * 
 	 * @param r a {@link TriggerRule}.
-	 * @param ref a {@link ReferenceSymbolic}, the reference that
-	 *        is resolved by {@code r}.
+	 * @param ref the {@link ReferenceSymbolic} that made fire 
+	 *        {@code r}.
 	 * @param state a {@link State}.
-	 * 
-	 * @return the first {@link Objekt} in the heap of {@code s} 
-	 *         whose origin matches the trigger parameter part 
-	 *         of {@code r}, or {@code null} if none exists in the heap.
+	 * @return a {@link ReferenceSymbolic} to (i.e., the origin of) 
+	 *         the first {@link Objekt} in the heap of {@code state} 
+	 *         that matches the trigger parameter part 
+	 *         of {@code r}, or {@code null} if none exists.
+	 * @throws FrozenStateException if {@code state} is frozen.
 	 */
-	public static ReferenceConcrete getTriggerMethodParameterObject(TriggerRule r, ReferenceSymbolic ref, State state) {
-		ReferenceConcrete retVal = null;
-		final Map<Long, Objekt> allObjs = state.getHeap();
-		for (Map.Entry<Long, Objekt> e : allObjs.entrySet()){
-			if (r.isTargetOfTrigger(ref, e.getValue())){
-				retVal = new ReferenceConcrete(e.getKey());
-				break;
-			}
-		}
-		return retVal;
+	public static ReferenceSymbolic getTriggerMethodParameterObject(TriggerRule r, ReferenceSymbolic ref, State state) throws FrozenStateException {
+        final Iterable<Clause> pathCondition = state.getPathCondition(); //TODO the decision procedure already stores the path condition: eliminate dependence on state
+        for (Clause c : pathCondition) {
+            if (c instanceof ClauseAssumeExpands) {
+                //gets the object and its position in the heap
+                final ClauseAssumeExpands cExp = (ClauseAssumeExpands) c;
+                final Objekt o = cExp.getObjekt();
+                
+    			if (r.isTriggerMethodParameterObject(ref, o)){
+    				return o.getOrigin();
+    			}
+            }
+        }
+		return null;
 	}
 
 	//do not instantiate it!

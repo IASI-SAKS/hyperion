@@ -1,18 +1,21 @@
 package jbse.algo;
 
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.failExecution;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.IINC_OFFSET;
+import static jbse.bc.Offsets.IINC_WIDE_OFFSET;
+
+import java.util.function.Supplier;
+
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.mem.exc.InvalidSlotException;
 import jbse.tree.DecisionAlternative_NONE;
+import jbse.val.Calculator;
 import jbse.val.Primitive;
 import jbse.val.Simplex;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
-
-import java.util.function.Supplier;
-
-import static jbse.algo.Util.*;
-import static jbse.bc.Offsets.IINC_OFFSET;
-import static jbse.bc.Offsets.IINC_WIDE_OFFSET;
 
 /**
  * {@link Algorithm} for the iinc bytecode.
@@ -63,13 +66,14 @@ StrategyUpdate<DecisionAlternative_NONE>> {
     @Override
     protected StrategyUpdate<DecisionAlternative_NONE> updater() {
         return (state, alt) -> { 
+        	final Calculator calc = this.ctx.getCalculator();
             try {
                 final int constant = this.data.nextWide() ? this.data.immediateSignedWord() : this.data.immediateSignedByte();
-                final Simplex constantSimplex = state.getCalculator().valInt(constant);
+                final Simplex constantSimplex = calc.valInt(constant);
                 final Primitive tmpVal = (Primitive) this.data.localVariableValue();
-                state.setLocalVariable(this.data.localVariableSlot(), tmpVal.add(constantSimplex));
+                state.setLocalVariable(this.data.localVariableSlot(), calc.push(tmpVal).add(constantSimplex).pop());
             } catch (ClassCastException | InvalidOperandException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             } catch (InvalidSlotException | InvalidTypeException e) {
                 //this should never happen

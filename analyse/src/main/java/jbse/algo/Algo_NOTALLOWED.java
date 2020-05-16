@@ -1,12 +1,12 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.throwVerifyError;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.exitFromAlgorithm;
-import static jbse.algo.Util.throwVerifyError;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
 
 /**
  * {@link Algorithm} managing all the bytecodes that are
@@ -15,11 +15,11 @@ import static jbse.algo.Util.throwVerifyError;
  * @author Pietro Braione
  */
 final class Algo_NOTALLOWED extends Algorithm<
-        BytecodeData_0,
+BytecodeData_0,
 DecisionAlternative_NONE,
-StrategyDecide<DecisionAlternative_NONE>,
-        StrategyRefine<DecisionAlternative_NONE>,
-        StrategyUpdate<DecisionAlternative_NONE>> {
+StrategyDecide<DecisionAlternative_NONE>, 
+StrategyRefine<DecisionAlternative_NONE>, 
+StrategyUpdate<DecisionAlternative_NONE>> {
 
     @Override
     protected Supplier<Integer> numOperands() {
@@ -57,7 +57,7 @@ StrategyDecide<DecisionAlternative_NONE>,
     @Override
     protected StrategyUpdate<DecisionAlternative_NONE> updater() {
         return (state, alt) -> {
-            throwVerifyError(state);
+            throwVerifyError(state, this.ctx.getCalculator());
             exitFromAlgorithm();
         };
     }

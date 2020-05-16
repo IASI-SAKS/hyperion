@@ -1,19 +1,29 @@
 package jbse.dec;
 
-import jbse.bc.ClassHierarchy;
+import java.util.HashMap;
+
 import jbse.common.Type;
+import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
 import jbse.dec.exc.DecisionException;
 import jbse.mem.ClauseAssume;
-import jbse.rewr.CalculatorRewriting;
-import jbse.rewr.Rewriter;
-import jbse.rewr.exc.NoResultException;
-import jbse.val.*;
+import jbse.val.Any;
+import jbse.val.Expression;
+import jbse.val.PrimitiveSymbolicApply;
+import jbse.val.PrimitiveSymbolicAtomic;
+import jbse.val.NarrowingConversion;
+import jbse.val.Operator;
+import jbse.val.Primitive;
+import jbse.val.PrimitiveSymbolic;
+import jbse.val.PrimitiveVisitor;
+import jbse.val.Rewriter;
+import jbse.val.Simplex;
+import jbse.val.Term;
+import jbse.val.WideningConversion;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidOperatorException;
 import jbse.val.exc.InvalidTypeException;
-
-import java.util.HashMap;
+import jbse.val.exc.NoResultException;
 
 /**
  * Decides expressions with shape {@code expr rel_op number} or
@@ -35,27 +45,27 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		/** No value (bottom, false). */
 		BOT {
 			@Override
-            SignPredicate mul(SignPredicate r) {
+			SignPredicate mul(SignPredicate r) {
 				return BOT;
 			}
 
 			@Override
-            SignPredicate add(SignPredicate r) {
+			SignPredicate add(SignPredicate r) {
 				return BOT;
 			}
 
 			@Override
-            SignPredicate neg() {
+			SignPredicate neg() {
 				return BOT;
 			}
 
 			@Override
-            SignPredicate and(SignPredicate r) {
+			SignPredicate and(SignPredicate r) {
 				return BOT;
 			}
 
 			@Override
-            SignPredicate not() {
+			SignPredicate not() {
 				return UNK;
 			}
 		},
@@ -65,7 +75,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		 */
 		EQ {
 			@Override
-            SignPredicate mul(SignPredicate r) {
+			SignPredicate mul(SignPredicate r) {
 				if (r == BOT) {
 					return r.mul(this);
 				}
@@ -73,7 +83,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate add(SignPredicate r) {
+			SignPredicate add(SignPredicate r) {
 				if (r == BOT) {
 					return r.add(this);
 				}
@@ -81,12 +91,12 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate neg() {
+			SignPredicate neg() {
 				return EQ;
 			}
 
 			@Override
-            SignPredicate and(SignPredicate r) {
+			SignPredicate and(SignPredicate r) {
 				if (r == BOT) {
 					return r.and(this);
 				}
@@ -97,7 +107,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate not() {
+			SignPredicate not() {
 				return NE;
 			}
 		},
@@ -107,7 +117,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		 */
 		UNK {
 			@Override
-            SignPredicate mul(SignPredicate r) {
+			SignPredicate mul(SignPredicate r) {
 				if (r == BOT || r == EQ) {
 					return r.mul(this);
 				}
@@ -115,7 +125,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate add(SignPredicate r) {
+			SignPredicate add(SignPredicate r) {
 				if (r == BOT || r == EQ) {
 					return r.add(this);
 				}
@@ -123,12 +133,12 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate neg() {
+			SignPredicate neg() {
 				return UNK;
 			}
 
 			@Override
-            SignPredicate and(SignPredicate r) {
+			SignPredicate and(SignPredicate r) {
 				if (r == BOT || r == EQ) {
 					return r.and(this);
 				}
@@ -139,7 +149,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate not() {
+			SignPredicate not() {
 				return BOT;
 			}
 		},
@@ -149,7 +159,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		 */
 		GE {
 			@Override
-            SignPredicate mul(SignPredicate r) {
+			SignPredicate mul(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK) {
 					return r.mul(this);
 				}
@@ -163,7 +173,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate add(SignPredicate r) {
+			SignPredicate add(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK) {
 					return r.add(this);
 				}
@@ -174,12 +184,12 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate neg() {
+			SignPredicate neg() {
 				return LE;
 			}
 
 			@Override
-            SignPredicate and(SignPredicate r) {
+			SignPredicate and(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK) {
 					return r.and(this);
 				}
@@ -196,7 +206,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate not() {
+			SignPredicate not() {
 				return LT;
 			}
 		},
@@ -206,12 +216,12 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		 */
 		GT {
 			@Override
-            SignPredicate mul(SignPredicate r) {
+			SignPredicate mul(SignPredicate r) {
 				return r;
 			}
 
 			@Override
-            SignPredicate add(SignPredicate r) {
+			SignPredicate add(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE) {
 					return r.add(this);
 				}
@@ -222,12 +232,12 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate neg() {
+			SignPredicate neg() {
 				return LT;
 			}
 
 			@Override
-            SignPredicate and(SignPredicate r) {
+			SignPredicate and(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE) {
 					return r.and(this);
 				}
@@ -238,7 +248,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate not() {
+			SignPredicate not() {
 				return LE;
 			}
 		}, 
@@ -248,7 +258,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		 */
 		LE {
 			@Override
-            SignPredicate mul(SignPredicate r) {
+			SignPredicate mul(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE || r == GT) {
 					return r.mul(this);
 				}
@@ -259,7 +269,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate add(SignPredicate r) {
+			SignPredicate add(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE || r == GT) {
 					return r.add(this);
 				}
@@ -270,12 +280,12 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate neg() {
+			SignPredicate neg() {
 				return GE;
 			}
 
 			@Override
-            SignPredicate and(SignPredicate r) {
+			SignPredicate and(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE || r == GT) {
 					return r.and(this);
 				}
@@ -286,7 +296,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate not() {
+			SignPredicate not() {
 				return GT;
 			}
 		},
@@ -296,7 +306,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		 */
 		LT {
 			@Override
-            SignPredicate mul(SignPredicate r) {
+			SignPredicate mul(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE || r == GT || r == LE) {
 					return r.mul(this);
 				}
@@ -307,7 +317,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate add(SignPredicate r) {
+			SignPredicate add(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE || r == GT || r == LE) {
 					return r.add(this);
 				}
@@ -318,12 +328,12 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate neg() {
+			SignPredicate neg() {
 				return GT;
 			}
 
 			@Override
-            SignPredicate and(SignPredicate r) {
+			SignPredicate and(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE || r == GT || r == LE) {
 					return r.and(this);
 				}
@@ -331,7 +341,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate not() {
+			SignPredicate not() {
 				return GE;
 			}
 		},
@@ -341,7 +351,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		 */
 		NE {
 			@Override
-            SignPredicate mul(SignPredicate r) {
+			SignPredicate mul(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE || r == GT || r == LE || r == LT) {
 					return r.mul(this);
 				}
@@ -349,7 +359,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate add(SignPredicate r) {
+			SignPredicate add(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE || r == GT || r == LE || r == LT) {
 					return r.add(this);
 				}
@@ -357,12 +367,12 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate neg() {
+			SignPredicate neg() {
 				return NE;
 			}
 
 			@Override
-            SignPredicate and(SignPredicate r) {
+			SignPredicate and(SignPredicate r) {
 				if (r == BOT || r == EQ || r == UNK || r == GE || r == GT || r == LE || r == LT) {
 					return r.and(this);
 				}
@@ -370,7 +380,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-            SignPredicate not() {
+			SignPredicate not() {
 				return EQ;
 			}
 		};
@@ -471,16 +481,9 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 	/** Caches the {@link SignPredicate}s of all the discovered path predicates. */
 	private HashMap<Primitive, SignPredicate> preds = new HashMap<Primitive, SignPredicate>();
 
-	/**
-	 * Constructor.
-	 * 
-	 * @param next The next {@link DecisionProcedure} in the 
-	 *        Chain Of Responsibility.
-	 * @param calc a {@link CalculatorRewriting}.
-	 */
-	public DecisionProcedureSignAnalysis(DecisionProcedure next, CalculatorRewriting calc) {
-		super(next, calc);
-		this.rewriters = new Rewriter[] { new RewriterSimplifyTrivialExpressions() }; //explicit assignment: no constructor call is allowed before super()
+	public DecisionProcedureSignAnalysis(DecisionProcedure next) throws InvalidInputException {
+		super(next);
+		this.rewriters = new Rewriter[] { new RewriterSimplifyTrivialExpressions() }; //explicit assignment because the super constructor must be invoked before the rewriter's constructor
 	}
 
 	@Override
@@ -504,7 +507,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 	}
 	
 	@Override
-	protected boolean isSatLocal(ClassHierarchy hier, Expression exp, Expression expSimpl) 
+	protected boolean isSatLocal(Expression exp, Expression expSimpl) 
 	throws DecisionException {
 		if (isTrivial(expSimpl)) {
 			final SignPredicate predicateOperand = deduceSignPredicate(getOperand(expSimpl));
@@ -570,8 +573,8 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 	 * @param exp an {@link Expression}. It must be in form 
 	 *        {@code subexp rel_op number} or {@code number rel_op subexp}, 
 	 *        otherwise the method might not behave as expected.
-	 * @return an {@link Operator}, either {@code rel_op} or
-	 *         {@code rel_op.}{@link Operator#twist() twist()} according to
+	 * @return an {@link Operator}, either {@code rel_op} or 
+	 *         {@code rel_op.}{@link Operator#twist() twist()} according to 
 	 *         whether {@code exp} is either in form 
 	 *         {@code subexp rel_op number} or {@code number rel_op subexp}.
 	 */
@@ -609,8 +612,8 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			if (x instanceof Expression) {
 				final Primitive xNeg;
 				try {
-					xNeg = x.neg();
-				} catch (InvalidTypeException e) {
+					xNeg = this.calc.push(x).neg().pop();
+				} catch (InvalidOperandException | InvalidTypeException e) {
 					//TODO blame the caller
 					throw new UnexpectedInternalException(e);
 				}
@@ -644,7 +647,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		return v.result;
 	}
 	
-	private static SignPredicate bestApproxRange(Expression exp) {
+	private SignPredicate bestApproxRange(Expression exp) {
 		final Operator operator = getOperator(exp);
 		final Simplex num = getNumber(exp);
 		final char type = getOperand(exp).getType();
@@ -667,7 +670,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			        } else {
 			            throw new UnexpectedInternalException("invalid operator " + operator.toString());
 			        }
-			    } else if (((Simplex) num.neg()).isZeroOne(false)) {
+			    } else if (((Simplex) this.calc.push(num).neg().pop()).isZeroOne(false)) {
 			        if (operator == Operator.EQ || operator == Operator.LE || operator == Operator.LT) {
 			            return SignPredicate.LT;
 			        } else if (operator == Operator.NE || operator == Operator.GE) {
@@ -678,7 +681,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			            throw new UnexpectedInternalException("invalid operator " + operator.toString());
 			        }
 			    } //else fall through
-			} catch (InvalidTypeException e) {
+			} catch (InvalidOperandException | InvalidTypeException e) {
 				//TODO blame the caller
 				throw new UnexpectedInternalException(e);
 			}
@@ -758,13 +761,13 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 					final Primitive first = e.getFirstOperand();
 					final Primitive second = e.getSecondOperand();
 					final Simplex simplex;
-					final FunctionApplication funAppl;
-					if (first instanceof Simplex && second instanceof FunctionApplication) {
+					final PrimitiveSymbolicApply funAppl;
+					if (first instanceof Simplex && second instanceof PrimitiveSymbolicApply) {
 						simplex = (Simplex) first;
-						funAppl = (FunctionApplication) second;
-					} else if (second instanceof Simplex && first instanceof FunctionApplication) {
+						funAppl = (PrimitiveSymbolicApply) second;
+					} else if (second instanceof Simplex && first instanceof PrimitiveSymbolicApply) {
 						simplex = (Simplex) second;
-						funAppl = (FunctionApplication) first;
+						funAppl = (PrimitiveSymbolicApply) first;
 					} else {
 						this.result = SignPredicate.UNK;
 						return;
@@ -777,7 +780,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 						return;
 					}
 					final String fun = funAppl.getOperator();
-					if (fun.equals(FunctionApplication.ASIN) || fun.equals(FunctionApplication.ATAN)) {
+					if (fun.equals(PrimitiveSymbolicApply.ASIN) || fun.equals(PrimitiveSymbolicApply.ATAN)) {
 						if (operator == Operator.ADD && val >= Math.PI/2) {
 							this.result = SignPredicate.GE;
 							return;
@@ -792,12 +795,12 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-			public void visitAny(Any x) throws Exception {
+			public void visitAny(Any x) throws Exception { 
 				this.result = SignPredicate.UNK;
 			}
 
 			@Override
-			public void visitFunctionApplication(FunctionApplication x) { 
+			public void visitPrimitiveSymbolicApply(PrimitiveSymbolicApply x) { 
 				this.result = SignPredicate.UNK;
 			}
 
@@ -813,7 +816,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-			public void visitPrimitiveSymbolic(PrimitiveSymbolic s) {
+			public void visitPrimitiveSymbolicAtomic(PrimitiveSymbolicAtomic s) { 
 				this.result = SignPredicate.UNK;
 			}
 
@@ -869,17 +872,20 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		}
 
 		@Override
-		public void visitFunctionApplication(FunctionApplication x) {
+		public void visitPrimitiveSymbolicApply(PrimitiveSymbolicApply x) {
 			final SignPredicate infoFromOperator;
 			final String operator = x.getOperator();
-			if (operator.equals(FunctionApplication.EXP)) {
+			if (operator.equals(PrimitiveSymbolicApply.EXP)) {
 				infoFromOperator = SignPredicate.GT; //does nothing, indeed
-			} else if (operator.equals(FunctionApplication.ABS) || 
-					operator.equals(FunctionApplication.SQRT) ||
-					operator.equals(FunctionApplication.ACOS)) {
+			} else if (operator.equals(PrimitiveSymbolicApply.ABS_DOUBLE) ||
+					operator.equals(PrimitiveSymbolicApply.ABS_FLOAT) || 
+					operator.equals(PrimitiveSymbolicApply.ABS_INT) || 
+					operator.equals(PrimitiveSymbolicApply.ABS_LONG) || 
+					operator.equals(PrimitiveSymbolicApply.SQRT) ||
+					operator.equals(PrimitiveSymbolicApply.ACOS)) {
 				infoFromOperator = SignPredicate.GE;
-            } else if (operator.equals(FunctionApplication.POW)) {
-                final Primitive arg = x.getArgs()[1];
+            } else if (operator.equals(PrimitiveSymbolicApply.POW)) {
+                final Primitive arg = (Primitive) x.getArgs()[1];
                 if (arg instanceof Simplex) {
                     final Simplex argSimplex = (Simplex) arg;
                     if (argSimplex.isZeroOne(true)) {
@@ -898,16 +904,16 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
                 } else {
                     infoFromOperator = SignPredicate.UNK;
                 }
-			} else if (operator.equals(FunctionApplication.COS)) {
-				final Primitive arg = x.getArgs()[0];
-				if (arg instanceof FunctionApplication) {
-					final String argOperator = ((FunctionApplication) arg).getOperator();
-					if (argOperator.equals(FunctionApplication.SIN) ||
-						argOperator.equals(FunctionApplication.COS) ||
-						argOperator.equals(FunctionApplication.ATAN)) {
+			} else if (operator.equals(PrimitiveSymbolicApply.COS)) {
+				final Primitive arg = (Primitive) x.getArgs()[0];
+				if (arg instanceof PrimitiveSymbolicApply) {
+					final String argOperator = ((PrimitiveSymbolicApply) arg).getOperator();
+					if (argOperator.equals(PrimitiveSymbolicApply.SIN) ||
+						argOperator.equals(PrimitiveSymbolicApply.COS) ||
+						argOperator.equals(PrimitiveSymbolicApply.ATAN)) {
 						//all these functions have value in (-PI/2, PI/2) where cos is positive
 						infoFromOperator = SignPredicate.GT; 
-					} else if (argOperator.equals(FunctionApplication.ASIN)) {
+					} else if (argOperator.equals(PrimitiveSymbolicApply.ASIN)) {
 						//all these functions have value in [-PI/2, PI/2] where cos is nonnegative
 						infoFromOperator = SignPredicate.GE;
 					} else {
@@ -916,14 +922,14 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 				} else {
 					infoFromOperator = SignPredicate.UNK;
 				}
-			} else if (operator.equals(FunctionApplication.SIN)) {
+			} else if (operator.equals(PrimitiveSymbolicApply.SIN)) {
 				//sin(atan(x)) has the same sign of x
-				final Primitive arg = x.getArgs()[0];
-				if (arg instanceof FunctionApplication) {
-					final FunctionApplication argFA = (FunctionApplication) arg;
+				final Primitive arg = (Primitive) x.getArgs()[0];
+				if (arg instanceof PrimitiveSymbolicApply) {
+					final PrimitiveSymbolicApply argFA = (PrimitiveSymbolicApply) arg;
 					final String argOperator = argFA.getOperator();
-					if (argOperator.equals(FunctionApplication.ATAN)) {
-						final Primitive argArg = argFA.getArgs()[0];
+					if (argOperator.equals(PrimitiveSymbolicApply.ATAN)) {
+						final Primitive argArg = (Primitive) argFA.getArgs()[0];
 						try {
 							argArg.accept(this);
 						} catch (Exception e) {
@@ -971,7 +977,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 		}
 
 		@Override
-		public void visitPrimitiveSymbolic(PrimitiveSymbolic s) {
+		public void visitPrimitiveSymbolicAtomic(PrimitiveSymbolicAtomic s) {
 			this.result = fetch(s);
 		}
 
@@ -1003,9 +1009,9 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			final RewriterSimplifyTrivialExpressionsSubexpression r = 
 					new RewriterSimplifyTrivialExpressionsSubexpression();
 			if (isTrivial(x) && getNumber(x).isZeroOne(true)) {
-				final Primitive operandRewr = calc.applyRewriters(getOperand(x), r);
+				final Primitive operandRewr = DecisionProcedureSignAnalysis.this.calc.simplify(Rewriter.applyRewriters(getOperand(x), r));
 				try {
-					setResult(calc.applyBinary(operandRewr, (r.twist ? getOperator(x).twist() : getOperator(x)), getNumber(x)));
+					setResult(DecisionProcedureSignAnalysis.this.calc.push(operandRewr).applyBinary((r.twist ? getOperator(x).twist() : getOperator(x)), getNumber(x)).pop());
 				} catch (InvalidOperatorException e) {
 					//this should never happen
 					throw new UnexpectedInternalException(e);
@@ -1040,15 +1046,15 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 				final SignPredicate signPredicate = deduceSignPredicate(x);
 				try {
 					if (signPredicate == SignPredicate.GT) {
-						setResult(calc.valInt(1).to(type));
+						setResult(DecisionProcedureSignAnalysis.this.calc.pushInt(1).to(type).pop());
 						return true;
 					}
 					if (signPredicate == SignPredicate.EQ) {
-						setResult(calc.valInt(0).to(type));
+						setResult(DecisionProcedureSignAnalysis.this.calc.pushInt(0).to(type).pop());
 						return true;
 					}
 					if (signPredicate == SignPredicate.LT) {
-						setResult(calc.valInt(-1).to(type));
+						setResult(DecisionProcedureSignAnalysis.this.calc.pushInt(-1).to(type).pop());
 						return true;
 					}
 				} catch (InvalidTypeException e) {
@@ -1083,14 +1089,14 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 							if (firstIsConstant) {
 								final char type = firstOperandSimpl.getType();
 								setResult(secondOperandSimpl);
-								if (((Simplex) firstOperandSimpl).lt(calc.valInt(0).to(type)).surelyTrue()) {
+								if (DecisionProcedureSignAnalysis.this.calc.push(firstOperandSimpl).lt(DecisionProcedureSignAnalysis.this.calc.pushInt(0).to(type).pop()).pop().surelyTrue()) {
 									this.twist = ! this.twist; //switches
 								}
 							}
 							if (secondIsConstant) {
 								final char type = secondOperandSimpl.getType();
 								setResult(firstOperandSimpl);
-								if (((Simplex) secondOperandSimpl).lt(calc.valInt(0).to(type)).surelyTrue()) {
+								if (DecisionProcedureSignAnalysis.this.calc.push(secondOperandSimpl).lt(DecisionProcedureSignAnalysis.this.calc.pushInt(0).to(type).pop()).pop().surelyTrue()) {
 									this.twist = ! this.twist; //switches
 								}
 							}
@@ -1105,7 +1111,7 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 			}
 
 			@Override
-			protected void rewriteFunctionApplication(FunctionApplication x)
+			protected void rewritePrimitiveSymbolicApply(PrimitiveSymbolicApply x)
 			throws NoResultException {
 				final boolean done = setResultBasedOnSign(x);
 				if (done) {
@@ -1114,9 +1120,9 @@ public final class DecisionProcedureSignAnalysis extends DecisionProcedureChainO
 
 				//else
 				final String operator = x.getOperator();
-				if (operator.equals(FunctionApplication.ATAN) ||
-					operator.equals(FunctionApplication.ASIN)) { //TODO is asin simplification problematic as asin(x) requires a bounded x?
-					setResult(rewrite(x.getArgs()[0]));
+				if (operator.equals(PrimitiveSymbolicApply.ATAN) ||
+					operator.equals(PrimitiveSymbolicApply.ASIN)) { //TODO is asin simplification problematic as asin(x) requires a bounded x?
+					setResult(rewrite((Primitive) x.getArgs()[0]));
 				} else {
 					setResult(x);
 				}

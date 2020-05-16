@@ -1,11 +1,11 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_NONE;
+import static jbse.bc.Offsets.NOP_OFFSET;
 
 import java.util.function.Supplier;
 
-import static jbse.bc.Offsets.NOP_OFFSET;
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_NONE;
 
 /**
  * {@link Algorithm} managing the "do nothing"
@@ -14,11 +14,11 @@ import static jbse.bc.Offsets.NOP_OFFSET;
  * @author Pietro Braione
  */
 final class Algo_NOP extends Algorithm<
-        BytecodeData_0,
-        DecisionAlternative_NONE,
-StrategyDecide<DecisionAlternative_NONE>,
-        StrategyRefine<DecisionAlternative_NONE>,
-        StrategyUpdate<DecisionAlternative_NONE>> {
+BytecodeData_0,
+DecisionAlternative_NONE, 
+StrategyDecide<DecisionAlternative_NONE>, 
+StrategyRefine<DecisionAlternative_NONE>, 
+StrategyUpdate<DecisionAlternative_NONE>> {
 
     @Override
     protected Supplier<Integer> numOperands() {

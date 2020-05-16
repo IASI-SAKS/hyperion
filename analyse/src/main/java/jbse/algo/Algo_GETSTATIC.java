@@ -1,17 +1,23 @@
 package jbse.algo;
 
-import jbse.bc.ClassFile;
-import jbse.bc.exc.BadClassFileException;
-import jbse.bc.exc.FieldNotFoundException;
-import jbse.common.exc.ClasspathException;
-import jbse.dec.exc.DecisionException;
-import jbse.dec.exc.InvalidInputException;
-import jbse.mem.State;
+import static jbse.algo.Util.ensureClassInitialized;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.failExecution;
+import static jbse.algo.Util.throwNew;
+import static jbse.bc.Signatures.INCOMPATIBLE_CLASS_CHANGE_ERROR;
+import static jbse.bc.Signatures.OUT_OF_MEMORY_ERROR;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.*;
-import static jbse.bc.Signatures.INCOMPATIBLE_CLASS_CHANGE_ERROR;
+import jbse.bc.exc.FieldNotFoundException;
+import jbse.common.exc.ClasspathException;
+import jbse.common.exc.InvalidInputException;
+import jbse.dec.exc.DecisionException;
+import jbse.mem.Objekt;
+import jbse.mem.State;
+import jbse.mem.exc.ContradictionException;
+import jbse.mem.exc.FrozenStateException;
+import jbse.mem.exc.HeapMemoryExhaustedException;
 
 /**
  * {@link Algorithm} managing the getstatic bytecode. It decides over the value 
@@ -25,36 +31,34 @@ final class Algo_GETSTATIC extends Algo_GETX {
     protected Supplier<Integer> numOperands() {
         return () -> 0;
     }
-    
-    @Override
-    protected void check(State state, String currentClassName)
-    throws FieldNotFoundException, BadClassFileException, InterruptException {
-        final String fieldClassName = this.fieldSignatureResolved.getClassName();
-        final ClassFile fieldClassFile = state.getClassHierarchy().getClassFile(fieldClassName);
 
+    @Override
+    protected void check(State state)
+    throws ClasspathException, FieldNotFoundException, InterruptException {
         //checks that the field is static or belongs to an interface
-        if (!fieldClassFile.isInterface() && 
-            !fieldClassFile.isFieldStatic(this.fieldSignatureResolved)) {
-            throwNew(state, INCOMPATIBLE_CLASS_CHANGE_ERROR);
+        if (!this.fieldClassResolved.isInterface() && 
+            !this.fieldClassResolved.isFieldStatic(this.data.signature())) {
+            throwNew(state, this.ctx.getCalculator(), INCOMPATIBLE_CLASS_CHANGE_ERROR);
             exitFromAlgorithm();
         }
     }
-    
+
     @Override
-    protected void get(State state)
-    throws DecisionException, ClasspathException, InterruptException {
-        final String fieldClassName = this.fieldSignatureResolved.getClassName();
-        
-        //possibly creates and initializes the class of the field
+    protected Objekt source(State state)
+    throws ClasspathException, DecisionException, InterruptException, 
+    ContradictionException, FrozenStateException {
+        //possibly initializes the class of the field
         try {
-            ensureClassCreatedAndInitialized(state, fieldClassName, this.ctx);
-        } catch (InvalidInputException | BadClassFileException e) {
+            ensureClassInitialized(state, this.fieldClassResolved, this.ctx);
+        } catch (HeapMemoryExhaustedException e) {
+            throwNew(state, this.ctx.getCalculator(), OUT_OF_MEMORY_ERROR);
+            exitFromAlgorithm();
+        } catch (InvalidInputException e) {
             //this should never happen
             //TODO really?
             failExecution(e);
         }
-        
-        //gets the field's value 
-        this.valToLoad = state.getKlass(fieldClassName).getFieldValue(this.fieldSignatureResolved);
+
+        return state.getKlass(this.fieldClassResolved);
     }
 }

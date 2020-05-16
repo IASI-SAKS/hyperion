@@ -1,163 +1,137 @@
 package jbse.mem;
 
-import jbse.bc.Signature;
-import jbse.val.Calculator;
-import jbse.val.MemoryPath;
-import jbse.val.Primitive;
-import jbse.val.Value;
+import java.util.Collection;
+import java.util.Map;
 
-import java.util.*;
+import jbse.bc.ClassFile;
+import jbse.bc.Signature;
+import jbse.common.exc.InvalidInputException;
+import jbse.val.HistoryPoint;
+import jbse.val.Primitive;
+import jbse.val.ReferenceSymbolic;
+import jbse.val.Value;
 
 /**
  * A Java object which may reside in the heap or in the static store, 
  * i.e., either a class, or an instance of a class, or an array.
  */
-public abstract class Objekt implements Cloneable {
-	/** 
-	 * The creation epoch of an {@link Objekt}.
-	 * 
-	 * @author Pietro Braione
-	 *
-	 */
-	protected enum Epoch { 
-		EPOCH_BEFORE_START, EPOCH_AFTER_START
-	}
-	
-    /** Static type identifier. Immutable. */
-	protected final String type;
-
-	/**
-	 * The origin of the object in the case it is created by 
-	 * lazy initialization. Immutable.
-	 */
-	private final MemoryPath origin;
-
-    /** The creation epoch of this {@link Objekt}. Immutable. */
-    private final Epoch epoch;
-    
-    /** All the signatures of all the fields. Immutable. */
-    private final List<Signature> fieldSignatures;
-    
-    /** 
-     * The hash code of this {@link Objekt}. Mutable only
-     * because it must be set after creation, but should not
-     * be changed after its initialization.
-     */
-    private Primitive hashCode;
-
-    /** 
-     * The fields as a map of signatures (as strings) to variables.
-     * Immutable for arrays, but mutable otherwise (the map
-     * is by itself immutable but the stored Variables may be 
-     * mutable). 
-     */
-    protected HashMap<String, Variable> fields;
-	
+public interface Objekt extends Cloneable {
     /**
-     * Constructor.
+     * Returns the class of this {@link Objekt}.
      * 
-     * @param calc a {@link Calculator}.
-     * @param type a {@link String}, the class of this object.
-     * @param origin a {@link MemoryPath}, the
-     *        chain of memory accesses which allowed to discover
-     *        the object for the first time. It can be null when
-     *        {@code epoch == }{@link Epoch#EPOCH_AFTER_START}.
-     * @param epoch the creation {@link Epoch} of this object.
-     * @param fieldSignatures an array of field {@link Signature}s.
+     * @return a {@link ClassFile} or {@code null}
+     *         if this object has no class (i.e., it is
+     *         in the static store).
      */
-    protected Objekt(Calculator calc, String type, MemoryPath origin, Epoch epoch, Signature... fieldSignatures) {
-        this.fields = new HashMap<>();
-        this.fieldSignatures = Arrays.asList(fieldSignatures.clone()); //safety copy
-        for (Signature s : this.fieldSignatures) {
-            this.fields.put(s.toString(), new Variable(calc, s.getDescriptor(), s.getName()));
-        }
-    	this.type = type;
-    	this.origin = origin;
-    	this.epoch = epoch;
-    	this.hashCode = calc.valInt(hashCode()); //TODO calc.valInt(hashCode()) is a VERY POOR choice! Use a suitable symbol also when the Objekt is concrete.
-    }
-    
-	/**
-     * Returns the class name of this {@link Objekt} (i.e.,
-     * {@code "java/lang/Object"} or {@code "[[I"}).
+    ClassFile getType();
+
+    /**
+     * Returns this {@link Objekt}'s origin.
      * 
-     * @return a {@link String}.
+     * @return a {@link ReferenceSymbolic} or {@code null}
+     *         if {@code !}{@link #isSymbolic()}.
      */
-	public final String getType() {
-		return this.type;
-	}
+    ReferenceSymbolic getOrigin();
+
+    /**
+     * Returns the creation epoch of this object
+     * as a {@link HistoryPoint}.
+     * 
+     * @return a {@link HistoryPoint}.
+     */
+    HistoryPoint historyPoint();
     
     /**
-     * Returns the object's origin.
-     * 
-     * @return a {@link String}
-     */
-    public final MemoryPath getOrigin() {
-    	return this.origin;
-    }
-    
-    /**
-     * Checks the epoch of this {@link Objekt}.
+     * Checks whether this {@link Objekt} is symbolic.
      *  
      * @return {@code true} iff the object is symbolic, i.e., 
-     *         is an object that was present in the heap 
-     *         before the start of the symbolic execution.
+     *         it was not explicitly created during symbolic execution 
+     *         by a {@code new*} bytecode, but rather assumed.
      */
-    public final boolean isSymbolic() {
-    	return (this.epoch == Epoch.EPOCH_BEFORE_START); 
-    }
+    boolean isSymbolic();
     
     /**
-     * Sets the hash code of this {@link Objekt}.
+     * Turns a concrete object into a symbolic one.
      * 
-     * @param hashCode a {@link Primitive} for the hash code
-     *        of this {@link Objekt}. It must be set when
-     *        {@code epoch == }{@link Epoch#EPOCH_BEFORE_START}.
-     *        When {@code epoch == }{@link Epoch#EPOCH_AFTER_START}
-     *        the hash code of this {@link Objekt} from the underlying
-     *        JVM is used.
+     * @param origin a {@link ReferenceSymbolic}, the origin
+     *        of this {@link Objekt}.
+     * @throws InvalidInputException if {@code origin == null}
+     *         or if this {@link Objekt} cannot be turned into
+     *         a symbolic object (e.g., because it already is).
      */
-    public final void setObjektHashCode(Primitive hashCode) {
-        this.hashCode = hashCode;
-    }
-    
+    void makeSymbolic(ReferenceSymbolic origin) throws InvalidInputException;
+
     /**
-     * Returns the hash code of this {@code Objekt}.
+     * Sets the identity hash code of this {@link Objekt}.
+     * 
+     * @param identityHashCode a {@link Primitive} with type {@code int} 
+     *        for the identity hash code of this {@link Objekt}.
+     */
+    void setIdentityHashCode(Primitive identityHashCode);
+
+    /**
+     * Returns the identity hash code of this {@code Objekt}.
      * 
      * @return a {@code Primitive}.
      */
-    public final Primitive getObjektHashCode() {
-        return this.hashCode;
-    }
-    
+    Primitive getIdentityHashCode();
+
     /**
      * Returns the {@link Signature}s of all the fields
-     * declared in this {@link Instance}.
+     * this {@link Objekt} stores.
      * 
      * @return an immutable 
      *         {@link Collection}{@code <}{@link Signature}{@code >}.
      */
-    public final Collection<Signature> getFieldSignatures() {
-    	return Collections.unmodifiableCollection(this.fieldSignatures);
-    }
-    
+    Collection<Signature> getStoredFieldSignatures();
+
     /**
-     * Gets the value in a field of the {@link Instance}.
+     * Checks whether an object has an offset.
+     * 
+     * @param ofst an {@code int}.
+     * @return {@code true} iff {@code ofst} is a valid offset
+     *         number for the object. For arrays it is {@code true}
+     *         iff the array's length is concrete and {@code ofst}
+     *         is a possible array index.
+     */
+    boolean hasOffset(int ofst);
+
+    /**
+     * Gets the value in a field of this {@link Objekt}.
      * 
      * @param sig the {@link Signature} of the field.
      * @return a {@link Value} object which is the value 
-     * stored in the field of the {@link Instance}, or
-     * {@code null} if the {@link Instance} has no
-     * field with that {@code name}. 
+     * stored in the field of this {@link Objekt}, or 
+     * {@code null} if this {@link Objekt} has no 
+     * field with signature {@code sig}. 
      */
-    public final Value getFieldValue(Signature sig) {
-    	//TODO does it work with visibility modifiers???
-        try {
-            return this.fields.get(sig.toString()).getValue();  //toString() is necessary, type erasure doesn't play well
-        } catch (Exception e) {
-            return null;
-        }
-    }
+    Value getFieldValue(Signature sig);
+
+    /**
+     * Gets the value in a field of the {@link Instance}.
+     * 
+     * @param fieldName the name of the field.
+     * @param fieldClass the name of the class 
+     * where the field is declared.
+     * @return the {@link Value} stored in the 
+     *         field of this {@link Objekt}, or 
+     *         {@code null} if this {@link Objekt} 
+     *         has no field with that {@code fieldName}
+     *         and {@code fieldClass}.
+     */
+    Value getFieldValue(String fieldName, String fieldClass);
+    
+    /**
+     * Gets the value in a field of this {@link Objekt}.
+     * 
+     * @param ofst an {@code int} signifying an offset number
+     *        of a field (as returned by {@code sun.misc.Unsafe} methods).
+     * @return a {@link Value} object which is the value 
+     *         stored in the field of this {@link Objekt}, or 
+     *         {@code null} if {@code slot} is not the slot number
+     *         of a field. 
+     */
+    Value getFieldValue(int ofst);
 
     /**
      * Sets the value of a field. Throws a runtime exception 
@@ -165,63 +139,32 @@ public abstract class Objekt implements Cloneable {
      * 
      * @param field the {@link Signature} of the field.
      * @param item the new {@link Value} that must be assigned to
-     *             the field.
+     *        the field.
      */
-    //TODO throw a better exception in the case a field does not exist or is immutable
-    public void setFieldValue(Signature field, Value item) {
-        this.fields.get(field.toString()).setValue(item); //toString() is necessary, type erasure doesn't play well
-    }
-    
+    //TODO throw a exception in the case a field does not exist or is immutable
+    void setFieldValue(Signature field, Value item);
+
+    /**
+     * Sets the value of a field. Throws a runtime exception 
+     * in the case the field does not exist or is immutable.
+     * 
+     * @param ofst an {@code int} signifying an offset number
+     *        of a field (as returned by {@code sun.misc.Unsafe} methods).
+     * @param item the new {@link Value} that must be assigned to
+     *        the field.
+     */
+    //TODO throw exception in the case a field does not exist or is immutable
+    void setFieldValue(int ofst, Value item);
+
     /**
      * Returns an immutable view of this 
      * {@link Objekt}'s fields.
      * 
      * @return an immutable 
-     *         {@link Map}{@code <}{@link String}{@code , }{@link Variable}{@code <}
+     *         {@link Map}{@code <}{@link String}{@code , }{@link Variable}{@code >}
      *         backed by this {@link Objekt}'s fields map.
      */
-    public Map<String, Variable> fields() {
-        return Collections.unmodifiableMap(this.fields);
-    }
-   
-    /**
-     * Gets the value in a field of the {@link Instance}.
-     * 
-     * @param fieldName the name of the field.
-     * @return a {@link Value} object which is the value 
-     * stored in the field of the {@link Instance}, or
-     * {@code null} if the {@link Instance} has no
-     * field with that {@code name}. 
-     */
-    public final Value getFieldValue(String fieldName) {
-    	//TODO does it work with visibility modifiers???
-        for (Signature sig: this.fieldSignatures) {
-            if (sig.getName().equals(fieldName)) {
-                return getFieldValue(sig);
-            }
-        }
-        return null;
-    }
+    Map<Signature, Variable> fields();
     
-    protected final HashMap<String, Variable> fieldsDeepCopy() {
-        final HashMap<String, Variable> retVal = new HashMap<>();
-        for (String key : this.fields.keySet()) {
-            final Variable variableClone = this.fields.get(key).clone();
-            retVal.put(key, variableClone);
-        }
-        return retVal;
-    }
-    
-	@Override
-    public Objekt clone() {
-    	try {
-    		return (Objekt) super.clone();
-    	} catch (CloneNotSupportedException e) {
-    		throw new InternalError(e);
-    	}
-    	//note that we do not clone this.fields because
-    	//it is immutable for arrays and mutable for instances;
-    	//note also that the clone will have same
-    	//hash code as the original.
-    }
+    Objekt clone();
 }

@@ -1,25 +1,42 @@
 package jbse.jvm;
 
-import jbse.algo.Algo_INIT;
+import static jbse.bc.Opcodes.OP_ARETURN;
+import static jbse.bc.Opcodes.OP_ATHROW;
+import static jbse.bc.Opcodes.OP_DRETURN;
+import static jbse.bc.Opcodes.OP_FRETURN;
+import static jbse.bc.Opcodes.OP_INVOKEINTERFACE;
+import static jbse.bc.Opcodes.OP_INVOKESPECIAL;
+import static jbse.bc.Opcodes.OP_INVOKESTATIC;
+import static jbse.bc.Opcodes.OP_INVOKEVIRTUAL;
+import static jbse.bc.Opcodes.OP_IRETURN;
+import static jbse.bc.Opcodes.OP_RETURN;
+
+import java.util.Collection;
+
 import jbse.algo.Algorithm;
-import jbse.algo.ContinuationException;
 import jbse.algo.ExecutionContext;
+import jbse.algo.InterruptException;
+import jbse.algo.Action;
+import jbse.algo.Action_START;
 import jbse.algo.exc.CannotManageStateException;
-import jbse.bc.Opcodes;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
 import jbse.common.exc.ClasspathException;
+import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
 import jbse.dec.exc.DecisionBacktrackException;
 import jbse.dec.exc.DecisionException;
-import jbse.dec.exc.InvalidInputException;
-import jbse.jvm.exc.*;
+import jbse.jvm.exc.CannotBacktrackException;
+import jbse.jvm.exc.EngineStuckException;
+import jbse.jvm.exc.FailureException;
+import jbse.jvm.exc.InitializationException;
+import jbse.jvm.exc.NonexistingObservedVariablesException;
 import jbse.mem.Clause;
 import jbse.mem.State;
+import jbse.mem.State.Phase;
 import jbse.mem.exc.ContradictionException;
+import jbse.mem.exc.FrozenStateException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.tree.StateTree.BranchPoint;
-
-import java.util.Collection;
 
 /**
  * An {@code Engine} is a JVM able to symbolically execute the 
@@ -28,7 +45,7 @@ import java.util.Collection;
  * tools by means of the following features:
  * 
  * <ul>
- * <li>Stepwise symbolic execution of public methods of Java classes;</li>
+ * <li>Stepwise symbolic execution of methods of Java classes;</li>
  * <li>Automatic detection of feasible branches at decision points, predictable 
  * exploration and possibility to backtrack the execution to
  * unexplored branches;</li>
@@ -43,275 +60,338 @@ import java.util.Collection;
  * @author unknown
  */
 public class Engine implements AutoCloseable {
-	//Architecture of the engine
+    //Architecture of the engine
 
-	/** The {@link ExecutionContext}. */
-	private final ExecutionContext ctx; 
-	
-	/** The {@link VariableObserverManager}. */
-	private final VariableObserverManager vom;
+    /** The {@link ExecutionContext}. */
+    private final ExecutionContext ctx; 
 
-	//State of the execution
-	
-	/** The current JVM {@link State} of the symbolic execution. */
-	private State currentState;
-	
-	/** 
-	 * Whether some of the references resolved by the last
-	 * decision procedure call has not been expanded.
-	 */
-	private boolean someReferenceNotExpanded;
+    /** The {@link VariableObserverManager}. */
+    private final VariableObserverManager vom;
 
-	/**
-	 * List of the origins of the references 
-	 * resolved but not expanded by the last decision 
-	 * procedure call.
-	 */
-	private String nonExpandedReferencesOrigins;
+    //State of the execution
 
-	/**
-	 * List of the static types of the references 
-	 * resolved but not expanded by the last decision 
-	 * procedure call.
-	 */
-	private String nonExpandedReferencesTypes;
+    /** The current JVM {@link State} of the symbolic execution. */
+    private State currentState;
 
-	/** 
-	 * Stores the source row of the bytecode executed before the current one 
-	 * (-1 if none has before, or no debug information was available).
-	 */
-	private int preStepSourceRow = -1;
+    /** 
+     * Whether some of the references resolved by the last
+     * decision procedure call has not been expanded.
+     */
+    private boolean someReferenceNotExpanded;
 
-	/**
-	 * Stores the size of the current state's stack before a step; used as 
-	 * a quick and dirty way for understanding whether a step caused a change
-	 * in current method.
-	 */
-	private int preStepStackSize;
-	
-	//Execution statistics
-	
-	/** The total number of {@link State}s analyzed by the {@link Engine}. */
-	private long analyzedStates = 0L;
+    /**
+     * List of the origins of the references 
+     * resolved but not expanded by the last decision 
+     * procedure call.
+     */
+    private String nonExpandedReferencesOrigins;
 
+    /**
+     * List of the static types of the references 
+     * resolved but not expanded by the last decision 
+     * procedure call.
+     */
+    private String nonExpandedReferencesTypes;
 
-	//Construction.
+    /** 
+     * Stores the source row of the bytecode executed before the current one 
+     * (-1 if none has before, or no debug information was available).
+     */
+    private int preStepSourceRow = -1;
 
-	/**
-	 * Constructor. Used by the builder.
-	 * 
-	 * @param ctx an {@link ExecutionContext}.
-	 */
-	Engine(ExecutionContext ctx, VariableObserverManager vom) {
-		this.ctx = ctx;
-		this.vom = vom;
-	}
-	
-	
-	/**
-	 * Steps the engine in a suitable initial state, either the one stored in 
-	 * {@code this.ctx} or the state where:
-	 * 
-	 * <ul>
-	 * <li> the stack has one frame for an invocation of the root method;</li>
-	 * <li> if the root method is not static, the heap has one object, an 
-	 * instance for the {@code this} parameter of the method; this object 
-	 * is the <emph>root object</emph>;</li>
-	 * <li> all the local variables in the current frame and all the instance 
-	 * variables of the root object (if present) are initialized with symbolic 
-	 * values;</li>
-	 * <li> the path condition assumes that the class of the root method is
-	 * preloaded, and (if the method is not static) that the {@code this}
-	 * parameter is resolved by expansion to the root object.</li>
-	 * </ul>
-	 * 
-	 * @throws DecisionException in case initialization of the 
-	 *         decision procedure fails for some reason.
-	 * @throws InitializationException in case the specified root method 
-	 *         does not exist or cannot be symbolically executed for 
-	 *         any reason (e.g., is native).
-	 * @throws ThreadStackEmptyException 
-	 * @throws InvalidClassFileFactoryClassException in case the class object
-	 *         provided to build a class file factory cannot be used
-	 *         (e.g., it has not a suitable constructor or it is not visible).
-	 * @throws NonexistingObservedVariablesException in case some of the provided 
-	 *         observed variable names cannot be observed. This is the only exception
-	 *         that allows nevertheless to perform symbolic execution, in which case 
-	 *         only the observers to existing variables will be notified.
-	 * @throws ClasspathException 
-	 */
-	void init() 
-	throws DecisionException, InitializationException,
-            InvalidClassFileFactoryClassException, NonexistingObservedVariablesException,
-	ClasspathException {
-		//executes the initial state setup step
-		final Algo_INIT algo = this.ctx.dispatcher.select();
-		algo.exec(ctx);
+    /**
+     * Stores the size of the current state's stack before a step; used as 
+     * a quick and dirty way for understanding whether a step caused a change
+     * in current method.
+     */
+    private int preStepStackSize;
 
-		//extracts the initial state from the tree
-		this.currentState = this.ctx.stateTree.nextState();
-		
-        //synchronizes the decision procedure with the path condition
-		try {
-		    this.ctx.decisionProcedure.setAssumptions(this.currentState.getPathCondition());
-		} catch (InvalidInputException e) {
-		    //this should never happen
-		    throw new UnexpectedInternalException(e);
-		}
-		this.currentState.resetLastPathConditionClauses();
+    //Execution statistics
 
-        //inits the variable observer manager
-		try {
-			this.vom.init(this);
-		} catch (ThreadStackEmptyException e) {
-			//this should never happen
-			throw new UnexpectedInternalException(e);
-		}
-	}
+    /** The total number of {@link State}s analyzed by the {@link Engine}. */
+    private long analyzedStates = 0L;
+    
+    //Construction.
 
-	//public methods (operations)
-	
-	/**
-	 * Returns the engine's initial JVM state (a safety copy).
-	 * 
-	 * @return the initial {@link State} as it was at the beginning
-	 *         of the symbolic execution. It is not refined on the current
-	 *         path condition.
-	 */
-	public State getInitialState() {
-		return this.ctx.getInitialState();
-	}
+    /**
+     * Constructor. Used by the builder.
+     * 
+     * @param ctx an {@link ExecutionContext}.
+     */
+    Engine(ExecutionContext ctx, VariableObserverManager vom) {
+        this.ctx = ctx;
+        this.vom = vom;
+    }
 
-	/**
-	 * Checks whether the engine can step.
-	 * 
-	 * @return <code>true</code> iff the engine can step. The engine can step unless 
-	 *         the current {@link State} is stuck, or no backtrack has 
-	 *         been performed since the last invocation of the {@link #stopCurrentTrace}
-	 *         method.
-	 */
-	public boolean canStep() {
-		return !(this.currentState.isStuck());
-	}
+    /**
+     * Steps the engine in a suitable start state from which execution can be continued
+     * by invoking {@link #step()}. Such a state is either the one stored in 
+     * {@code this.ctx} or a <em>pre-initial</em> state that bootstraps the standard
+     * java classes before the symbolic execution of the target method. In the
+     * pre-initial state:
+     * 
+     * <ul>
+     * <li> the path condition is set to {@code true};</li>
+     * <li> the heap is empty;</li>
+     * <li> the stack has many frames loaded for the execution 
+     * of several methods that initialize the virtual machine.</li>
+     * </ul>
+     * 
+     * @throws DecisionException in case initialization of the 
+     *         decision procedure fails for some reason.
+     * @throws InitializationException in case this {@link Engine} is not
+     *         executed on a Java 8 runtime environment, or some error happened
+     *         while initializing some indispensable Java standard classes, 
+     *         or while creating the initial thread or thread group. 
+     * @throws InvalidClassFileFactoryClassException in case the class object 
+     *         provided to build a class file factory cannot be used
+     *         (e.g., it has not a suitable constructor or it is not visible).
+     * @throws NonexistingObservedVariablesException in case some of the provided 
+     *         observed variable names cannot be observed. This is the only exception
+     *         that allows nevertheless to perform symbolic execution, in which case 
+     *         only the observers to existing variables will be notified.
+     * @throws ClasspathException in case any of the indispensable standard Java 8 
+     *         Runtime Environment classes is missing from the bootstrap classpath, 
+     *         or is ill-formed.
+     * @throws ContradictionException if some initialization assumption is
+     *         contradicted.
+     */
+    void init() 
+    throws DecisionException, InitializationException, 
+    InvalidClassFileFactoryClassException, NonexistingObservedVariablesException, 
+    ClasspathException, ContradictionException {
+    	try {
+    		//checks that the version of the meta-level JRE is ok
+    		final String javaVersion = System.getProperty("java.version");
+    		if (!javaVersion.startsWith("1.8.0")) {
+    			throw new InitializationException("JBSE requires to be run on a Java 8 JVM.");
+    		}
 
-	/**
-	 * Steps the execution by performing the current bytecode.
-	 * 
-	 * @return the {@link BranchPoint} created after the execution of the 
-	 *         current bytecode, allowing to resume the execution from the states 
-	 *         produced by it, or {@code null} if the bytecode execution 
-	 *         does not produce more than one possible next state.
-	 * @throws CannotManageStateException iff the engine is unable to calculate
-	 *         the next state because of some engine limitations.
-     * @throws ClasspathException iff the JRE standard libraries are missing from
-     *         the classpath or incompatible with the current JBSE.
-	 * @throws ContradictionException iff the step causes a violation of some assumption; 
-	 *         in this case after the step it is 
-	 *         {@code this.}{@link #canStep()}{@code == false}.
-	 * @throws DecisionException iff the decision procedure fails for any reason.
-	 * @throws EngineStuckException when the method is invoked from a state where 
-	 *         {@code this.}{@link #canStep()}{@code == false}.
-	 * @throws ThreadStackEmptyException when the execution of a step is attempted
-	 *         on a current state with an empty thread stack.
-	 * @throws FailureException iff the step causes a violation of some assertion;
-	 *         in this case after the step it is 
-	 *         {@code this.}{@link #canStep()}{@code == false}.
-	 */
-	public BranchPoint step() 
-	throws EngineStuckException, CannotManageStateException, ClasspathException,
-	ThreadStackEmptyException, ContradictionException, DecisionException,
-            FailureException {
-		//sanity check
-		if (!canStep()) {
-			throw new EngineStuckException();
-		}
+    		//steps
+    		final Action_START algo = this.ctx.dispatcher.selectStart();
+    		algo.exec(this.ctx);
+    		
+    		//updates the current state
+    		if (this.ctx.stateTree.createdBranch()) { //Algo_START always creates a branch, but we need the side effect of invoking createBranch
+    			this.currentState = this.ctx.stateTree.nextState();
+    		} else {
+    			//this should never happen
+    			throw new UnexpectedInternalException("The first state is missing from the state tree.");
+    		}
 
-		//updates the information about the state before the step
-		this.preStepSourceRow = this.currentState.getSourceRow();
-		this.preStepStackSize = this.currentState.getStackSize();
-		
-		//steps
-		Algorithm<?, ?, ?, ?, ?> algo, continuation = null;
-		do {
-		    algo = (continuation == null ? 
-		            this.ctx.dispatcher.select(this.currentState.getInstruction()) : 
-		            continuation);
-		    continuation = null;
-		    try {
-		        algo.exec(this.currentState, this.ctx);
-		    } catch (ContinuationException e) {
-		        continuation = e.getContinuation();
-		    } catch (ClasspathException | CannotManageStateException |
-		            ThreadStackEmptyException |  ContradictionException | 
-		            DecisionException | FailureException |
-		            UnexpectedInternalException e) {
-		        this.stopCurrentTrace();
-		        throw e;
-		    } 
-		} while (continuation != null);
-		this.someReferenceNotExpanded = algo.someReferenceNotExpanded();
-		this.nonExpandedReferencesOrigins = algo.nonExpandedReferencesOrigins();
-		this.nonExpandedReferencesTypes = algo.nonExpandedReferencesTypes();
+    		//in the case the state is initial does some operations
+    		if (atInitialState()) {
+    			this.ctx.setStateInitial(this.currentState);
+        		this.vom.init(this);
+    		}
 
-		//updates the current state and calculates return value
-		final BranchPoint retVal;
-		if (this.ctx.stateTree.createdBranch()) {
-			retVal = this.ctx.stateTree.nextBranch();
-			this.currentState = this.ctx.stateTree.nextState();
-		} else {
-			retVal = null;
-			this.currentState.incSequenceNumber();
-		}
-    	
-		//updates the counters for depth/count scope
-        if (this.currentState.branchingDecision()) {
-        	this.currentState.incDepth();
-        	this.currentState.resetCount();
-        } else {
-        	this.currentState.incCount();
+    		//synchronizes the decision procedure with the current path condition
+            final Collection<Clause> currentAssumptions = this.currentState.getPathCondition();
+    		this.ctx.decisionProcedure.setAssumptions(currentAssumptions);
+    		this.currentState.resetLastPathConditionClauses();
+        } catch (InvalidInputException | ThreadStackEmptyException e) {
+            //this should never happen
+            throw new UnexpectedInternalException(e);
         }
+    }
 
-		//synchronizes the decision procedure with the path condition
-		try {
-            this.ctx.decisionProcedure.addAssumptions(this.currentState.getLastPathConditionPushedClauses());
+    //public methods (operations)
+    
+    /** 
+     * Checks whether the current state is the last
+     * pre-initial state, i.e., the last state before 
+     * the start of the symbolic execution of the 
+     * target method.
+     * 
+     * @return a {@code boolean}.
+     */
+    public boolean atLastPreInitialState() {
+        return (this.currentState.phase() == Phase.PRE_INITIAL && this.currentState.getStackSize() == 0);
+    }
+    
+    /** 
+     * Checks whether the current state is the initial
+     * state, i.e., the first state of the post-initial phase.
+     * 
+     * @return a {@code boolean}.
+     */
+    public boolean atInitialState() {
+        return (this.currentState.phase() == Phase.INITIAL);
+    }
+
+    /**
+     * Returns the initial state (a safety copy).
+     * 
+     * @return the initial {@link State}, not refined on the current
+     *         path condition, or {@code null} if we are in the
+     *         pre-initial phase.
+     */
+    public State getInitialState() {
+        return this.ctx.getStateInitial();
+    }
+
+    /**
+     * Checks whether the engine can step.
+     * 
+     * @return {@code true} iff the engine can step. The engine can step unless 
+     *         the current {@link State} is stuck, or no backtrack has 
+     *         been performed since the last invocation of the {@link #stopCurrentPath}
+     *         method.
+     */
+    public boolean canStep() {
+        return !(this.currentState.isStuck());
+    }
+
+    /**
+     * Steps the execution.
+     * 
+     * @return the {@link BranchPoint} created after the execution of the 
+     *         current bytecode, allowing to resume the execution from the states 
+     *         produced by it, or {@code null} if the bytecode execution 
+     *         does not produce more than one possible next state.
+     * @throws CannotManageStateException iff the engine is unable to calculate 
+     *         the next state because of some engine limitations.
+     * @throws NonexistingObservedVariablesException in case some of the provided 
+     *         observed variable names cannot be observed. This is the only exception
+     *         that allows nevertheless to perform symbolic execution, in which case 
+     *         only the observers to existing variables will be notified.
+     * @throws ClasspathException in case any of the indispensable standard Java 8 
+     *         Runtime Environment classes is missing from the bootstrap classpath, 
+     *         or is ill-formed.
+     * @throws ContradictionException iff the step causes a violation of some assumption; 
+     *         in this case after the step it is 
+     *         {@link #canStep() canStep}{@code () == false}.
+     * @throws DecisionException iff the decision procedure fails for any reason.
+     * @throws EngineStuckException when the method is invoked from a state where 
+     *         {@link #canStep() canStep}{@code () == false}.
+     * @throws ThreadStackEmptyException when the execution of a step is attempted
+     *         on a current state with an empty thread stack.
+     * @throws FailureException iff the step causes a violation of some assertion; 
+     *         in this case after the step it is 
+     *         {@link #canStep() canStep}{@code () == false}.
+     */
+    public BranchPoint step() 
+    throws EngineStuckException, CannotManageStateException, NonexistingObservedVariablesException, 
+    ClasspathException, ThreadStackEmptyException, ContradictionException, DecisionException, 
+    FailureException {
+        try {
+        	//checks the precondition
+        	if (!canStep()) {
+        		throw new EngineStuckException();
+        	}
+
+        	//sets the next phase of the state
+        	final boolean atLastPreInitialState = atLastPreInitialState(); //safety copy
+        	if (atLastPreInitialState) {
+        		this.currentState.setPhaseInitial();
+        	} else if (atInitialState()) {
+        		this.currentState.setPhasePostInitial();
+        	}
+
+        	//updates the information about the state before the step
+        	this.preStepStackSize = this.currentState.getStackSize();
+        	this.preStepSourceRow = (this.preStepStackSize == 0 ? -1 : this.currentState.getSourceRow());
+
+        	//steps
+        	Action action = (atLastPreInitialState ? 
+  				             this.ctx.dispatcher.selectInit() :
+  				             this.ctx.dispatcher.select(this.currentState.getInstruction()));
+        	boolean hasContinuation;
+        	do {
+        		try {
+        			action.exec(this.currentState, this.ctx);
+        			hasContinuation = false;
+        		} catch (InterruptException e) {
+        			hasContinuation = e.hasContinuation();
+        			if (hasContinuation) {
+        				action = e.getContinuation();
+        			}
+        		} catch (ClasspathException | CannotManageStateException | 
+        				ThreadStackEmptyException | ContradictionException | 
+        				DecisionException | FailureException | 
+        				UnexpectedInternalException e) {
+        			stopCurrentPath();
+        			throw e;
+        		} 
+        	} while (hasContinuation);
+
+        	//possibly gets information about symbolic references that were not expanded
+        	if (action instanceof Algorithm<?, ?, ?, ?, ?>) {
+        		final Algorithm<?, ?, ?, ?, ?> algo = (Algorithm<?, ?, ?, ?, ?>) action;
+        		this.someReferenceNotExpanded = algo.someReferenceNotExpanded();
+        		this.nonExpandedReferencesOrigins = algo.nonExpandedReferencesOrigins();
+        		this.nonExpandedReferencesTypes = algo.nonExpandedReferencesTypes();
+        	}
+        	
+        	//cleans, stores and creates a branch for the initial state
+    	    if (atInitialState()) {
+    			this.currentState.gc();
+    			this.ctx.setStateInitial(this.currentState);
+        		this.vom.init(this);
+    	    	this.ctx.stateTree.addStateInitial(this.currentState);
+    	    }
+
+        	//updates the current state and calculates the return value
+        	BranchPoint retVal = null;
+        	if (this.ctx.stateTree.createdBranch()) {
+        		retVal = this.ctx.stateTree.nextBranch();
+        		this.currentState = this.ctx.stateTree.nextState();
+        	} else {
+        		this.currentState.incSequenceNumber();
+        	}
+        	
+        	//updates the counters for depth/count scope
+        	if (this.currentState.branchingDecision()) {
+        		this.currentState.incDepth();
+        		this.currentState.resetCount();
+        	} else {
+        		this.currentState.incCount();
+        	}
+
+        	//synchronizes the decision procedure with the current path condition
+        	if (this.currentState.areThereNewPathConditionClauses()) {
+        		this.ctx.decisionProcedure.addAssumptions(this.currentState.getLastPathConditionPushedClauses());
+        		this.currentState.resetLastPathConditionClauses();
+        	}
+
+        	//notifies observers of variables
+        	if (this.currentState.phase() == Phase.POST_INITIAL) {
+        		this.vom.notifyObservers(retVal);
+        	}
+
+        	//updates stats
+        	if (this.analyzedStates < Long.MAX_VALUE) { 
+        		++this.analyzedStates;
+        	}
+
+        	//returns
+        	return retVal;
         } catch (InvalidInputException e) {
             //this should never happen
             throw new UnexpectedInternalException(e);
         }
-		this.currentState.resetLastPathConditionClauses();
+    }
 
-		//manages variable observation
-		this.vom.notifyObservers(retVal);
+    /**
+     * Returns the engine's current JVM state 
+     * (<em>not</em> a copy).
+     * 
+     * @return a {@link State}.
+     */
+    public State getCurrentState() {
+        return this.currentState;
+    }
 
-		//updates stats
-		if (this.analyzedStates < Long.MAX_VALUE) { 
-			++this.analyzedStates;
-		}
+    /**
+     * Returns the number of analyzed symbolic states.
+     * 
+     * @return a {@code long}, the number of times the 
+     *         {@link #step()} method has been invoked.  
+     */
+    public long getAnalyzedStates() {
+        return this.analyzedStates;
+    }
 
-		//returns
-		return retVal;
-	}
-	
-	/**
-	 * Returns the engine's current JVM state 
-	 * (<em>not</em> a copy).
-	 * 
-	 * @return a {@link State}.
-	 */
-	public State getCurrentState() {
-		return this.currentState;
-	}
-	
-	/**
-	 * Returns the number of analyzed symbolic states.
-	 * 
-	 * @return a {@code long}, the number of times the 
-	 *         {@link #step} method has been invoked.  
-	 */
-	public long getAnalyzedStates() {
-		return this.analyzedStates;
-	}
-	
     /**
      * Returns the number of assumed object of a given class.
      * 
@@ -319,10 +399,10 @@ public class Engine implements AutoCloseable {
      * @return the number of objects with class {@code className}
      * assumed in the current state.
      */
-	public int getNumAssumed(String className) {
-		return this.currentState.getNumAssumed(className);
-	}
-
+    public int getNumAssumed(String className) {
+        return this.currentState.getNumAssumed(className);
+    }
+    
     /**
      * Returns the number of states that remain to be explored
      * at a given branch.
@@ -335,175 +415,188 @@ public class Engine implements AutoCloseable {
     	return this.ctx.stateTree.getNumOfStatesAtBranch(bp);
     }
 
-	/** 
-	 * Adds a branch point to the symbolic execution.
-	 * 
-	 * @return the created {@link BranchPoint}.
-	 */
-	public BranchPoint addBranchPoint() {
-		final State s = (State) this.currentState.clone();
-		this.ctx.stateTree.addBranchPoint(s, "MANUAL");
-		final BranchPoint retVal = this.ctx.stateTree.nextBranch();
-		this.vom.saveObservedVariablesValues(retVal);
-		return retVal;
-	}
-	
-	/**
-	 * Stops the execution along the current trace.
-	 */
-	public void stopCurrentTrace() {
-		this.currentState.setStuckStop();
-	}
+    /**
+     * Returns a state at a given branch.
+     * 
+     * @param bp a {@link BranchPoint}.
+     * @param index an {@code int}.
+     * @return the state at the branch identified by {@code bp} 
+     *         with position {@code index} in the branch.
+     * @throws InvalidInputException if 
+     *         {@code index < 0 || index > }{@link #getNumOfStatesAtBranch(BranchPoint) getNumOfStatesAtBranch}{@code (bp)}. 
+     */
+    public State getStateAtBranch(BranchPoint bp, int index) throws InvalidInputException {
+    	return this.ctx.stateTree.getStateAtBranch(bp, index);
+    }
 
-	/**
-	 * Checks whether the engine can backtrack to some state.
-	 * 
-	 * @return {@code true} iff the engine has at least one 
-	 *         pending backtrack point.
-	 */
-	public boolean canBacktrack() {
-		return this.ctx.stateTree.hasStates();
-	}
-	
-	/**
-	 * Backtracks the execution to the next pending branch.
-	 * 
-	 * @return the {@link BranchPoint} of the next pending branch.
-	 * @throws CannotBacktrackException iff {@code this.}{@link #canBacktrack}{@code () == false} 
-	 *         before the method is invoked.
-	 * @throws DecisionBacktrackException iff the decision procedure fails for 
-	 *         any reason. 
-	 */
-	public BranchPoint backtrack() 
-	throws CannotBacktrackException, DecisionBacktrackException {
-		//TODO dubious correctness of this implementation
-		if (!this.canBacktrack()) {
-			throw new CannotBacktrackException();
+    /**
+     * Stops the execution along the current path.
+     */
+    public void stopCurrentPath() {
+    	try {
+    		this.currentState.setStuckStop();
+		} catch (FrozenStateException e) {
+			//this should never happen
+			throw new UnexpectedInternalException(e);
 		}
+    }
+
+    /**
+     * Checks whether the engine can backtrack to some state.
+     * 
+     * @return {@code true} iff the engine has at least one 
+     *         pending backtrack point.
+     */
+    public boolean canBacktrack() {
+        return this.ctx.stateTree.hasStates();
+    }
+
+    /**
+     * Backtracks the execution to the next pending branch.
+     * 
+     * @return the {@link BranchPoint} of the next pending branch.
+     * @throws CannotBacktrackException iff {@link #canBacktrack}{@code () == false} 
+     *         before the method is invoked.
+     * @throws DecisionBacktrackException iff the decision procedure fails for 
+     *         any reason. 
+     */
+    public BranchPoint backtrack() 
+    throws CannotBacktrackException, DecisionBacktrackException {
+        //TODO dubious correctness of this implementation
+        if (!canBacktrack()) {
+            throw new CannotBacktrackException();
+        }
 
         final BranchPoint bp = this.ctx.stateTree.nextBranch();
         final boolean isLast = (getNumOfStatesAtBranch(bp) == 1);
 
         try {
-			this.currentState = this.ctx.stateTree.nextState();
-			final Collection<Clause> currentAssumptions = this.currentState.getPathCondition();
-			this.ctx.decisionProcedure.setAssumptions(currentAssumptions);
-			this.currentState.resetLastPathConditionClauses();
-		} catch (DecisionException e) {
-			throw new DecisionBacktrackException(e);
-		} catch (InvalidInputException e) {
+            this.currentState = this.ctx.stateTree.nextState();
+            final Collection<Clause> currentAssumptions = this.currentState.getPathCondition();
+            this.ctx.decisionProcedure.setAssumptions(currentAssumptions);
+            this.currentState.resetLastPathConditionClauses();
+
+            //updates the counters for depth/count scope
+            if (this.currentState.branchingDecision()) {
+                this.currentState.incDepth();
+                this.currentState.resetCount();
+            } else {
+                this.currentState.incCount();
+            }
+        } catch (DecisionException e) {
+            throw new DecisionBacktrackException(e);
+        } catch (InvalidInputException e) {
             //this should never happen
             throw new UnexpectedInternalException(e);
         }
-		
-		//updates the counters for depth/count scope
-        if (this.currentState.branchingDecision()) {
-        	this.currentState.incDepth();
-        	this.currentState.resetCount();
-        } else {
-        	this.currentState.incCount();
-        }
 
-		this.vom.restoreObservedVariablesValues(bp, isLast);
-		
-		return bp;
-	}
-	
-	
-	/**
-	 * Test whether some of the references resolved by the last
-	 * decision procedure call has not been expanded.
-	 * 
-	 * @return a {@code boolean}.
-	 */
-	public boolean someReferenceNotExpanded() {
-		return this.someReferenceNotExpanded;
-	}
-	
-	/**
-	 * Returns a list of the origins of the references 
-	 * resolved but not expanded by the last decision 
-	 * procedure call.
+        this.vom.restoreObservedVariablesValues(bp, isLast);
 
-	 * @return a {@link String}, a comma-separated
-	 *         list of origins. 
-	 */
-	public String getNonExpandedReferencesOrigins() {
-		return this.nonExpandedReferencesOrigins;
-	}
-	
-	
-	/**
-	 * Returns a list of the static types of the references 
-	 * resolved but not expanded by the last decision 
-	 * procedure call.
+        return bp;
+    }
 
-	 * @return a {@link String}, a comma-separated
-	 *         list of class names. 
-	 */
-	public String getNonExpandedReferencesTypes() {
-		return this.nonExpandedReferencesTypes;
-	}
-	
-	/**
-	 * Checks whether the current bytecode is in a different source row
-	 * than the previous one.
-	 * 
-	 * @return {@code true} iff the current bytecode is in a source code 
-	 *         statement different from the previous one, or the current 
-	 *         state is stuck.
-	 * @throws ThreadStackEmptyException 
-	 */
-	public boolean sourceRowChanged() throws ThreadStackEmptyException {
-		return (this.currentState.isStuck() || 
-				(this.currentState.getSourceRow() != this.preStepSourceRow));
-	}
-	
-	/**
-	 * Checks whether the current method has changed.
-	 * 
-	 * @return {@code true} iff the current frame is different
-	 *         from that previous the execution of a bytecode, 
-	 *         or the current state is stuck.
-	 */
-	public boolean currentMethodChanged() {
-		return (this.currentState.isStuck() || 
-				(this.currentState.getStackSize() != this.preStepStackSize));
-	}
+    /**
+     * Test whether some of the references resolved by the last
+     * decision procedure call has not been expanded.
+     * 
+     * @return a {@code boolean}.
+     */
+    public boolean someReferenceNotExpanded() {
+        return this.someReferenceNotExpanded;
+    }
 
-	/**
-	 * Checks whether the next bytecode may change the current frame.
-	 * 
-	 * @return {@code true} iff the next instruction is one of invoke*, 
-	 * athrow or *return, or the current state is stuck.
-	 * @throws ThreadStackEmptyException 
-	 */
-	public boolean atFrameChanger() throws ThreadStackEmptyException {
-		if (this.currentState.isStuck()) {
-			return true;
+    /**
+     * Returns a list of the origins of the references 
+     * resolved but not expanded by the last decision 
+     * procedure call.
+
+     * @return a {@link String}, a comma-separated
+     *         list of origins. 
+     */
+    public String getNonExpandedReferencesOrigins() {
+        return this.nonExpandedReferencesOrigins;
+    }
+
+
+    /**
+     * Returns a list of the static types of the references 
+     * resolved but not expanded by the last decision 
+     * procedure call.
+
+     * @return a {@link String}, a comma-separated
+     *         list of class names. 
+     */
+    public String getNonExpandedReferencesTypes() {
+        return this.nonExpandedReferencesTypes;
+    }
+
+    /**
+     * Checks whether the current bytecode is in a different source row
+     * than the previous one.
+     * 
+     * @return {@code true} iff the current bytecode is in a source code 
+     *         statement different from the previous one, or the current 
+     *         state is stuck.
+     * @throws ThreadStackEmptyException if the thread stack is empty.
+     */
+    public boolean sourceRowChanged() throws ThreadStackEmptyException {
+        try {
+			return (this.currentState.isStuck() || this.currentState.getStackSize() == 0 ||
+			        this.currentState.getSourceRow() != this.preStepSourceRow);
+		} catch (FrozenStateException e) {
+			//this should never happen
+			throw new UnexpectedInternalException(e);
 		}
-		final byte currentInstruction = this.currentState.getInstruction(); 
-		return (
-				currentInstruction == Opcodes.OP_INVOKEVIRTUAL||
-				currentInstruction == Opcodes.OP_INVOKESPECIAL ||
-				currentInstruction == Opcodes.OP_INVOKESTATIC ||
-				currentInstruction == Opcodes.OP_INVOKEINTERFACE ||
-				currentInstruction == Opcodes.OP_IRETURN ||
-				currentInstruction == Opcodes.OP_FRETURN ||
-				currentInstruction == Opcodes.OP_DRETURN ||
-				currentInstruction == Opcodes.OP_ARETURN ||
-				currentInstruction == Opcodes.OP_RETURN ||
-				currentInstruction == Opcodes.OP_ATHROW
-		);
-	}
+    }
 
-	/**
-	 * Cleans up the decision procedure after the usage of the engine.
-	 * 
-	 * @throws DecisionException when clean-up of decision procedure fails.
-	 */
-	@Override
-	public void close() throws DecisionException {
-		this.ctx.decisionProcedure.close();
-	}
+    /**
+     * Checks whether the current method has changed.
+     * 
+     * @return {@code true} iff the current frame is different
+     *         from that previous the execution of a bytecode, 
+     *         or the current state is stuck.
+     */
+    public boolean currentMethodChanged() {
+			return (this.currentState.isStuck() || 
+			        this.currentState.getStackSize() != this.preStepStackSize);
+    }
+
+    /**
+     * Checks whether the next bytecode may change the current frame.
+     * 
+     * @return {@code true} iff the next instruction is one of invoke*, 
+     * athrow or *return, or the current state is stuck.
+     * @throws ThreadStackEmptyException 
+     */
+    public boolean atFrameChanger() throws ThreadStackEmptyException {
+        if (this.currentState.isStuck()) {
+            return true;
+        }
+        try {
+        	final byte currentInstruction = this.currentState.getInstruction(); 
+        	return (currentInstruction == OP_INVOKEVIRTUAL ||
+        			currentInstruction == OP_INVOKESPECIAL ||
+        			currentInstruction == OP_INVOKESTATIC ||
+        			currentInstruction == OP_INVOKEINTERFACE ||
+        			currentInstruction == OP_IRETURN ||
+        			currentInstruction == OP_FRETURN ||
+        			currentInstruction == OP_DRETURN ||
+        			currentInstruction == OP_ARETURN ||
+        			currentInstruction == OP_RETURN ||
+        			currentInstruction == OP_ATHROW);
+		} catch (FrozenStateException e) {
+			//this should never happen
+			throw new UnexpectedInternalException(e);
+		}
+    }
+
+    /**
+     * Cleans up the decision procedure after the usage of the engine.
+     * 
+     * @throws DecisionException when clean-up of decision procedure fails.
+     */
+    @Override
+    public void close() throws DecisionException {
+        this.ctx.decisionProcedure.close();
+    }
 }

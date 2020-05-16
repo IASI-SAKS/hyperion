@@ -1,7 +1,5 @@
 package jbse.meta.annotations;
 
-import jbse.algo.Algo_INVOKEMETA;
-
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,5 +22,5 @@ import java.lang.annotation.Target;
 @Target({ElementType.METHOD})
 @Retention(RetentionPolicy.CLASS)
 public @interface MetaOverriddenBy {
-	Class<? extends Algo_INVOKEMETA<?, ?, ?, ?>> value();
+	java.lang.String value();
 }

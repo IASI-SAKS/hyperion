@@ -1,11 +1,13 @@
 package jbse.dec;
 
+import jbse.common.exc.InvalidInputException;
 import jbse.dec.exc.DecisionException;
 import jbse.dec.exc.ExternalProtocolInterfaceException;
-import jbse.rewr.CalculatorRewriting;
+import jbse.val.Calculator;
 
 import java.io.IOException;
 import java.io.PrintStream;
+import java.util.List;
 
 /**
  * A decision procedure for solvers compatible with SMTLIB 2 specification
@@ -17,10 +19,21 @@ import java.io.PrintStream;
  *
  */
 public final class DecisionProcedureSMTLIB2_AUFNIRA extends DecisionProcedureExternal {
-	public DecisionProcedureSMTLIB2_AUFNIRA(DecisionProcedure next, CalculatorRewriting calc, String solverPath, PrintStream logFile) throws DecisionException {
-		super(next, calc);
+	public DecisionProcedureSMTLIB2_AUFNIRA(DecisionProcedure next, List<String> solverCommandLine, PrintStream solverLog)
+	throws InvalidInputException, DecisionException {
+		super(next);
 		try {
-			this.extIf = new DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA(calc, solverPath, logFile);
+			this.extIf = new DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA(getCalculator(), solverCommandLine, solverLog);
+		} catch (ExternalProtocolInterfaceException | IOException e) {
+			throw new DecisionException(e);
+		}
+	}
+	
+	public DecisionProcedureSMTLIB2_AUFNIRA(Calculator calc, List<String> solverCommandLine, PrintStream solverLog)
+	throws InvalidInputException, DecisionException {
+		super(calc);
+		try {
+			this.extIf = new DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA(getCalculator(), solverCommandLine, solverLog);
 		} catch (ExternalProtocolInterfaceException | IOException e) {
 			throw new DecisionException(e);
 		}

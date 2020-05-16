@@ -1,19 +1,19 @@
 package jbse.algo;
 
-import jbse.dec.DecisionProcedureAlgorithms;
-import jbse.tree.DecisionAlternative_IFX;
-import jbse.val.Null;
-import jbse.val.Reference;
-
-import java.util.function.Supplier;
-
 import static jbse.algo.Util.exitFromAlgorithm;
 import static jbse.algo.Util.throwVerifyError;
 import static jbse.bc.Offsets.IF_ACMPX_XNULL_OFFSET;
 import static jbse.mem.Util.areAlias;
 
+import java.util.function.Supplier;
+
+import jbse.dec.DecisionProcedureAlgorithms;
+import jbse.tree.DecisionAlternative_IFX;
+import jbse.val.Null;
+import jbse.val.Reference;
+
 /**
- * {@link Algorithm} managing all the "branch if reference comparison"
+ * {@link Algorithm} managing all the "branch if reference comparison" 
  * bytecodes, including comparison with null (if_acmp[eq/ne], ifnull, ifnonnull). 
  * 
  * @author Pietro Braione
@@ -21,10 +21,10 @@ import static jbse.mem.Util.areAlias;
  */
 final class Algo_IF_ACMPX_XNULL extends Algorithm<
 BytecodeData_1ON,
-        DecisionAlternative_IFX,  //does not really need a decision alternative, but it's necessary to mark that this is a branching bytecode
+DecisionAlternative_IFX,  //does not really need a decision alternative, but it's necessary to mark that this is a branching bytecode
 StrategyDecide<DecisionAlternative_IFX>,
-        StrategyRefine<DecisionAlternative_IFX>,
-        StrategyUpdate<DecisionAlternative_IFX>> {
+StrategyRefine<DecisionAlternative_IFX>,
+StrategyUpdate<DecisionAlternative_IFX>> {
 
     private final boolean compareWithNull; //set by constructor
     private final boolean compareForEquality; //set by constructor
@@ -71,7 +71,7 @@ StrategyDecide<DecisionAlternative_IFX>,
                     val2 = (Reference) this.data.operand(1);
                 }
             } catch (ClassCastException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
 
@@ -79,7 +79,7 @@ StrategyDecide<DecisionAlternative_IFX>,
             //val2 (note that both are resolved as they come
             //from the operand stack)
             this.doJump = 
-               (this.compareForEquality ? areAlias(state, val1, val2) :  //also true when both are null
+            (this.compareForEquality ? areAlias(state, val1, val2) :  //also true when both are null
                 !areAlias(state, val1, val2));
         };
     }

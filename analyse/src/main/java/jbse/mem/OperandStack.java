@@ -1,11 +1,11 @@
 package jbse.mem;
 
-import jbse.mem.exc.InvalidNumberOfOperandsException;
-import jbse.val.Value;
-
 import java.util.ArrayDeque;
 import java.util.Collection;
 import java.util.Collections;
+
+import jbse.mem.exc.InvalidNumberOfOperandsException;
+import jbse.val.Value;
 
 /**
  * Class that represent the JVM's operand stack.

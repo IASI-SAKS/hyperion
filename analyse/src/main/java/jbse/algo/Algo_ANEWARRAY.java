@@ -1,19 +1,36 @@
 package jbse.algo;
 
-import jbse.bc.exc.BadClassFileException;
-import jbse.bc.exc.ClassFileNotAccessibleException;
-import jbse.bc.exc.ClassFileNotFoundException;
-import jbse.mem.State;
-import jbse.mem.exc.ThreadStackEmptyException;
-import jbse.val.Primitive;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.failExecution;
+import static jbse.algo.Util.invokeClassLoaderLoadClass;
+import static jbse.algo.Util.throwNew;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.ANEWARRAY_OFFSET;
+import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
+import static jbse.bc.Signatures.INCOMPATIBLE_CLASS_CHANGE_ERROR;
+import static jbse.bc.Signatures.NO_CLASS_DEFINITION_FOUND_ERROR;
+import static jbse.bc.Signatures.UNSUPPORTED_CLASS_VERSION_ERROR;
+import static jbse.common.Type.ARRAYOF;
+import static jbse.common.Type.isArray;
+import static jbse.common.Type.REFERENCE;
+import static jbse.common.Type.TYPEEND;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.*;
-import static jbse.bc.Offsets.ANEWARRAY_OFFSET;
-import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
-import static jbse.bc.Signatures.NO_CLASS_DEFINITION_FOUND_ERROR;
-import static jbse.common.Type.*;
+import jbse.bc.ClassFile;
+import jbse.bc.exc.BadClassFileVersionException;
+import jbse.bc.exc.ClassFileIllFormedException;
+import jbse.bc.exc.ClassFileNotAccessibleException;
+import jbse.bc.exc.ClassFileNotFoundException;
+import jbse.bc.exc.IncompatibleClassFileException;
+import jbse.bc.exc.PleaseLoadClassException;
+import jbse.bc.exc.RenameUnsupportedException;
+import jbse.bc.exc.WrongClassNameException;
+import jbse.common.exc.ClasspathException;
+import jbse.common.exc.InvalidInputException;
+import jbse.mem.State;
+import jbse.mem.exc.ThreadStackEmptyException;
+import jbse.val.Primitive;
 
 /**
  * Algorithm managing the anewarray bytecode.
@@ -33,34 +50,48 @@ final class Algo_ANEWARRAY extends Algo_XNEWARRAY<BytecodeData_1CL> {
     }
 
     @Override
-    protected void preCook(State state) throws InterruptException {
+    protected void preCook(State state) throws InterruptException, ClasspathException, ThreadStackEmptyException, InvalidInputException {
         //sets the array length
         try {
             this.dimensionsCounts = new Primitive[] { (Primitive) this.data.operand(0) };
         } catch (ClassCastException e) {
-            throwVerifyError(state);
+            throwVerifyError(state, this.ctx.getCalculator());
             exitFromAlgorithm();
         }
 
-        //sets the array type
-        this.arrayType = "" + ARRAYOF + REFERENCE + this.data.className() + TYPEEND;
 
-        //resolves the member class
         try {
-            final String currentClassName = state.getCurrentMethodSignature().getClassName();
-            state.getClassHierarchy().resolveClass(currentClassName, this.data.className());
+            //resolves the class
+            //TODO the JVMS v8, anewarray bytecode, prescribes to resolve the member class; It is not clear what initiating loader should be assumed for the array class. We assume the defining loader of the current class, so we can directly resolve the name of the array class.
+            final ClassFile currentClass = state.getCurrentClass();
+            final boolean memberIsArray = isArray(this.data.className());
+            this.arrayType = state.getClassHierarchy().resolveClass(currentClass, "" + ARRAYOF + (memberIsArray ? "" : REFERENCE) + this.data.className() + (memberIsArray ? "" : TYPEEND), state.bypassStandardLoading());
+        } catch (PleaseLoadClassException e) {
+            invokeClassLoaderLoadClass(state, this.ctx.getCalculator(), e);
+            exitFromAlgorithm();
         } catch (ClassFileNotFoundException e) {
-            throwNew(state, NO_CLASS_DEFINITION_FOUND_ERROR);
+            //TODO this exception should wrap a ClassNotFoundException
+            throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR);
+            exitFromAlgorithm();
+        } catch (BadClassFileVersionException e) {
+            throwNew(state, this.ctx.getCalculator(), UNSUPPORTED_CLASS_VERSION_ERROR);
+            exitFromAlgorithm();
+        } catch (WrongClassNameException e) {
+            throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR); //without wrapping a ClassNotFoundException
+            exitFromAlgorithm();
+        } catch (IncompatibleClassFileException e) {
+            throwNew(state, this.ctx.getCalculator(), INCOMPATIBLE_CLASS_CHANGE_ERROR);
             exitFromAlgorithm();
         } catch (ClassFileNotAccessibleException e) {
-            throwNew(state, ILLEGAL_ACCESS_ERROR);
+            throwNew(state, this.ctx.getCalculator(), ILLEGAL_ACCESS_ERROR);
             exitFromAlgorithm();
-        } catch (BadClassFileException e) {
-            throwVerifyError(state);
+        } catch (ClassFileIllFormedException e) {
+            //TODO throw LinkageError instead
+            throwVerifyError(state, this.ctx.getCalculator());
             exitFromAlgorithm();
-        } catch (ThreadStackEmptyException e) {
-            //this should never happen
-            failExecution(e);
+        } catch (RenameUnsupportedException e) {
+        	//this should never happen
+        	failExecution(e);
         }
     }
 

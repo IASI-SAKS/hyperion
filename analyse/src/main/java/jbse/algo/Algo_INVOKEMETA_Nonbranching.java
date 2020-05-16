@@ -1,20 +1,21 @@
 package jbse.algo;
 
+import static jbse.bc.Offsets.offsetInvoke;
+
+import java.util.function.Supplier;
+
 import jbse.algo.exc.CannotManageStateException;
+import jbse.bc.exc.RenameUnsupportedException;
 import jbse.common.exc.ClasspathException;
+import jbse.common.exc.InvalidInputException;
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.dec.exc.DecisionException;
-import jbse.jvm.exc.FailureException;
 import jbse.mem.State;
 import jbse.mem.exc.ContradictionException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.tree.DecisionAlternative_NONE;
-
-import java.util.function.Supplier;
-
-import static jbse.algo.Util.failExecution;
-import static jbse.bc.Offsets.INVOKEDYNAMICINTERFACE_OFFSET;
-import static jbse.bc.Offsets.INVOKESPECIALSTATICVIRTUAL_OFFSET;
+import jbse.val.exc.InvalidOperandException;
+import jbse.val.exc.InvalidTypeException;
 
 /**
  * Abstract {@link Algorithm} implementing the effect of 
@@ -30,28 +31,22 @@ StrategyDecide<DecisionAlternative_NONE>,
 StrategyRefine<DecisionAlternative_NONE>, 
 StrategyUpdate<DecisionAlternative_NONE>> {
 
-    private int pcOffset; //set by cooker
+    protected int pcOffset; //set by cooker
 
     @Override
     protected final BytecodeCooker bytecodeCooker() {
         return (state) -> { 
             //sets the program counter offset for the return point
-            this.pcOffset = (this.isInterface ? 
-                INVOKEDYNAMICINTERFACE_OFFSET : 
-                INVOKESPECIALSTATICVIRTUAL_OFFSET);
-            try {
-                cookMore(state);
-            } catch (ThreadStackEmptyException e) {
-                //this should never happen
-                failExecution(e);
-            }
+            this.pcOffset = offsetInvoke(this.isInterface);
+            cookMore(state);
         };
     }
 
     protected void cookMore(State state) 
-    throws ThreadStackEmptyException, DecisionException, 
-    ClasspathException, CannotManageStateException, 
-    InterruptException {
+    throws ThreadStackEmptyException, DecisionException, ClasspathException, 
+    CannotManageStateException, InterruptException, InvalidInputException, 
+    ContradictionException, InvalidTypeException, InvalidOperandException, 
+    RenameUnsupportedException {
         //the default implementation does nothing
     }
 
@@ -61,7 +56,7 @@ StrategyUpdate<DecisionAlternative_NONE>> {
     }
 
     @Override
-    protected final StrategyDecide<DecisionAlternative_NONE> decider() {
+    protected StrategyDecide<DecisionAlternative_NONE> decider() {
         return (state, result) -> {
             result.add(DecisionAlternative_NONE.instance());
             return DecisionProcedureAlgorithms.Outcome.FF;
@@ -69,35 +64,17 @@ StrategyUpdate<DecisionAlternative_NONE>> {
     }
 
     @Override
-    protected final StrategyRefine<DecisionAlternative_NONE> refiner() {
+    protected StrategyRefine<DecisionAlternative_NONE> refiner() {
         return (state, alt) -> { };
     }
 
     @Override
-    protected final StrategyUpdate<DecisionAlternative_NONE> updater() {
-        return (state, alt) -> {
-            //updates
-            try { 
-                update(state);
-            } catch (ThreadStackEmptyException e) {
-                //this should never happen
-                failExecution(e);
-            }
-        };
-    }
-
-    protected abstract void update(State state)
-    throws ThreadStackEmptyException, ClasspathException,
-    CannotManageStateException, DecisionException, 
-    ContradictionException, FailureException, InterruptException;
-
-    @Override
-    protected final Supplier<Boolean> isProgramCounterUpdateAnOffset() {
+    protected Supplier<Boolean> isProgramCounterUpdateAnOffset() {
         return () -> true;
     }
 
     @Override
-    protected final Supplier<Integer> programCounterUpdate() {
+    protected Supplier<Integer> programCounterUpdate() {
         return () -> this.pcOffset;
     }
 }

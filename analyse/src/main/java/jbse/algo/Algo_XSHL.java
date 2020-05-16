@@ -1,16 +1,16 @@
 package jbse.algo;
 
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.MATH_LOGICAL_OP_OFFSET;
+
+import java.util.function.Supplier;
+
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.tree.DecisionAlternative_NONE;
 import jbse.val.Primitive;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
-
-import java.util.function.Supplier;
-
-import static jbse.algo.Util.exitFromAlgorithm;
-import static jbse.algo.Util.throwVerifyError;
-import static jbse.bc.Offsets.MATH_LOGICAL_OP_OFFSET;
 
 /**
  * {@link Algorithm} for all the *shl bytecodes
@@ -63,9 +63,9 @@ StrategyUpdate<DecisionAlternative_NONE>> {
             try {
                 final Primitive val1 = (Primitive) this.data.operand(0);
                 final Primitive val2 = (Primitive) this.data.operand(1);
-                state.pushOperand(val1.shl(val2));
+                state.pushOperand(this.ctx.getCalculator().push(val1).shl(val2).pop());
             } catch (ClassCastException | InvalidTypeException | InvalidOperandException e) {
-                throwVerifyError(state);
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
             }
         };

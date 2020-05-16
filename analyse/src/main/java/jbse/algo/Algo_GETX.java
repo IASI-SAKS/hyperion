@@ -1,21 +1,38 @@
 package jbse.algo;
 
-import jbse.bc.ClassHierarchy;
-import jbse.bc.Signature;
-import jbse.bc.exc.*;
-import jbse.common.exc.ClasspathException;
-import jbse.dec.exc.DecisionException;
-import jbse.mem.State;
-import jbse.mem.exc.ThreadStackEmptyException;
+import static jbse.algo.Util.exitFromAlgorithm;
+import static jbse.algo.Util.failExecution;
+import static jbse.algo.Util.invokeClassLoaderLoadClass;
+import static jbse.algo.Util.throwNew;
+import static jbse.algo.Util.throwVerifyError;
+import static jbse.bc.Offsets.GETX_PUTX_OFFSET;
+import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
+import static jbse.bc.Signatures.INCOMPATIBLE_CLASS_CHANGE_ERROR;
+import static jbse.bc.Signatures.NO_CLASS_DEFINITION_FOUND_ERROR;
+import static jbse.bc.Signatures.NO_SUCH_FIELD_ERROR;
+import static jbse.bc.Signatures.UNSUPPORTED_CLASS_VERSION_ERROR;
 
 import java.util.function.Supplier;
 
-import static jbse.algo.Util.*;
-import static jbse.bc.Offsets.GETX_PUTX_OFFSET;
-import static jbse.bc.Signatures.*;
+import jbse.bc.ClassFile;
+import jbse.bc.Signature;
+import jbse.bc.exc.BadClassFileVersionException;
+import jbse.bc.exc.ClassFileIllFormedException;
+import jbse.bc.exc.ClassFileNotAccessibleException;
+import jbse.bc.exc.ClassFileNotFoundException;
+import jbse.bc.exc.FieldNotAccessibleException;
+import jbse.bc.exc.FieldNotFoundException;
+import jbse.bc.exc.IncompatibleClassFileException;
+import jbse.bc.exc.PleaseLoadClassException;
+import jbse.bc.exc.WrongClassNameException;
+import jbse.common.exc.ClasspathException;
+import jbse.dec.exc.DecisionException;
+import jbse.mem.Objekt;
+import jbse.mem.State;
+import jbse.mem.exc.ContradictionException;
+import jbse.mem.exc.FrozenStateException;
 
 //TODO extract common superclass with Algo_PUTX and eliminate duplicate code
-
 /**
  * Abstract {@link Algorithm} for the get* bytecodes (get[field/static]).
  * It decides over the value loaded to the operand stack in the cases 
@@ -25,7 +42,7 @@ import static jbse.bc.Signatures.*;
  */
 abstract class Algo_GETX extends Algo_XLOAD_GETX<BytecodeData_1FI> {
 
-    protected Signature fieldSignatureResolved; //set by cook
+    protected ClassFile fieldClassResolved; //set by cook
 
     @Override
     protected final Supplier<BytecodeData_1FI> bytecodeData() {
@@ -35,50 +52,56 @@ abstract class Algo_GETX extends Algo_XLOAD_GETX<BytecodeData_1FI> {
     @Override
     protected final BytecodeCooker bytecodeCooker() {
         return (state) -> {
-            //gets the class hierarchy
-            final ClassHierarchy hier = state.getClassHierarchy();
-
             //performs field resolution
-            String currentClassName = null; //it's final 
             try {
-                currentClassName = state.getCurrentMethodSignature().getClassName();    
-                this.fieldSignatureResolved = hier.resolveField(currentClassName, this.data.signature());
+                final ClassFile currentClass = state.getCurrentClass();    
+                this.fieldClassResolved = state.getClassHierarchy().resolveField(currentClass, this.data.signature(), state.bypassStandardLoading());
+            } catch (PleaseLoadClassException e) {
+                invokeClassLoaderLoadClass(state, this.ctx.getCalculator(), e);
+                exitFromAlgorithm();
             } catch (ClassFileNotFoundException e) {
-                throwNew(state, NO_CLASS_DEFINITION_FOUND_ERROR);
+                //TODO this exception should wrap a ClassNotFoundException
+                throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR);
+                exitFromAlgorithm();
+            } catch (BadClassFileVersionException e) {
+                throwNew(state, this.ctx.getCalculator(), UNSUPPORTED_CLASS_VERSION_ERROR);
+                exitFromAlgorithm();
+            } catch (WrongClassNameException e) {
+                throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR); //without wrapping a ClassNotFoundException
+                exitFromAlgorithm();
+            } catch (IncompatibleClassFileException e) {
+                throwNew(state, this.ctx.getCalculator(), INCOMPATIBLE_CLASS_CHANGE_ERROR);
                 exitFromAlgorithm();
             } catch (FieldNotFoundException e) {
-                throwNew(state, NO_SUCH_FIELD_ERROR);
+                throwNew(state, this.ctx.getCalculator(), NO_SUCH_FIELD_ERROR);
                 exitFromAlgorithm();
             } catch (ClassFileNotAccessibleException | FieldNotAccessibleException e) {
-                throwNew(state, ILLEGAL_ACCESS_ERROR);
+                throwNew(state, this.ctx.getCalculator(), ILLEGAL_ACCESS_ERROR);
                 exitFromAlgorithm();
-            } catch (BadClassFileException e) {
-                throwVerifyError(state);
+            } catch (ClassFileIllFormedException e) {
+                throwVerifyError(state, this.ctx.getCalculator());
                 exitFromAlgorithm();
-            } catch (ThreadStackEmptyException e) {
-                //this should never happen
-                failExecution(e);
             }
 
             //checks the field
             try {
-                check(state, currentClassName);
-            } catch (FieldNotFoundException | BadClassFileException e) {
+                check(state);
+            } catch (FieldNotFoundException e) {
                 //this should never happen
                 failExecution(e);
             }
 
-            //reads the field
-            get(state);
+            //reads the field value
+            final Signature fieldSignatureResolved = new Signature(this.fieldClassResolved.getClassName(), this.data.signature().getDescriptor(), this.data.signature().getName());
+            this.valToLoad = source(state).getFieldValue(fieldSignatureResolved);
         };
     }
 
-    protected abstract void check(State state, String currentClass)
-    throws FieldNotFoundException, BadClassFileException,
-            InterruptException;
+    protected abstract void check(State state)
+    throws ClasspathException, FieldNotFoundException, InterruptException;
 
-    protected abstract void get(State state)
-    throws DecisionException, ClasspathException, InterruptException;
+    protected abstract Objekt source(State state)
+    throws ClasspathException, DecisionException, InterruptException, ContradictionException, FrozenStateException;
 
     @Override
     protected final Supplier<Boolean> isProgramCounterUpdateAnOffset() {

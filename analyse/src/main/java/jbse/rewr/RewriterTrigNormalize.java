@@ -1,12 +1,14 @@
 package jbse.rewr;
 
 import jbse.common.Type;
+import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
-import jbse.rewr.exc.NoResultException;
-import jbse.val.FunctionApplication;
+import jbse.val.PrimitiveSymbolicApply;
+import jbse.val.Rewriter;
 import jbse.val.Primitive;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
+import jbse.val.exc.NoResultException;
 
 /**
  * A {@link Rewriter} which normalizes application of trigonometric
@@ -19,36 +21,36 @@ import jbse.val.exc.InvalidTypeException;
  * @author Pietro Braione
  *
  */
-public class RewriterTrigNormalize extends Rewriter {
+public class RewriterTrigNormalize extends RewriterCalculatorRewriting {
 	public RewriterTrigNormalize() { }
 
 	@Override
-	protected void rewriteFunctionApplication(FunctionApplication x)
+	protected void rewritePrimitiveSymbolicApply(PrimitiveSymbolicApply x)
 	throws NoResultException {
 		final String operator = x.getOperator();
 		final double period;
-		if (operator.equals(FunctionApplication.TAN)) {
+		if (operator.equals(PrimitiveSymbolicApply.TAN)) {
 			period = Math.PI;
-		} else if (operator.equals(FunctionApplication.SIN) ||
-				operator.equals(FunctionApplication.COS)) {
+		} else if (operator.equals(PrimitiveSymbolicApply.SIN) ||
+				operator.equals(PrimitiveSymbolicApply.COS)) {
 			period = 2 * Math.PI;
 		} else {
-			super.rewriteFunctionApplication(x);
+			setResult(x);
 			return;
 		}
 		if (x.getType() != Type.DOUBLE) {
 			//trigonometric function yields nondouble value; in doubt we give up
-			super.rewriteFunctionApplication(x);
+			setResult(x);
 			return;
 		}
 		if (x.getArgs().length != 1) {
 			//trigonometric function with strange number of args;
 			//since it is not our business complaining we just give up
-			super.rewriteFunctionApplication(x);
+			setResult(x);
 			return;
 		}
-		Polynomial arg = Polynomial.of(this.calc, x.getArgs()[0]);
-		double addend = ((Number)arg.getConstantTerm().getActualValue()).doubleValue();
+		Polynomial arg = Polynomial.of(this.calc, (Primitive) x.getArgs()[0]);
+		double addend = ((Number) arg.getConstantTerm(this.calc).getActualValue()).doubleValue();
 		final boolean normalized, negate;
 		try {
 			if (addend < 0 || addend >= period) {
@@ -57,22 +59,22 @@ public class RewriterTrigNormalize extends Rewriter {
 				final Polynomial nperiodP = Polynomial.of(this.calc, this.calc.valDouble(-period));
 				do {
 					if (addend < 0) {
-						arg = arg.add(periodP);
+						arg = arg.add(this.calc, periodP);
 						addend += period;
 					} else {
-						arg = arg.add(nperiodP);
+						arg = arg.add(this.calc, nperiodP);
 						addend -= period;
 					}
 				} while (addend < 0 || addend >= period);
 			} else {
 				normalized = false;
 			}
-			if ((operator.equals(FunctionApplication.SIN) ||
-					operator.equals(FunctionApplication.COS)) && addend >= Math.PI) {
+			if ((operator.equals(PrimitiveSymbolicApply.SIN) ||
+					operator.equals(PrimitiveSymbolicApply.COS)) && addend >= Math.PI) {
 				negate = true;
 				final Polynomial nPiP = Polynomial.of(this.calc, this.calc.valDouble(-Math.PI));
 				try {
-					arg = arg.add(nPiP);
+					arg = arg.add(this.calc, nPiP);
 				} catch (InvalidTypeException e) {
 					//this should never happen
 					throw new UnexpectedInternalException(e);
@@ -81,15 +83,15 @@ public class RewriterTrigNormalize extends Rewriter {
 				negate = false;
 			}
 			if (normalized || negate) {
-				Primitive result = this.calc.applyFunction(x.getType(), operator, arg.toPrimitive());
+				Primitive result = this.calc.applyFunctionPrimitiveAndPop(x.getType(), x.historyPoint(), operator, arg.toPrimitive(this.calc));
 				if (negate) {
-					result = result.neg();
+					result = this.calc.push(result).neg().pop();
 				}
 				setResult(result);
 			} else {
-				super.rewriteFunctionApplication(x);
+				setResult(x);
 			}
-		} catch (InvalidOperandException | InvalidTypeException e) {
+		} catch (InvalidOperandException | InvalidTypeException | InvalidInputException e) {
 			//this should never happen
 			throw new UnexpectedInternalException(e);
 		}
