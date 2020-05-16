@@ -214,6 +214,9 @@ public final class Run {
                 try {
                     final State currentState = Run.this.getCurrentState();
                     Run.this.emitState(currentState);
+                    if(Run.this.parameters.getCallback() != null) {
+                        Run.this.parameters.getCallback().inspectState(currentState);
+                    }
                 } catch (UnexpectedInternalException e) {
                     Run.this.err(ERROR_UNEXPECTED);
                     Run.this.err(e);
@@ -777,6 +780,7 @@ public final class Run {
         }
         this.out[1] = this.log[1] = this.err[1];
 
+        // set the solver log file
         if(this.parameters.getSolverLogOutputFileName() == null) {
             this.solverLog = null;
         } else {

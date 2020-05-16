@@ -300,6 +300,9 @@ public final class RunParameters implements Cloneable {
         JUNIT_TEST
     }
 
+    /** The callback object */
+    private Callback callback;
+
     /** The runner parameters. */
     private RunnerParameters runnerParameters;
 
@@ -1944,6 +1947,25 @@ public final class RunParameters implements Cloneable {
      */
     public void addNotInitializedClasses(String... notInitializedClasses) {
         this.repoInit.addNotInitializedClassPattern(notInitializedClasses);
+    }
+
+    /**
+     * Sets a callback object. This will be called to inspect execution
+     * states when a path condition of interest is met during the execution.
+     *
+     * @param cb an object implementing {@link Callback}.
+     */
+    public void setCallback(Callback cb) {
+        this.callback = cb;
+    }
+
+    /**
+     * Get the callback object.
+     *
+     * @return an object implementing {@link Callback}.
+     */
+    public Callback getCallback() {
+        return this.callback;
     }
 
     /**

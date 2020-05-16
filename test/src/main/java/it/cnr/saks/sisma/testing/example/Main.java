@@ -14,9 +14,9 @@ public class Main {
         Object ret = null;
         Method testPostMethod = null;
 
-        //ret = cl.testPost();
+        ret = cl.testPost();
 
-        try {
+        /*try {
             testPostMethod = SimpleRestClient.class.getMethod("testPost");
         } catch (NoSuchMethodException e) {
             e.printStackTrace();
@@ -26,7 +26,7 @@ public class Main {
         } catch (IllegalAccessException | InvocationTargetException | NullPointerException e) {
             e.printStackTrace();
             return false;
-        }
+        }*/
 
         return (boolean)ret;
     }

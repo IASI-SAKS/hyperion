@@ -87,6 +87,7 @@ public class Main {
         p.setExternalDecisionProcedurePath(Z3_PATH);
         p.setStateFormatMode(StateFormatMode.TEXT);
         p.setStepShowMode(StepShowMode.METHOD);
+        p.setCallback(new InspectStateCallback(path + "methods.log"));
 
         return p;
     }
