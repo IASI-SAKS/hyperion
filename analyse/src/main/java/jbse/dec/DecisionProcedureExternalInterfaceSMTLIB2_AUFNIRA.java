@@ -59,11 +59,12 @@ class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionProcedur
     private ArrayList<Integer> nSymPushed; 
     private int nSymCurrent;
     private int nTotalSymbols;
+    private PrintStream logFile;
 
     /** 
      * Costructor.
      */
-    public DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA(CalculatorRewriting calc, String solverBinaryPath)
+    public DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA(CalculatorRewriting calc, String solverBinaryPath, PrintStream logFile)
     throws ExternalProtocolInterfaceException, IOException {
         this.calc = calc;
         this.m = new ExpressionMangler("X", "", this.calc);
@@ -73,8 +74,14 @@ class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionProcedur
         this.solver = pb.start();
         this.solverIn = new BufferedReader(new InputStreamReader(this.solver.getInputStream()));
         this.solverOut = new BufferedWriter(new OutputStreamWriter(this.solver.getOutputStream()));
+        this.logFile = logFile;
 
         final String query = PROLOGUE + PUSH_1;
+
+        if(this.logFile != null) {
+            this.logFile.println(solverBinaryPath);
+        }
+
         sendAndCheckAnswer(query);
         clear();
     }
@@ -388,6 +395,7 @@ class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionProcedur
     
     private void send(String query) throws IOException {
         //System.err.print("--->SMTLIB2: " + query); //TODO log differently!
+        this.logFile.println(query);
 
         try {
             this.solverOut.write(query);
@@ -429,6 +437,7 @@ class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionProcedur
         }
 
         //System.err.println("<---SMTLIB2: " + answer); //TODO log differently!
+        this.logFile.println(answer);
         return answer;
     }
     

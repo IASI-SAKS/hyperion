@@ -5,6 +5,7 @@ import jbse.dec.exc.ExternalProtocolInterfaceException;
 import jbse.rewr.CalculatorRewriting;
 
 import java.io.IOException;
+import java.io.PrintStream;
 
 /**
  * A decision procedure for solvers compatible with SMTLIB 2 specification
@@ -16,10 +17,10 @@ import java.io.IOException;
  *
  */
 public final class DecisionProcedureSMTLIB2_AUFNIRA extends DecisionProcedureExternal {
-	public DecisionProcedureSMTLIB2_AUFNIRA(DecisionProcedure next, CalculatorRewriting calc, String solverPath) throws DecisionException {
+	public DecisionProcedureSMTLIB2_AUFNIRA(DecisionProcedure next, CalculatorRewriting calc, String solverPath, PrintStream logFile) throws DecisionException {
 		super(next, calc);
 		try {
-			this.extIf = new DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA(calc, solverPath);
+			this.extIf = new DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA(calc, solverPath, logFile);
 		} catch (ExternalProtocolInterfaceException | IOException e) {
 			throw new DecisionException(e);
 		}

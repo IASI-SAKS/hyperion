@@ -10,8 +10,11 @@ public class Main {
     private static boolean a, b;
 
     public static boolean getResult() {
+
         Object ret = null;
         Method testPostMethod = null;
+
+        //ret = cl.testPost();
 
         try {
             testPostMethod = SimpleRestClient.class.getMethod("testPost");

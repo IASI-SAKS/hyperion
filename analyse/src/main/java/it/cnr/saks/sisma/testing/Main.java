@@ -5,16 +5,15 @@ import jbse.apps.run.Run;
 import jbse.apps.run.RunParameters.DecisionProcedureType;
 import jbse.apps.run.RunParameters.StepShowMode;
 
-import java.io.File;
-
 public class Main {
     // Customize if needed
     public static final String Z3_PATH           = "/usr/bin/z3";
 
     // Information about program under test's method entry point
     private static final String METHOD_CLASS      = "it/cnr/saks/sisma/testing/example/Main";
-    private static final String METHOD_NAME       = "main";
-    private static final String METHOD_DESCRIPTOR = "([Ljava/lang/String;)V";
+    private static final String METHOD_NAME       = "m";
+    //private static final String METHOD_DESCRIPTOR = "([Ljava/lang/String;)V";
+    private static final String METHOD_DESCRIPTOR = "(I)V";
 
     public static void main(String[] args)	{
         final RunParameters p = setParameters();
@@ -32,10 +31,12 @@ public class Main {
         p.addClasspath(classPath);
         p.setMethodSignature(METHOD_CLASS, METHOD_DESCRIPTOR, METHOD_NAME);
         p.setOutputFileName("JBSE-output.txt");
+        p.setSolverLogOutputfilename("z3.log");
         p.setShowOnConsole(false);
         p.setDecisionProcedureType(DecisionProcedureType.Z3);
         p.setExternalDecisionProcedurePath(Z3_PATH);
         p.setStepShowMode(StepShowMode.METHOD);
+        //p.setStepShowMode(StepShowMode.LEAVES);
 
         return p;
     }

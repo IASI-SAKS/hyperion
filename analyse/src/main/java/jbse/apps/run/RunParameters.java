@@ -345,6 +345,9 @@ public final class RunParameters implements Cloneable {
 	/** The name of the output file. */
 	private String outFileName = null;
 
+	/** The name of the z3 log file. */
+	private String solverLogOutFileName = null;
+
 	/** The text mode. */
 	private TextMode textMode = TextMode.PLATFORM;
 
@@ -1410,10 +1413,10 @@ public final class RunParameters implements Cloneable {
 	public boolean getShowOnConsole() {
 	    return this.showOnConsole;
 	}
-	
+
 	/**
 	 * Sets the name of the output file.
-	 * 
+	 *
 	 * @param s A {@link String} representing the pathname of a 
 	 *          file where the console output (stdout and stderr) will 
 	 *          be copied.
@@ -1423,7 +1426,22 @@ public final class RunParameters implements Cloneable {
 		if (s == null) {
 			throw new NullPointerException();
 		}
-		this.outFileName = s; 
+		this.outFileName = s;
+	}
+
+	/**
+	 * Sets the name of the z3 output file.
+	 *
+	 * @param s A {@link String} representing the pathname of a
+	 *          file where the console output (stdout and stderr) will
+	 *          be copied.
+	 * @throws NullPointerException if {@code s == null}.
+	 */
+	public void setSolverLogOutputfilename(String s) {
+		if (s == null) {
+			throw new NullPointerException();
+		}
+		this.solverLogOutFileName = s;
 	}
 
 	/**
@@ -1434,16 +1452,27 @@ public final class RunParameters implements Cloneable {
 	public void setOutputFileNone() { 
 		this.outFileName = null; 
 	}
-	
+
 	/**
 	 * Returns the name of the output file
-	 * 
+	 *
 	 * @return a {@link String} representing the pathname of a 
-     *          file where the console output (stdout and stderr) will 
-     *          be copied, or {@code null} if none was previously specified.
+	 *          file where the console output (stdout and stderr) will
+	 *          be copied, or {@code null} if none was previously specified.
 	 */
 	public String getOutputFileName() {
-	    return this.outFileName;
+		return this.outFileName;
+	}
+
+	/**
+	 * Returns the name of the z3 output file
+	 *
+	 * @return a {@link String} representing the pathname of a
+	 *          file where the console output (stdout and stderr) will
+	 *          be copied, or {@code null} if none was previously specified.
+	 */
+	public String getSolverLogOutputFileName() {
+		return this.solverLogOutFileName;
 	}
 
 	/**

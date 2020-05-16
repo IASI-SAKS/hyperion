@@ -76,6 +76,9 @@ public final class Run {
 	/** The {@link PrintStream}s for errors (critical log information). */
 	private PrintStream[] err = null;
 
+	/** The {@link PrintStream}s to show interactions with the solver. */
+	private PrintStream solverLog = null;
+
 	/** The {@link Formatter} to output states at branches. */
 	private Formatter formatterBranches = null;
 
@@ -690,7 +693,18 @@ public final class Run {
         }
         this.out[1] = this.log[1] = this.err[1];
 
-        // sets line separator style
+        if(this.parameters.getSolverLogOutputFileName() == null) {
+			this.solverLog = null;
+		} else {
+			try {
+				final File f = new File(this.parameters.getSolverLogOutputFileName());
+				this.solverLog = new PrintStream(f);
+			} catch (FileNotFoundException | SecurityException e) {
+				this.solverLog = null;
+			}
+		}
+
+		// sets line separator style
         if (this.parameters.getTextMode() == TextMode.WINDOWS) {
             System.setProperty("line.separator", "\r\n");
         } else if (this.parameters.getTextMode() == TextMode.UNIX) {
@@ -854,12 +868,12 @@ public final class Run {
 		        //do nothing
 		    } else if (type == DecisionProcedureType.Z3) {
 		        final String z3 = (path == null ? "z3" : path.toString()) + COMMANDLINE_LAUNCH_Z3;
-		        core = new DecisionProcedureSMTLIB2_AUFNIRA(core, calc, z3);
-		        coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, calc, z3) : null);
+		        core = new DecisionProcedureSMTLIB2_AUFNIRA(core, calc, z3, this.solverLog);
+		        coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, calc, z3, this.solverLog) : null);
 		    } else if (type == DecisionProcedureType.CVC4) {
                 final String cvc4 = (path == null ? "cvc4" : path.toString()) + COMMANDLINE_LAUNCH_CVC4;
-		        core = new DecisionProcedureSMTLIB2_AUFNIRA(core, calc, cvc4);
-		        coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, calc, cvc4) : null);
+		        core = new DecisionProcedureSMTLIB2_AUFNIRA(core, calc, cvc4, this.solverLog);
+		        coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, calc, cvc4, this.solverLog) : null);
 		    } else {
 		        core.close();
 		        if (coreNumeric != null) {
