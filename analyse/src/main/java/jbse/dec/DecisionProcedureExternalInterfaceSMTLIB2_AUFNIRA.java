@@ -444,7 +444,8 @@ final class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionPr
     
     private void send(String query) throws IOException {
         //System.err.print("--->SMTLIB2: " + query); //TODO log differently!
-        this.solverLog.println(query);
+        if(this.solverLog != null)
+            this.solverLog.println(query);
     	
         try {
             this.solverOut.write(query);
@@ -486,7 +487,8 @@ final class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionPr
         }
 
         //System.err.println("<---SMTLIB2: " + answer); //TODO log differently!
-        this.solverLog.println(answer);
+        if(this.solverLog != null)
+            this.solverLog.println(answer);
         return answer;
     }
     

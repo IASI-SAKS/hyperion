@@ -665,7 +665,8 @@ public class ClassFileJavassist extends ClassFile {
         final List<MethodInfo> ms = this.cf.getMethods();
         for (MethodInfo m : ms) {
             final String internalName = m.getName();
-            if (internalName.equals(methodSignature.getName()) &&
+            String signature = methodSignature.getName();
+            if (internalName.equals(signature) &&
                 m.getDescriptor().equals(methodSignature.getDescriptor())) {
                 return m;
             }
