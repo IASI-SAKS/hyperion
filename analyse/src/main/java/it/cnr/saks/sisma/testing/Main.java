@@ -18,6 +18,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Main {
@@ -33,7 +34,7 @@ public class Main {
             return;
         }
 
-        inspector.setOutputFile(testPath + "inspection.log");
+        inspector.setOutputFile(testPath + "inspection-testprog-with-args.log");
 
         List<Class> classes = null;
         try {
@@ -43,6 +44,11 @@ public class Main {
             System.exit(66); // EX_NOINPUT
         }
 
+        /********/
+        List<String> allowedMethods =  Arrays.asList("newFileTest", "setAndGetFileIdTest", "setAndGetFileTypeTest");
+        /********/
+
+
         for (Class klass: classes) {
             System.out.print("Analysing class " + klass.getName() + ":");
 
@@ -50,6 +56,15 @@ public class Main {
                 System.out.println(" Skipping, it's an abstract class.");
                 continue;
             }
+
+
+            /********/
+            if(!klass.getName().equals("com.fullteaching.backend.unitary.file.FileUnitaryTest")) {
+                System.out.println(" Skipping in this selective test.");
+                continue;
+            }
+            /********/
+
 
             inspector.setCurrClass(klass.getName());
 
@@ -71,6 +86,11 @@ public class Main {
                 if(!isTest)
                     continue;
 
+                /********/
+                if(!allowedMethods.contains(met.getName()))
+                    continue;
+                /********/
+
                 inspector.setCurrMethod(met.getName());
                 System.out.println("\tSymbolic execution starting from: " + met.getName() + ", " + getMethodDescriptor(met));
 
@@ -86,7 +106,7 @@ public class Main {
                     r.run();
                 } catch (Exception e) { }
                 finally {
-                    inspector.dump();
+                    //inspector.dump();
                 }
             }
         }
@@ -223,21 +243,25 @@ public class Main {
             directory = new File("").getAbsoluteFile();
 //        }
 
-        testPath = directory.getAbsolutePath() + File.separator;
+        String outputPath = testPath + "analyse-output/";
+        try {
+            Files.createDirectories(Paths.get(outputPath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         System.out.println("Saving results to " + testPath);
 
         RunParameters p = new RunParameters();
         p.addUserClasspath(classPath);
         p.setMethodSignature(methodClass.replace(".", File.separator), methodDescriptor, methodName);
-        //p.setOutputFileName(testPath + "JBSE-output.txt");
-        //p.setSolverLogOutputfilename(path + "z3.log");
+        p.setOutputFileName(outputPath + methodName + "-JBSE-output.txt");
+        p.setSolverLogOutputfilename(outputPath + methodName + "-z3.log");
         p.setShowOnConsole(false);
         p.setDecisionProcedureType(DecisionProcedureType.Z3);
         p.setExternalDecisionProcedurePath(Z3_PATH);
         p.setStateFormatMode(StateFormatMode.TEXT);
-        //p.setStepShowMode(StepShowMode.METHOD);
-        p.setStepShowMode(StepShowMode.METHOD);
+        p.setStepShowMode(StepShowMode.ALL);
         p.setCallback(inspector);
 
         return p;
