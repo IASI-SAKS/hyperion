@@ -27,7 +27,7 @@ public class Main {
 
     public static void main(String[] args) {
         String testPath = args.length > 0 ? args[0] : null;
-        String SUTPath = args.length > 0 ? args[0] : null;
+        String SUTPath = args.length > 1 ? args[1] : null;
 
         if(testPath == null || SUTPath == null) {
             System.out.println("Need paths");
@@ -45,7 +45,8 @@ public class Main {
         }
 
         /********/
-        List<String> allowedMethods =  Arrays.asList("newFileTest", "setAndGetFileIdTest", "setAndGetFileTypeTest");
+//        List<String> allowedMethods =  Arrays.asList("newFileTest", "setAndGetFileIdTest", "setAndGetFileTypeTest");
+//        List<String> allowedMethods =  Arrays.asList("setAndGetFileIdTest", "setAndGetFileTypeTest");
         /********/
 
 
@@ -59,10 +60,10 @@ public class Main {
 
 
             /********/
-            if(!klass.getName().equals("com.fullteaching.backend.unitary.file.FileUnitaryTest")) {
-                System.out.println(" Skipping in this selective test.");
-                continue;
-            }
+//            if(!klass.getName().equals("com.fullteaching.backend.unitary.file.FileUnitaryTest")) {
+//                System.out.println(" Skipping in this selective test.");
+//                continue;
+//            }
             /********/
 
 
@@ -87,8 +88,8 @@ public class Main {
                     continue;
 
                 /********/
-                if(!allowedMethods.contains(met.getName()))
-                    continue;
+//                if(!allowedMethods.contains(met.getName()))
+//                    continue;
                 /********/
 
                 inspector.setCurrMethod(met.getName());
@@ -102,12 +103,12 @@ public class Main {
                 }
 
                 Run r = new Run(p);
-                try {
+                //try {
                     r.run();
-                } catch (Exception e) { }
-                finally {
+                //} catch (Exception e) { }
+                //finally {
                     //inspector.dump();
-                }
+                //}
             }
         }
 
@@ -220,10 +221,10 @@ public class Main {
         URL[] urlClassPath = getClasspath(testPath);
         ArrayList<String> listClassPath = new ArrayList<>();
 
+        listClassPath.add(SUTPath);
         for(URL u: urlClassPath) {
             listClassPath.add(u.getPath());
         }
-        listClassPath.add(SUTPath);
         listClassPath.add("/home/pellegrini/Documenti/CNR/dawork/analyse/target/classes/");
         listClassPath.add("/home/pellegrini/Dropbox/Documenti/CNR/dawork/analyse/target/analyse-shaded-1.0-SNAPSHOT.jar");
         String[] classPath = new String[listClassPath.size()];
@@ -254,15 +255,17 @@ public class Main {
 
         RunParameters p = new RunParameters();
         p.addUserClasspath(classPath);
+//        p.addExtClasspath(classPath);
         p.setMethodSignature(methodClass.replace(".", File.separator), methodDescriptor, methodName);
-        p.setOutputFileName(outputPath + methodName + "-JBSE-output.txt");
-        p.setSolverLogOutputfilename(outputPath + methodName + "-z3.log");
+//        p.setOutputFileName(outputPath + methodName + "-JBSE-output.txt");
+//        p.setSolverLogOutputfilename(outputPath + methodName + "-z3.log");
         p.setShowOnConsole(false);
         p.setDecisionProcedureType(DecisionProcedureType.Z3);
         p.setExternalDecisionProcedurePath(Z3_PATH);
         p.setStateFormatMode(StateFormatMode.TEXT);
-        p.setStepShowMode(StepShowMode.ALL);
+        p.setStepShowMode(StepShowMode.METHOD);
         p.setCallback(inspector);
+        p.setDepthScope(5);
 
         return p;
     }
