@@ -18,6 +18,7 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 public class Main {
@@ -26,14 +27,14 @@ public class Main {
 
     public static void main(String[] args) {
         String testPath = args.length > 0 ? args[0] : null;
-        String SUTPath = args.length > 0 ? args[0] : null;
+        String SUTPath = args.length > 1 ? args[1] : null;
 
         if(testPath == null || SUTPath == null) {
             System.out.println("Need paths");
             return;
         }
 
-        inspector.setOutputFile(testPath + "inspection.log");
+        inspector.setOutputFile(testPath + "inspection-testprog-with-args.log");
 
         List<Class> classes = null;
         try {
@@ -43,6 +44,12 @@ public class Main {
             System.exit(66); // EX_NOINPUT
         }
 
+        /********/
+//        List<String> allowedMethods =  Arrays.asList("newFileTest", "setAndGetFileIdTest", "setAndGetFileTypeTest");
+//        List<String> allowedMethods =  Arrays.asList("setAndGetFileIdTest", "setAndGetFileTypeTest");
+        /********/
+
+
         for (Class klass: classes) {
             System.out.print("Analysing class " + klass.getName() + ":");
 
@@ -50,6 +57,15 @@ public class Main {
                 System.out.println(" Skipping, it's an abstract class.");
                 continue;
             }
+
+
+            /********/
+//            if(!klass.getName().equals("com.fullteaching.backend.unitary.file.FileUnitaryTest")) {
+//                System.out.println(" Skipping in this selective test.");
+//                continue;
+//            }
+            /********/
+
 
             inspector.setCurrClass(klass.getName());
 
@@ -71,6 +87,11 @@ public class Main {
                 if(!isTest)
                     continue;
 
+                /********/
+//                if(!allowedMethods.contains(met.getName()))
+//                    continue;
+                /********/
+
                 inspector.setCurrMethod(met.getName());
                 System.out.println("\tSymbolic execution starting from: " + met.getName() + ", " + getMethodDescriptor(met));
 
@@ -82,12 +103,12 @@ public class Main {
                 }
 
                 Run r = new Run(p);
-                try {
+                //try {
                     r.run();
-                } catch (Exception e) { }
-                finally {
-                    inspector.dump();
-                }
+                //} catch (Exception e) { }
+                //finally {
+                    //inspector.dump();
+                //}
             }
         }
 
@@ -200,10 +221,10 @@ public class Main {
         URL[] urlClassPath = getClasspath(testPath);
         ArrayList<String> listClassPath = new ArrayList<>();
 
+        listClassPath.add(SUTPath);
         for(URL u: urlClassPath) {
             listClassPath.add(u.getPath());
         }
-        listClassPath.add(SUTPath);
         listClassPath.add("/home/pellegrini/Documenti/CNR/dawork/analyse/target/classes/");
         listClassPath.add("/home/pellegrini/Dropbox/Documenti/CNR/dawork/analyse/target/analyse-shaded-1.0-SNAPSHOT.jar");
         String[] classPath = new String[listClassPath.size()];
@@ -223,22 +244,28 @@ public class Main {
             directory = new File("").getAbsoluteFile();
 //        }
 
-        testPath = directory.getAbsolutePath() + File.separator;
+        String outputPath = testPath + "analyse-output/";
+        try {
+            Files.createDirectories(Paths.get(outputPath));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
 
         System.out.println("Saving results to " + testPath);
 
         RunParameters p = new RunParameters();
         p.addUserClasspath(classPath);
+//        p.addExtClasspath(classPath);
         p.setMethodSignature(methodClass.replace(".", File.separator), methodDescriptor, methodName);
-        //p.setOutputFileName(testPath + "JBSE-output.txt");
-        //p.setSolverLogOutputfilename(path + "z3.log");
+//        p.setOutputFileName(outputPath + methodName + "-JBSE-output.txt");
+//        p.setSolverLogOutputfilename(outputPath + methodName + "-z3.log");
         p.setShowOnConsole(false);
         p.setDecisionProcedureType(DecisionProcedureType.Z3);
         p.setExternalDecisionProcedurePath(Z3_PATH);
         p.setStateFormatMode(StateFormatMode.TEXT);
-        //p.setStepShowMode(StepShowMode.METHOD);
         p.setStepShowMode(StepShowMode.METHOD);
         p.setCallback(inspector);
+        p.setDepthScope(5);
 
         return p;
     }
