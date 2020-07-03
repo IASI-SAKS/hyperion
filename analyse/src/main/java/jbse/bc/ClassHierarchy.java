@@ -22,7 +22,6 @@ import static jbse.common.Type.toPrimitiveOrVoidCanonicalName;
 import static jbse.common.Type.toPrimitiveOrVoidInternalName;
 
 import java.io.ByteArrayOutputStream;
-import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
