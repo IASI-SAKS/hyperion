@@ -1,39 +1,38 @@
 package it.cnr.saks.sisma.testing;
 
 import it.cnr.saks.sisma.testing.MethodEnumerator.MethodDescriptor;
-import jbse.algo.exc.NotYetImplementedException;
-import jbse.bc.exc.InvalidClassFileFactoryClassException;
-import jbse.common.exc.ClasspathException;
-import jbse.common.exc.InvalidInputException;
-import jbse.dec.exc.DecisionException;
-import jbse.jvm.exc.CannotBuildEngineException;
-import jbse.jvm.exc.InitializationException;
-import jbse.jvm.exc.NonexistingObservedVariablesException;
-import jbse.mem.exc.ContradictionException;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 public class Main {
     private static final MethodCallSet inspector = new MethodCallSet();
     private static MethodEnumerator methodEnumerator;
 
     public static void main(String[] args) {
-        String testPath = args.length > 0 ? args[0] : null;
-        String SUTPath = args.length > 1 ? args[1] : null;
+        final String testPath = args.length > 0 ? args[0] : null;
+        final String SUTPath = args.length > 1 ? args[1] : null;
+
+        String[] additionalClassPath = null;
+        if(args.length > 2) {
+            additionalClassPath = Arrays.copyOfRange(args, 2, args.length);
+        }
 
         if(testPath == null || SUTPath == null) {
             System.out.println("Need paths");
             System.exit(64); // EX_USAGE
         }
 
+        long startTime = System.nanoTime();
+
         inspector.setOutputFile(testPath + "inspection.log");
         try {
             methodEnumerator = new MethodEnumerator(testPath);
-        } catch (IOException e) {
+        } catch (IOException | AnalyzerException e) {
             System.exit(66); // EX_NOINPUT
         }
 
@@ -42,18 +41,24 @@ public class Main {
             System.out.println("\tSymbolic execution starting from: " + method.getMethodName() + ", " + method.getMethodDescriptor());
 
             try {
-                AnalyzerParameters p = configureJBSE(testPath, SUTPath, method.getClassName(), method.getMethodName(), method.getMethodDescriptor());
-                Analyzer r = new Analyzer(p);
-                r.run();
-            } catch (CannotBuildEngineException | ContradictionException | NonexistingObservedVariablesException | InitializationException | InvalidClassFileFactoryClassException | NotYetImplementedException | DecisionException | ClasspathException | MalformedURLException | InvalidInputException e) {
+                Analyzer a = new Analyzer(inspector)
+                        .withUserClasspath(prepareFinalRuntimeClasspath(SUTPath, additionalClassPath))
+                        .withMethodSignature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName())
+                        .withDepthScope(5);
+                a.run();
+            } catch (AnalyzerException e) {
                 e.printStackTrace();
             }
         }
 
         inspector.dump();
+
+        long endTime = System.nanoTime();
+        double duration = (double)(endTime - startTime) / 1000000000;
+        System.out.println("Analyzed " + methodEnumerator.getMethodsCount() + " methods in " + duration + " seconds.");
     }
 
-    private static AnalyzerParameters configureJBSE(String testPath, String SUTPath, String methodClass, String methodName, String methodDescriptor) throws MalformedURLException {
+    private static String[] prepareFinalRuntimeClasspath(String SUTPath, String[] additionalClassPath) {
         URL[] urlClassPath = methodEnumerator.getClassPath();
         ArrayList<String> listClassPath = new ArrayList<>();
 
@@ -61,17 +66,13 @@ public class Main {
         for(URL u: urlClassPath) {
             listClassPath.add(u.getPath());
         }
-        listClassPath.add("/home/pellegrini/Documenti/CNR/dawork/analyse/target/classes/");
-        listClassPath.add("/home/pellegrini/Dropbox/Documenti/CNR/dawork/analyse/target/analyse-shaded-1.0-SNAPSHOT.jar");
+        for(String path: additionalClassPath) {
+            listClassPath.add(path);
+        }
+        
         String[] classPath = new String[listClassPath.size()];
         listClassPath.toArray(classPath);
 
-        AnalyzerParameters p = new AnalyzerParameters();
-        p.addUserClasspath(classPath);
-        p.setMethodSignature(methodClass.replace(".", File.separator), methodDescriptor, methodName);
-        p.setDepthScope(5);
-        p.methodCallSet = inspector;
-
-        return p;
+        return classPath;
     }
 }

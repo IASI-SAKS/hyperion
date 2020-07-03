@@ -49,7 +49,7 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
         }
     }
 
-    public MethodEnumerator(String classPath) throws IOException {
+    public MethodEnumerator(String classPath) throws IOException, AnalyzerException {
         this.classPath = this.initializeClasspath(classPath);
 
         List<Class> classes = this.enumerateClasses(classPath);
@@ -143,7 +143,7 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
     }
 
 
-    private List<Class> enumerateClasses(String classPath) throws IOException {
+    private List<Class> enumerateClasses(String classPath) throws IOException, AnalyzerException {
         List<String> paths = new ArrayList<>();
         List<Class> classes = new ArrayList<>();
 
@@ -159,7 +159,7 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
         return classes;
     }
 
-    private Class loadClass(String classFile, String path, URL[] urls) {
+    private Class loadClass(String classFile, String path, URL[] urls) throws AnalyzerException {
         String classPkg = classFile.substring(0, classFile.lastIndexOf('.')).replace(path, "").replace(File.separator, ".");
 
         ClassLoader cl;
@@ -169,10 +169,14 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
             cl = new URLClassLoader(urls);
             dynamicClass = cl.loadClass(classPkg);
         } catch (ClassNotFoundException e) {
-            e.printStackTrace();
+            throw new AnalyzerException(e.getMessage());
         }
 
         return dynamicClass;
+    }
+
+    public int getMethodsCount() {
+        return this.methods.size();
     }
 
     private URL[] initializeClasspath(String classPath) throws MalformedURLException {
