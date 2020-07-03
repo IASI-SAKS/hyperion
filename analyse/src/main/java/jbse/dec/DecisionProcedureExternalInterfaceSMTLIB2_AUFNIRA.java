@@ -1,6 +1,10 @@
 package jbse.dec;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
@@ -79,8 +83,6 @@ final class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionPr
     private ArrayList<Integer> nSymPushed; 
     private int nSymCurrent;
     private int nTotalSymbols;
-
-    private PrintStream solverLog;
     
     /** 
      * Costructor.
@@ -89,7 +91,7 @@ final class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionPr
      * @param solverCommandLine a {@link List}{@code <}{@link String}{@code >}, the
      *        command line to launch the external process for the decision procedure.
      */
-    public DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA(Calculator calc, List<String> solverCommandLine, PrintStream solverLog)
+    public DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA(Calculator calc, List<String> solverCommandLine) 
     throws ExternalProtocolInterfaceException, IOException {
         this.calc = calc;
         this.m = new ExpressionMangler("X", "", calc);
@@ -99,7 +101,6 @@ final class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionPr
         this.solver = pb.start();
         this.solverIn = new BufferedReader(new InputStreamReader(this.solver.getInputStream()));
         this.solverOut = new BufferedWriter(new OutputStreamWriter(this.solver.getOutputStream()));
-        this.solverLog = solverLog;
         
         final String query = PROLOGUE + PUSH_1;
         sendAndCheckAnswer(query);
@@ -444,8 +445,6 @@ final class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionPr
     
     private void send(String query) throws IOException {
         //System.err.print("--->SMTLIB2: " + query); //TODO log differently!
-        if(this.solverLog != null)
-            this.solverLog.println(query);
     	
         try {
             this.solverOut.write(query);
@@ -487,8 +486,6 @@ final class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionPr
         }
 
         //System.err.println("<---SMTLIB2: " + answer); //TODO log differently!
-        if(this.solverLog != null)
-            this.solverLog.println(answer);
         return answer;
     }
     

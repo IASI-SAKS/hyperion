@@ -1,6 +1,5 @@
 package it.cnr.saks.sisma.testing;
 
-import jbse.apps.run.Callback;
 import jbse.mem.State;
 import jbse.mem.exc.ThreadStackEmptyException;
 
@@ -10,14 +9,12 @@ import java.io.PrintStream;
 import java.util.HashMap;
 import java.util.HashSet;
 
-public class InspectStateCallback implements Callback {
+public class MethodCallSet {
     private PrintStream out = null;
     // Class -> Method -> Called Methods
-    private HashMap<String, HashMap<String, HashSet<String>>> methodCalls = new HashMap<>();
+    private final HashMap<String, HashMap<String, HashSet<String>>> methodCalls = new HashMap<>();
     private String currClass;
     private String currMethod;
-
-    //public InspectStateCallback() {}
 
     public void inspectState(State s) {
         try {
@@ -32,17 +29,19 @@ public class InspectStateCallback implements Callback {
         } catch (FileNotFoundException e) { }
     }
 
-    public void setCurrClass(String currClass) {
+    public void setCurrMethod(String currClass, String currMethod) {
         this.currClass = currClass;
-        methodCalls.put(currClass, new HashMap<>());
-    }
-
-    public void setCurrMethod(String currMethod) {
         this.currMethod = currMethod;
+        if(!methodCalls.containsKey(currClass)) {
+            methodCalls.put(currClass, new HashMap<>());
+        }
         methodCalls.get(this.currClass).put(currMethod, new HashSet<>());
     }
 
     public void dump() {
+        if(this.out == null)
+            return;
+
         methodCalls.forEach((key,value) -> {
             if(value.size() == 0)
                 return;

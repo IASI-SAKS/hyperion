@@ -81,7 +81,6 @@ import jbse.val.ReferenceSymbolic;
  * @author Pietro Braione
  */
 public final class RunParameters implements Cloneable {
-
     /**
      * Enumeration of the possible decision procedures.
      * 
@@ -300,9 +299,6 @@ public final class RunParameters implements Cloneable {
         JUNIT_TEST
     }
 
-    /** The callback object */
-    private Callback callback;
-
     /** The runner parameters. */
     private RunnerParameters runnerParameters;
 
@@ -372,9 +368,6 @@ public final class RunParameters implements Cloneable {
 
     /** The name of the output file. */
     private String outFileName = null;
-
-    /** The name of the solver log file. */
-    private String solverLog = null;
 
     /** The text mode. */
     private TextMode textMode = TextMode.PLATFORM;
@@ -1950,25 +1943,6 @@ public final class RunParameters implements Cloneable {
     }
 
     /**
-     * Sets a callback object. This will be called to inspect execution
-     * states when a path condition of interest is met during the execution.
-     *
-     * @param cb an object implementing {@link Callback}.
-     */
-    public void setCallback(Callback cb) {
-        this.callback = cb;
-    }
-
-    /**
-     * Get the callback object.
-     *
-     * @return an object implementing {@link Callback}.
-     */
-    public Callback getCallback() {
-        return this.callback;
-    }
-
-    /**
      * Sets whether the output should be shown on 
      * console (stdout, stderr). Note that if the 
      * output is not shown on the console and no
@@ -2009,23 +1983,6 @@ public final class RunParameters implements Cloneable {
         this.outFileName = s; 
     }
 
-
-
-    /**
-     * Sets the name of the z3 log file.
-     *
-     * @param s A {@link String} representing the pathname of a
-     *          file where the console output (stdout and stderr) will
-     *          be copied.
-     * @throws NullPointerException if {@code s == null}.
-     */
-    public void setSolverLogOutputfilename(String s) {
-        if (s == null) {
-            throw new NullPointerException();
-        }
-        this.solverLog = s;
-    }
-
     /**
      * Instructs not to copy the console output to file, cancelling
      * any previous invocation of the {@link #setOutputFileName}
@@ -2036,21 +1993,10 @@ public final class RunParameters implements Cloneable {
     }
 
     /**
-     * Returns the name of the solver log output file
-     *
+     * Returns the name of the output file
+     * 
      * @return a {@link String} representing the pathname of a 
      *          file where the console output (stdout and stderr) will 
-     *          be copied, or {@code null} if none was previously specified.
-     */
-    public String getSolverLogOutputFileName() {
-        return this.solverLog;
-    }
-
-    /**
-     * Returns the name of the output file
-     *
-     * @return a {@link String} representing the pathname of a
-     *          file where the console output (stdout and stderr) will
      *          be copied, or {@code null} if none was previously specified.
      */
     public String getOutputFileName() {

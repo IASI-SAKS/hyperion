@@ -112,9 +112,6 @@ public final class Run {
     /** The {@link PrintStream}s for errors (critical log information). */
     private PrintStream[] err = null;
 
-    /** The {@link PrintStream}s for errors (critical log information). */
-    private PrintStream solverLog = null;
-
     /** The {@link Formatter} to output states. */
     private Formatter formatter = null;
 
@@ -214,9 +211,6 @@ public final class Run {
                 try {
                     final State currentState = Run.this.getCurrentState();
                     Run.this.emitState(currentState);
-                    if(Run.this.parameters.getCallback() != null) {
-                        Run.this.parameters.getCallback().inspectState(currentState);
-                    }
                 } catch (UnexpectedInternalException e) {
                     Run.this.err(ERROR_UNEXPECTED);
                     Run.this.err(e);
@@ -780,18 +774,6 @@ public final class Run {
         }
         this.out[1] = this.log[1] = this.err[1];
 
-        // set the solver log file
-        if(this.parameters.getSolverLogOutputFileName() == null) {
-            this.solverLog = null;
-        } else {
-            try {
-                final File f = new File(this.parameters.getSolverLogOutputFileName());
-                this.solverLog = new PrintStream(f);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
-            }
-        }
-
         // sets line separator style
         if (this.parameters.getTextMode() == TextMode.WINDOWS) {
             System.setProperty("line.separator", "\r\n");
@@ -927,8 +909,8 @@ public final class Run {
     				z3CommandLine.add(switchChar + "smt2");
     				z3CommandLine.add(switchChar + "in");
     				z3CommandLine.add(switchChar + "t:10");
-    				core = new DecisionProcedureSMTLIB2_AUFNIRA(core, z3CommandLine, this.solverLog);
-    				coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, z3CommandLine, this.solverLog) : null);
+    				core = new DecisionProcedureSMTLIB2_AUFNIRA(core, z3CommandLine);
+    				coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, z3CommandLine) : null);
     			} else if (type == DecisionProcedureType.CVC4) {
     				final ArrayList<String> cvc4CommandLine = new ArrayList<>();
     				cvc4CommandLine.add(path == null ? "cvc4" : path.toString());
@@ -937,8 +919,8 @@ public final class Run {
     				cvc4CommandLine.add("--no-interactive");
     				cvc4CommandLine.add("--incremental");
     				cvc4CommandLine.add("--tlimit-per=10000");
-    				core = new DecisionProcedureSMTLIB2_AUFNIRA(core, cvc4CommandLine, this.solverLog);
-    				coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, cvc4CommandLine, this.solverLog) : null);
+    				core = new DecisionProcedureSMTLIB2_AUFNIRA(core, cvc4CommandLine);
+    				coreNumeric = (needHeapCheck ? new DecisionProcedureSMTLIB2_AUFNIRA(coreNumeric, cvc4CommandLine) : null);
     			} else {
     				core.close();
     				if (coreNumeric != null) {
