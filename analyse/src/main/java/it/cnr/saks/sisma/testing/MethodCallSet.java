@@ -19,6 +19,7 @@ public class MethodCallSet {
     public void inspectState(State s) {
         try {
             this.methodCalls.get(this.currClass).get(this.currMethod).add(s.getCurrentMethodSignature() + " from class " + s.getCurrentClass());
+            System.out.println("\t\tCalling " + s.getCurrentMethodSignature());
         } catch (ThreadStackEmptyException e) {}
     }
 

@@ -1,7 +1,6 @@
 package it.cnr.saks.sisma.testing;
 
 import jbse.algo.exc.CannotManageStateException;
-import jbse.algo.exc.NotYetImplementedException;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
 import jbse.common.exc.ClasspathException;
 import jbse.common.exc.InvalidInputException;
@@ -133,6 +132,11 @@ public final class Analyzer {
 
     public Analyzer withDepthScope(int depthScope) {
         this.runnerParameters.setDepthScope(depthScope);
+        return this;
+    }
+
+    public Analyzer withUninterpreted(String methodClassName, String methodDescriptor, String methodName) {
+        this.runnerParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
         return this;
     }
 

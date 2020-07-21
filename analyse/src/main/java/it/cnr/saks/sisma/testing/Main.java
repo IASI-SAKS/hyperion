@@ -4,13 +4,12 @@ import it.cnr.saks.sisma.testing.MethodEnumerator.MethodDescriptor;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Main {
-    private static final MethodCallSet inspector = new MethodCallSet();
+    private static final MethodCallSet methodCallSet = new MethodCallSet();
     private static MethodEnumerator methodEnumerator;
 
     public static void main(String[] args) {
@@ -29,7 +28,7 @@ public class Main {
 
         long startTime = System.nanoTime();
 
-        inspector.setOutputFile(testPath + "inspection.log");
+        methodCallSet.setOutputFile(testPath + "inspection.log");
         try {
             methodEnumerator = new MethodEnumerator(testPath);
         } catch (IOException | AnalyzerException e) {
@@ -37,21 +36,46 @@ public class Main {
         }
 
         for(MethodDescriptor method: methodEnumerator) {
-            inspector.setCurrMethod(method.getClassName(), method.getMethodName());
+            methodCallSet.setCurrMethod(method.getClassName(), method.getMethodName());
             System.out.println("\tSymbolic execution starting from: " + method.getMethodName() + ", " + method.getMethodDescriptor());
 
             try {
-                Analyzer a = new Analyzer(inspector)
+                Analyzer a = new Analyzer(methodCallSet)
                         .withUserClasspath(prepareFinalRuntimeClasspath(SUTPath, additionalClassPath))
                         .withMethodSignature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName())
-                        .withDepthScope(5);
+                        .withDepthScope(5)
+                        .withUninterpreted("org/springframework/util/Assert", "(Z)V", "state")
+                        .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "state")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)V", "isAssignable")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Class;)V", "isAssignable")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Object;Ljava/lang/String;)V", "isInstanceOf")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Object;)V", "isInstanceOf")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/util/Map;)V", "notEmpty")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/util/Map;Ljava/lang/String;)V", "notEmpty")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/util/Collection;)V", "notEmpty")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/util/Collection;Ljava/lang/String;)V", "notEmpty")
+                        .withUninterpreted("org/springframework/util/Assert", "([Ljava/lang/Object;)V", "noNullElements")
+                        .withUninterpreted("org/springframework/util/Assert", "([Ljava/lang/Object;Ljava/lang/String;)V", "noNullElements")
+                        .withUninterpreted("org/springframework/util/Assert", "([Ljava/lang/Object;)V", "notEmpty")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;Ljava/lang/String;)V", "doesNotContain")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", "doesNotContain")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;)V", "hasText")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;Ljava/lang/String;)V", "hasText")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;)V", "hasLength")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;Ljava/lang/String;)V", "hasLength")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;)V", "notNull")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;Ljava/lang/String;)V", "notNull")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;)V", "isNull")
+                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;Ljava/lang/String;)V", "isNull")
+                        .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "isTrue")
+                        .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
                 a.run();
             } catch (AnalyzerException e) {
                 e.printStackTrace();
             }
         }
 
-        inspector.dump();
+        methodCallSet.dump();
 
         long endTime = System.nanoTime();
         double duration = (double)(endTime - startTime) / 1000000000;

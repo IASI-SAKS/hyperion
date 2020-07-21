@@ -80,6 +80,9 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
                 if(!isTest)
                     continue;
 
+                if(!met.getName().equals("newFileTest"))
+                    continue;
+
                 methods.add(new MethodDescriptor(met, met.getName(), this.getMethodDescriptor(met), clazz.getName()));
             }
         }
