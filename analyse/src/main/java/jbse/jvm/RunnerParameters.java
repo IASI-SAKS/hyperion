@@ -442,6 +442,19 @@ public final class RunnerParameters implements Cloneable {
     }
 
     /**
+     * Adds a regular expression pattern of class names whose 
+     * state did not change after their class initialization, 
+     * up to the beginning of symbolic execution. Upon their 
+     * first access their class initializers will be executed.
+     *  
+     * @param classPattern a {@link String}. The {@code null} 
+     *        value will be ignored.
+     */
+    public void addClassInvariantAfterInitializationPattern(String classPattern) {
+    	this.engineParameters.addClassInvariantAfterInitializationPattern(classPattern);
+    }
+    
+    /**
      * Returns the expansion backdoor.
      * 
      * @return a {@link Map}{@code <}{@link String}{@code , }{@link Set}{@code <}{@link String}{@code >>},

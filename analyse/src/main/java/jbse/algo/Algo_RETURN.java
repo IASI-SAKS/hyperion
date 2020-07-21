@@ -70,11 +70,11 @@ StrategyUpdate<DecisionAlternative_NONE>> {
             		state.setStuckReturn();
             	}
             } else {
-                this.pcReturn = state.getReturnPC();
+                this.pcReturn = state.getReturnProgramCounter();
             }
             if (poppedFrame instanceof MethodFrame && "<clinit>".equals(returnedMethod.getName())) {
                 final Klass k = state.getKlass(returnedCurrentClass);
-                k.setInitialized();
+                k.setInitializationCompleted();
             }
         };
     }
