@@ -778,7 +778,20 @@ public final class RunParameters implements Cloneable {
     public TriggerRulesRepo getTriggerRulesRepo() {
         return this.runnerParameters.getTriggerRulesRepo();
     }
-
+    
+    /**
+     * Adds a regular expression pattern of class names whose 
+     * state did not change after their class initialization, 
+     * up to the beginning of symbolic execution. Upon their 
+     * first access their class initializers will be executed.
+     *  
+     * @param classPattern a {@link String}. The {@code null} 
+     *        value will be ignored.
+     */
+    public void addClassInvariantAfterInitializationPattern(String classPattern) {
+    	this.runnerParameters.addClassInvariantAfterInitializationPattern(classPattern);
+    }
+ 
     /**
      * Returns the expansion backdoor.
      * 

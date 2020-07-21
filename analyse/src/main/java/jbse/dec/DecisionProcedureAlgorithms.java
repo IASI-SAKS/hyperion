@@ -74,6 +74,8 @@ import jbse.val.ReferenceSymbolic;
 import jbse.val.ReferenceSymbolicApply;
 import jbse.val.ReferenceSymbolicAtomic;
 import jbse.val.ReferenceSymbolicMember;
+import jbse.val.ReferenceSymbolicMemberArray;
+import jbse.val.ReferenceSymbolicMemberMapValue;
 import jbse.val.Simplex;
 import jbse.val.Term;
 import jbse.val.Value;
@@ -1241,7 +1243,15 @@ public class DecisionProcedureAlgorithms extends DecisionProcedureDecorator {
         	//gets the container reference, where the type parameter is 
         	//instantiated, and its class, where the type parameter is declared
         	final ReferenceSymbolicMember refMember = (ReferenceSymbolicMember) ref;
-    		final ReferenceSymbolic containerRef = refMember.getContainer(); //TODO does it work correctly for MemberArrays, MemberKeys and MemberValues?
+    		final ReferenceSymbolic containerRef;
+    		{
+    			final ReferenceSymbolic containerRefPre = refMember.getContainer();
+    			if (containerRefPre instanceof ReferenceSymbolicMemberArray || containerRefPre instanceof ReferenceSymbolicMemberMapValue) {
+    				containerRef = ((ReferenceSymbolicMember) containerRefPre).getContainer();
+    			} else {
+    				containerRef = containerRefPre;
+    			}
+    		}
         	final ClassFile containerRefClass;
     		try {
     			containerRefClass = hier.loadCreateClass(CLASSLOADER_APP, className(containerRef.getStaticType()), true);
@@ -1283,11 +1293,11 @@ public class DecisionProcedureAlgorithms extends DecisionProcedureDecorator {
     		}
     		final String[] containerSignatureTypes = containerSignatureType.split("\\.");
     		for (int i = 1; i < containerSignatureTypes.length; ++i) {
-    	    	containerSignatureTypes[i - 1] = containerSignatureTypes[i - 1] + TYPEEND;
-    	    	final int start = splitClassGenericSignatureTypeParameters(containerSignatureTypes[i - 1]).length();
-    	    	final String s = containerSignatureTypes[i - 1].substring(start);
-    	    	final int end = s.indexOf('<');
-    	    	containerSignatureTypes[i] = (end == -1 ? s : s.substring(0, end)) + "$" + containerSignatureTypes[i];
+        	    	containerSignatureTypes[i - 1] = containerSignatureTypes[i - 1] + TYPEEND;
+        	    	final int start = splitClassGenericSignatureTypeParameters(containerSignatureTypes[i - 1]).length();
+        	    	final String s = containerSignatureTypes[i - 1].substring(start);
+        	    	final int end = s.indexOf('<');
+        	    	containerSignatureTypes[i] = (end == -1 ? s : s.substring(0, end)) + "$" + containerSignatureTypes[i];
     		}
     		
     		//adds the equations
@@ -1309,16 +1319,17 @@ public class DecisionProcedureAlgorithms extends DecisionProcedureDecorator {
     
 	private static final Var[] EMPTY_VAR_ARRAY = new Var[0];
     
-    private static Apply textToApply(String prefix, String text) {
-		final String functor = text.substring(1, text.indexOf('<'));
-		final ArrayList<Var> vars = new ArrayList<>();
-		final String[] preVars = text.substring(text.indexOf('<') + 1).split(":");
-		for (int k = 0; k < preVars.length - 1; ++k) {
-			vars.add(new Var(prefix + "?" + (k == 0 ? preVars[k] : preVars[k].substring(preVars[k].indexOf(';') + 1))));
-		}
-		
-		return new Apply(functor, vars.toArray(EMPTY_VAR_ARRAY));
-    }
+	private static Apply textToApply(String prefix, String text) {
+	    final int langleIndex = text.indexOf('<');
+	    final String functor = (langleIndex == -1 ? text.substring(1, text.length() - 1) : text.substring(1, langleIndex));
+	    final String[] preVars = (langleIndex == -1 ? new String[0] : text.substring(langleIndex + 1).split(":"));
+            final ArrayList<Var> vars = new ArrayList<>();
+	    for (int k = 0; k < preVars.length - 1; ++k) {
+	        vars.add(new Var(prefix + "?" + (k == 0 ? preVars[k] : preVars[k].substring(preVars[k].indexOf(';') + 1))));
+	    }
+
+	    return new Apply(functor, vars.toArray(EMPTY_VAR_ARRAY));
+	}
 
 	private static final TypeTerm[] EMPTY_TYPETERM_ARRAY = new TypeTerm[0];
 	
