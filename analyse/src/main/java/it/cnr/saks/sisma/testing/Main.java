@@ -44,7 +44,8 @@ public class Main {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(prepareFinalRuntimeClasspath(SUTPath, additionalClassPath))
                         .withMethodSignature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName())
-                        .withDepthScope(5);
+                        .withDepthScope(5)
+                        .withGuided(true);
                 a.run();
             } catch (AnalyzerException e) {
                 e.printStackTrace();
