@@ -49,10 +49,11 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
         }
     }
 
-    public MethodEnumerator(String classPath) throws IOException, AnalyzerException {
-        this.classPath = this.initializeClasspath(classPath);
-
+    public MethodEnumerator(String classPath, String SUTPath) throws IOException, AnalyzerException {
+        this.classPath = this.initializeClasspath(classPath, SUTPath);
         List<Class> classes = this.enumerateClasses(classPath);
+
+        this.enumerateClasses(SUTPath); // To load classes from the SUT
 
         for (Class clazz: classes) {
             System.out.print("Analysing class " + clazz.getName() + ":");
@@ -127,17 +128,17 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
         return ('L'+c.getName()+';').replace('.', '/');
     }
 
-    private Method[] getAccessibleMethods(Class klass)
+    private Method[] getAccessibleMethods(Class clazz)
     {
         List<Method> result = new ArrayList<>();
-        while (klass != null) {
-            for (Method method: klass.getDeclaredMethods()) {
+        while (clazz != null) {
+            for (Method method: clazz.getDeclaredMethods()) {
                 int modifiers = method.getModifiers();
                 if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
                     result.add(method);
                 }
             }
-            klass = klass.getSuperclass();
+            clazz = clazz.getSuperclass();
         }
         return result.toArray(new Method[result.size()]);
     }
@@ -169,7 +170,7 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
             cl = new URLClassLoader(urls);
             dynamicClass = cl.loadClass(classPkg);
         } catch (ClassNotFoundException e) {
-            throw new AnalyzerException(e.getMessage());
+            throw new AnalyzerException("Unable to find class " + e.getMessage());
         }
 
         return dynamicClass;
@@ -179,9 +180,10 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
         return this.methods.size();
     }
 
-    private URL[] initializeClasspath(String classPath) throws MalformedURLException {
+    private URL[] initializeClasspath(String classPath, String SUTPath) throws MalformedURLException {
         List<URL> ret = new ArrayList<>();
         ret.add(new File(classPath).toURI().toURL());
+        ret.add(new File(SUTPath).toURI().toURL());
         ret.add(new File("data/jre/rt.jar").toURI().toURL());
 
         String runtimeClasspath = ManagementFactory.getRuntimeMXBean().getClassPath();

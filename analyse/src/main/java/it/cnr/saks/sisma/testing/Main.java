@@ -31,8 +31,9 @@ public class Main {
 
         inspector.setOutputFile(testPath + "inspection.log");
         try {
-            methodEnumerator = new MethodEnumerator(testPath);
+            methodEnumerator = new MethodEnumerator(testPath, SUTPath);
         } catch (IOException | AnalyzerException e) {
+            System.err.println(e.getMessage());
             System.exit(66); // EX_NOINPUT
         }
 
