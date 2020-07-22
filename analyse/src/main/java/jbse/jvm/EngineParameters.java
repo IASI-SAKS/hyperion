@@ -210,6 +210,13 @@ public final class EngineParameters implements Cloneable {
 
     /** The {@link TriggerRulesRepo}, containing all the trigger rules. */
     private TriggerRulesRepo triggerRulesRepo = new TriggerRulesRepo();
+    
+    /** 
+     * The patterns of the class names whose states did not change 
+     * after their class initialization, up to the beginning of 
+     * symbolic execution. 
+     */
+    private ArrayList<String> postInitInvariantClasses = new ArrayList<>();
 
     /** The expansion backdoor. */
     private HashMap<String, Set<String>> expansionBackdoor = new HashMap<>();
@@ -676,6 +683,33 @@ public final class EngineParameters implements Cloneable {
         	retVal.addExpandTo("java/util/HashMap", "(?!{°}*java/util/HashMap:initialMap{EOL}){°}*", "java/util/HashMap", new Signature("java/util/HashMap", "(Ljava/util/HashMap;)V", "initSymbolic"), "{$REF}");
         }
         return retVal;
+    }
+    
+    /**
+     * Adds a regular expression pattern of class names whose 
+     * state did not change after their class initialization, 
+     * up to the beginning of symbolic execution. Upon their 
+     * first access their class initializers will be executed.
+     *  
+     * @param classPattern a {@link String}. The {@code null} 
+     *        value will be ignored.
+     */
+    public void addClassInvariantAfterInitializationPattern(String classPattern) {
+    	if (classPattern == null) {
+    		return;
+    	}
+    	this.postInitInvariantClasses.add(classPattern);
+    }
+    
+    /**
+     * Returns the list of the patterns of class names whose 
+     * states did not change after their class initialization, 
+     * up to the beginning of symbolic execution.
+     *  
+     * @return a {@link List}{@code <}{@link String}{@code >}.
+     */
+    public List<String> getClassInvariantAfterInitialization() {
+    	return new ArrayList<>(this.postInitInvariantClasses);
     }
 
     /**

@@ -1001,7 +1001,7 @@ public final class State implements Cloneable {
      * Gets a symbolic object as it was initially in this state.
      * 
      * @param origin a {@link ReferenceSymbolic}.
-     * @return the symbolic {@link Objekt} whose origin is {@code origin} 
+     * @return the symbolic {@link HeapObjekt} whose origin is {@code origin} 
      *         in the state it was at its epoch (equivalently, at the
      *         moment of its assumption), or 
      *         {@code null} if {@code origin} does not refer to 
@@ -1010,7 +1010,7 @@ public final class State implements Cloneable {
      * @throws FrozenStateException if the state is frozen.
      */
     //TODO eliminate this method!!!
-    private Objekt getObjectInitial(ReferenceSymbolic origin) throws FrozenStateException {
+    private HeapObjekt getObjectInitial(ReferenceSymbolic origin) throws FrozenStateException {
     	if (this.frozen) {
     		throw new FrozenStateException();
     	}
@@ -1702,7 +1702,7 @@ public final class State implements Cloneable {
     
     private InstanceImpl doCreateInstance(Calculator calc, ClassFile classFile) {
         final int numOfStaticFields = classFile.numOfStaticFields();
-        final Signature[] fieldsSignatures = classFile.getAllFields();
+        final Signature[] fieldsSignatures = classFile.getObjectFields();
         final ClassFile cf_JAVA_CLASSLOADER;
         final ClassFile cf_JAVA_THREAD;
         try {
@@ -1748,7 +1748,7 @@ public final class State implements Cloneable {
                 throw new UnexpectedInternalException("Could not find the classfile for java.lang.Class.");
             }
             final int numOfStaticFields = cf_JAVA_CLASS.numOfStaticFields();
-            final Signature[] fieldsSignatures = cf_JAVA_CLASS.getAllFields();
+            final Signature[] fieldsSignatures = cf_JAVA_CLASS.getObjectFields();
             final InstanceImpl_JAVA_CLASS myObj = new InstanceImpl_JAVA_CLASS(calc, cf_JAVA_CLASS, null, this.historyPoint, representedClass, numOfStaticFields, fieldsSignatures);
             final ReferenceConcrete retVal = new ReferenceConcrete(this.heap.addNew(myObj));
             
@@ -1808,7 +1808,7 @@ public final class State implements Cloneable {
             return;
         }
         final int numOfStaticFields = classFile.numOfStaticFields();
-        final Signature[] fieldsSignatures = classFile.getAllFields();
+        final Signature[] fieldsSignatures = classFile.getObjectFields();
         final KlassImpl k = new KlassImpl(calc, false, null, this.historyPoint, numOfStaticFields, fieldsSignatures);
         k.setIdentityHashCode(calc.valInt(0)); //doesn't care because it is not used
         this.staticMethodArea.set(classFile, k);
@@ -1828,11 +1828,9 @@ public final class State implements Cloneable {
      *        not for its superclasses in the hierarchy.
      * @throws FrozenStateException if the state is frozen.
      * @throws InvalidInputException if {@code calc == null || classFile == null}.
-     * @throws InvalidIndexException if the access to the class 
-     *         constant pool fails.
      */
     public void ensureKlassSymbolic(Calculator calc, ClassFile classFile) 
-    throws FrozenStateException, InvalidInputException, InvalidIndexException {
+    throws FrozenStateException, InvalidInputException {
     	if (this.frozen) {
     		throw new FrozenStateException();
     	}
@@ -1843,7 +1841,7 @@ public final class State implements Cloneable {
             return;
         }
         final int numOfStaticFields = classFile.numOfStaticFields();
-        final Signature[] fieldsSignatures = classFile.getAllFields();
+        final Signature[] fieldsSignatures = classFile.getObjectFields();
         final KlassImpl k = new KlassImpl(calc, true, createSymbolKlassPseudoReference(this.lastPreInitialHistoryPoint, classFile), this.lastPreInitialHistoryPoint, numOfStaticFields, fieldsSignatures);
         try {
         	initWithSymbolicValues(k, classFile);
@@ -1852,6 +1850,7 @@ public final class State implements Cloneable {
         	throw new UnexpectedInternalException(e);
         }
         k.setIdentityHashCode(calc.valInt(0)); //doesn't care because it is not used
+        k.setInitializationCompleted(); //nothing else to do
         this.staticMethodArea.set(classFile, k);
     }
 
@@ -1955,7 +1954,7 @@ public final class State implements Cloneable {
             throw new CannotAssumeSymbolicObjectException("JBSE does not allow to execute symbolically the methods of class " + classFile.getClassName() + ".");
         }
         final int numOfStaticFields = classFile.numOfStaticFields();
-        final Signature[] fieldsSignatures = classFile.getAllFields();
+        final Signature[] fieldsSignatures = classFile.getObjectFields();
         final InstanceImpl_DEFAULT obj = new InstanceImpl_DEFAULT(calc, true, classFile, origin, origin.historyPoint(), numOfStaticFields, fieldsSignatures);
         try {
         	initWithSymbolicValues(obj, classFile);
@@ -2825,24 +2824,6 @@ public final class State implements Cloneable {
     }
 
     /**
-     * Sets the return program counter of the current frame.
-     * 
-     * @param returnPCOffset the offset of the return program counter 
-     *        w.r.t. the current program counter.
-     * @throws InvalidProgramCounterException iff current + offset program counter
-     *        yield an invalid offset.
-     * @throws ThreadStackEmptyException if the thread stack is empty.
-     * @throws FrozenStateException if the state is frozen.
-     */
-    public void setReturnProgramCounter(int returnPCOffset) 
-    throws InvalidProgramCounterException, ThreadStackEmptyException, FrozenStateException {
-    	if (this.frozen) {
-    		throw new FrozenStateException();
-    	}
-        getCurrentFrame().setReturnProgramCounter(returnPCOffset);
-    }
-
-    /**
      * Removes the current {@link Frame} from the thread stack.
      * 
      * @return the popped {@link Frame}.
@@ -2927,7 +2908,7 @@ public final class State implements Cloneable {
      * Returns a copy of the state's heap.
      * 
      * @return a copy the state's heap as a 
-     * {@link SortedMap}{@code <}{@link Integer}{@code , }{@link Objekt}{@code >}
+     * {@link SortedMap}{@code <}{@link Long}{@code , }{@link Objekt}{@code >}
      * mapping heap positions to the {@link Objekt}s stored 
      * at them.
      * @throws FrozenStateException if the state is frozen.
@@ -3076,13 +3057,31 @@ public final class State implements Cloneable {
     }
 
     /**
+     * Sets the return program counter of the current frame.
+     * 
+     * @param returnPCOffset the offset of the return program counter 
+     *        w.r.t. the current program counter.
+     * @throws InvalidProgramCounterException iff current + offset program counter
+     *        yield an invalid offset.
+     * @throws ThreadStackEmptyException if the thread stack is empty.
+     * @throws FrozenStateException if the state is frozen.
+     */
+    public void setReturnProgramCounter(int returnPCOffset) 
+    throws InvalidProgramCounterException, ThreadStackEmptyException, FrozenStateException {
+    	if (this.frozen) {
+    		throw new FrozenStateException();
+    	}
+        getCurrentFrame().setReturnProgramCounter(returnPCOffset);
+    }
+
+    /**
      * Returns the return program counter of the caller frame
      * stored for a return bytecode.
      * 
      * @return an {@code int}, the return program counter.
      * @throws ThreadStackEmptyException  if the thread stack is empty.
      */
-    public int getReturnPC() throws ThreadStackEmptyException {
+    public int getReturnProgramCounter() throws ThreadStackEmptyException {
         return this.stack.currentFrame().getReturnProgramCounter();
     }
 
@@ -3190,7 +3189,8 @@ public final class State implements Cloneable {
     /**
      * Assumes the expansion of a symbolic reference to a fresh object of some
      * class, where the symbolic object is already present in the heap. Note that
-     * this method does <em>not</em> check that another symbolic reference
+     * this method does <em>not</em> check that no other symbolic reference exists 
+     * that expands to the referred symbolic object.
      * 
      * @param referenceSymbolic the {@link ReferenceSymbolic} which is resolved. It 
      *        must be {@code referenceSymbolic != null} and {@code referenceSymbolic} 
@@ -3198,7 +3198,7 @@ public final class State implements Cloneable {
      * @param freshObjectPosition a {@code long}, the position of the symbolic object in 
      *        the heap to which {@code referenceSymbolic} is expanded. Note that
      *        this method does <em>not</em> check that no other symbolic reference
-     *        exists that is expanded to the object at {@code freshObjectPosition}!
+     *        exists that expands to the object at {@code freshObjectPosition}!
      * @throws InvalidInputException if either {@code referenceSymbolic} is {@code null}, 
      *         or no symbolic object is stored at {@code freshObjectPosition}, or the 
      *         state is frozen.
@@ -3256,7 +3256,7 @@ public final class State implements Cloneable {
         if (resolved(referenceSymbolic)) {
             throw new ContradictionException("Attempted to invoke State.assumeAliases with an already resolved referenceSymbolic.");
         }
-        final Objekt aliasObject = getObjectInitial(aliasOrigin);
+        final HeapObjekt aliasObject = getObjectInitial(aliasOrigin);
         if (aliasObject == null) {
             throw new InvalidInputException("Attempted to invoke State.assumeAliases with an aliasOrigin that does not refer to any initial object.");
         }
@@ -3302,18 +3302,18 @@ public final class State implements Cloneable {
      * @param classFile the {@link ClassFile} for the class that
      *        is assumed to be initialized. 
      *        It must be {@code classFile != null}.
-     * @param klass the symbolic {@link Klass} for {@code classFile}, 
-     *        or {@code null} if the initial class is not symbolic. 
+     * @param klass the symbolic or concrete {@link Klass} for {@code classFile}. 
+     *        It must not be {@code null}. 
      * @throws InvalidInputException if {@code classFile == null}, or
-     *         the state is frozen.
+     *         {@code klass == null}, or the state is frozen.
      */
     public void assumeClassInitialized(ClassFile classFile, Klass klass) 
     throws InvalidInputException {
     	if (this.frozen) {
     		throw new FrozenStateException();
     	}
-        if (classFile == null) {
-            throw new InvalidInputException("Attempted to invoke State.assumeClassInitialized with a null classFile.");
+        if (classFile == null || klass == null) {
+            throw new InvalidInputException("Attempted to invoke State.assumeClassInitialized with a null classFile or klass parameter.");
         }
         
     	possiblyReset();
@@ -3695,8 +3695,8 @@ public final class State implements Cloneable {
      * refines (i.e., comes temporally later than) this state.
      *
      * @param stateRefining another {@link State}; it must refine this state, 
-     *        meaning that this state's identifier and path condition must be prefixes 
-     *        of {@code stateRefining}'s identifier and path condition.
+     *        meaning that this state's history point and path condition must be prefixes 
+     *        of {@code stateRefining}'s history point and path condition.
      * @throws CannotRefineException when {@code stateRefining} does not refine 
      *         {@code this}.
      * @throws FrozenStateException if the state is frozen.
@@ -3705,7 +3705,7 @@ public final class State implements Cloneable {
     	if (this.frozen) {
     		throw new FrozenStateException();
     	}
-        //TODO this method doesn't work with arrays!!!
+        //TODO this method doesn't work with arrays and maps!!!
         final HistoryPoint refiningHistoryPoint = stateRefining.historyPoint;
         final PathCondition refiningPathCondition = stateRefining.pathCondition;
 
