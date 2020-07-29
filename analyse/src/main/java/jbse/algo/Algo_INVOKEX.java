@@ -57,6 +57,7 @@ final class Algo_INVOKEX extends Algo_INVOKEX_Abstract {
                 exitFromAlgorithm();
             } catch (ClassFileNotFoundException e) {
                 //TODO this exception should wrap a ClassNotFoundException
+                System.err.println(e.getMessage());
                 throwNew(state, this.ctx.getCalculator(), NO_CLASS_DEFINITION_FOUND_ERROR);
                 exitFromAlgorithm();
             } catch (BadClassFileVersionException e) {
