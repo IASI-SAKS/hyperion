@@ -1,12 +1,14 @@
 package it.cnr.saks.sisma.testing;
 
 import java.lang.reflect.Method;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
 
 public class TestInformation {
-    private final HashSet<MethodCall> methodCalls = new HashSet<>();;
-    private final HashSet<EndPoint> endPoints = new HashSet<>();;
-    private final HashSet<String> exceptions = new HashSet<>();;
+    private final ArrayList<MethodCall> methodCalls = new ArrayList<>();
+    private final ArrayList<EndPoint> endPoints = new ArrayList<>();
+    private final ArrayList<String> exceptions = new ArrayList<>();
 
     protected void addMethodCall(String methodName, String methodDescriptor, String className) {
         for(MethodCall md : this.methodCalls) {
@@ -28,15 +30,15 @@ public class TestInformation {
         this.exceptions.add(exception);
     }
 
-    protected HashSet<MethodCall> getMethodCalls() {
+    public ArrayList<MethodCall> getMethodCalls() {
         return this.methodCalls;
     }
 
-    protected HashSet<EndPoint> getEndPoints() {
+    public ArrayList<EndPoint> getEndPoints() {
         return this.endPoints;
     }
 
-    protected HashSet<String> getExceptions() {
+    public ArrayList<String> getExceptions() {
         return this.exceptions;
     }
 
@@ -45,6 +47,7 @@ public class TestInformation {
         private final String type;
         private final String endPoint;
         private final String args;
+        private int hits;
 
         private EndPoint(String type, String endPoint, String args) {
             this.type = type;
@@ -62,6 +65,14 @@ public class TestInformation {
 
         public String getArgs() {
             return args;
+        }
+
+        public int getHits() {
+            return this.hits;
+        }
+
+        public void hit() {
+            this.hits++;
         }
     }
 
@@ -92,12 +103,12 @@ public class TestInformation {
             return methodName;
         }
 
-        public void hit() {
-            this.hits++;
-        }
-
         public int getHits() {
             return this.hits;
+        }
+
+        public void hit() {
+            this.hits++;
         }
     }
 }

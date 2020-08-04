@@ -68,7 +68,7 @@ public final class Analyzer {
         public boolean atMethodPost() {
             if(Analyzer.this.trackMethods) {
                 final State currentState = Analyzer.this.engine.getCurrentState();
-                Analyzer.this.informationLogger.inspectState(currentState);
+                Analyzer.this.informationLogger.onMethodCall(currentState);
             }
 
             return super.atMethodPost();

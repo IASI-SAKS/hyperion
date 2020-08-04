@@ -36,7 +36,7 @@ public class Main {
         }
 
         inspector = new InformationLogger(methodEnumerator);
-        inspector.setOutputFile(testPath + "inspection.log");
+        inspector.setJsonOutputFile("inspection.json");
 
         for(MethodDescriptor method: methodEnumerator) {
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
@@ -54,9 +54,9 @@ public class Main {
         }
 
         try {
-            inspector.dump();
+            inspector.emitJson();
         } catch (JsonProcessingException e) {
-            e.printStackTrace();
+            System.err.println(e.getMessage());
         }
 
         long endTime = System.nanoTime();
@@ -72,9 +72,7 @@ public class Main {
         for(URL u: urlClassPath) {
             listClassPath.add(u.getPath());
         }
-        for(String path: additionalClassPath) {
-            listClassPath.add(path);
-        }
+        listClassPath.addAll(Arrays.asList(additionalClassPath));
         
         String[] classPath = new String[listClassPath.size()];
         listClassPath.toArray(classPath);
