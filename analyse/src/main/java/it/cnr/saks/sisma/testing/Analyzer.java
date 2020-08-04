@@ -135,4 +135,9 @@ public final class Analyzer {
         return this;
     }
 
+    public Analyzer withUninterpreted(String methodClassName, String methodDescriptor, String methodName) {
+        this.runnerParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
+        return this;
+    }
+
 }
