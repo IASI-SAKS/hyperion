@@ -269,4 +269,4 @@ SimpleCharStream.java
 # Our stuff
 
 JBSE-output.txt
-
+*.json

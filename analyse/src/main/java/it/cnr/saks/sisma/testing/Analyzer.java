@@ -1,7 +1,6 @@
 package it.cnr.saks.sisma.testing;
 
 import jbse.algo.exc.CannotManageStateException;
-import jbse.algo.exc.NotYetImplementedException;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
 import jbse.common.exc.ClasspathException;
 import jbse.common.exc.InvalidInputException;
@@ -29,9 +28,9 @@ public final class Analyzer {
     private final RunnerParameters runnerParameters;
     private Engine engine;
 
-    private final MethodCallSet methodCallSet;
+    private final InformationLogger informationLogger;
 
-    public Analyzer(MethodCallSet methodCallSet) throws AnalyzerException {
+    public Analyzer(InformationLogger informationLogger) throws AnalyzerException {
         final CalculatorRewriting calc = createCalculator();
 
         this.runnerParameters = new RunnerParameters();
@@ -39,7 +38,7 @@ public final class Analyzer {
         this.runnerParameters.setCalculator(calc);
         this.runnerParameters.setDecisionProcedure(createDecisionProcedure(calc));
 
-        this.methodCallSet = methodCallSet;
+        this.informationLogger = informationLogger;
     }
 
     private class ActionsRun extends Runner.Actions {
@@ -69,7 +68,7 @@ public final class Analyzer {
         public boolean atMethodPost() {
             if(Analyzer.this.trackMethods) {
                 final State currentState = Analyzer.this.engine.getCurrentState();
-                Analyzer.this.methodCallSet.inspectState(currentState);
+                Analyzer.this.informationLogger.onMethodCall(currentState);
             }
 
             return super.atMethodPost();

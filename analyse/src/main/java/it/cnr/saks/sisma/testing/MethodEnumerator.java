@@ -15,47 +15,18 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescriptor> {
+public class MethodEnumerator implements Iterable<MethodDescriptor> {
     private final List<MethodDescriptor> methods = new ArrayList<>();
     private final URL[] classPath;
-
-    protected static class MethodDescriptor {
-        private final Method method;
-        private final String methodName;
-        private final String methodDescriptor;
-        private final String className;
-
-        public MethodDescriptor(Method method, String methodName, String methodDescriptor, String className) {
-            this.method = method;
-            this.methodName = methodName;
-            this.methodDescriptor = methodDescriptor;
-            this.className = className;
-        }
-
-        public Method getMethod() {
-            return method;
-        }
-
-        public String getClassName() {
-            return className;
-        }
-
-        public String getMethodDescriptor() {
-            return methodDescriptor;
-        }
-
-        public String getMethodName() {
-            return methodName;
-        }
-    }
+    private List<Class> classes = null;
+    private List<Class> SUTClasses = null;
 
     public MethodEnumerator(String classPath, String SUTPath) throws IOException, AnalyzerException {
         this.classPath = this.initializeClasspath(classPath, SUTPath);
-        List<Class> classes = this.enumerateClasses(classPath);
+        this.classes = this.enumerateClasses(classPath);
+        this.SUTClasses = this.enumerateClasses(SUTPath); // To load classes from the SUT
 
-        this.enumerateClasses(SUTPath); // To load classes from the SUT
-
-        for (Class clazz: classes) {
+        for (Class clazz: this.classes) {
             System.out.print("Analysing class " + clazz.getName() + ":");
 
             if(Modifier.isAbstract(clazz.getModifiers())) {
@@ -89,6 +60,18 @@ public class MethodEnumerator implements Iterable<MethodEnumerator.MethodDescrip
     @Override
     public Iterator<MethodDescriptor> iterator() {
         return this.methods.iterator();
+    }
+
+    public Class findClass(String fqn) throws ClassNotFoundException {
+        for (Class clazz: this.classes) {
+            if(clazz.getName().equals(fqn))
+                return clazz;
+        }
+        for (Class clazz: this.SUTClasses) {
+            if(clazz.getName().equals(fqn))
+                return clazz;
+        }
+        throw new ClassNotFoundException("Unable to find class " + fqn);
     }
 
     private String getMethodDescriptor(Method m)
