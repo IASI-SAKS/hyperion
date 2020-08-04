@@ -1,16 +1,15 @@
 package it.cnr.saks.sisma.testing;
 
-import it.cnr.saks.sisma.testing.MethodEnumerator.MethodDescriptor;
+import com.fasterxml.jackson.core.JsonProcessingException;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Main {
-    private static final MethodCallSet inspector = new MethodCallSet();
+    private static InformationLogger inspector;
     private static MethodEnumerator methodEnumerator;
 
     public static void main(String[] args) {
@@ -29,13 +28,15 @@ public class Main {
 
         long startTime = System.nanoTime();
 
-        inspector.setOutputFile(testPath + "inspection.log");
         try {
             methodEnumerator = new MethodEnumerator(testPath, SUTPath);
         } catch (IOException | AnalyzerException e) {
             System.err.println(e.getMessage());
             System.exit(66); // EX_NOINPUT
         }
+
+        inspector = new InformationLogger(methodEnumerator);
+        inspector.setOutputFile(testPath + "inspection.log");
 
         for(MethodDescriptor method: methodEnumerator) {
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
@@ -52,7 +53,11 @@ public class Main {
             }
         }
 
-        inspector.dump();
+        try {
+            inspector.dump();
+        } catch (JsonProcessingException e) {
+            e.printStackTrace();
+        }
 
         long endTime = System.nanoTime();
         double duration = (double)(endTime - startTime) / 1000000000;
