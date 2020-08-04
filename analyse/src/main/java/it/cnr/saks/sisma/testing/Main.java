@@ -5,6 +5,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -64,18 +66,25 @@ public class Main {
         System.out.println("Analyzed " + methodEnumerator.getMethodsCount() + " methods in " + duration + " seconds.");
     }
 
-    private static String[] prepareFinalRuntimeClasspath(String SUTPath, String[] additionalClassPath) {
+    private static String[] prepareFinalRuntimeClasspath(String SUTPath, String[] additionalClassPath) throws AnalyzerException {
         URL[] urlClassPath = methodEnumerator.getClassPath();
         ArrayList<String> listClassPath = new ArrayList<>();
 
         listClassPath.add(SUTPath);
-        for(URL u: urlClassPath) {
+        for (URL u : urlClassPath) {
             listClassPath.add(u.getPath());
         }
         listClassPath.addAll(Arrays.asList(additionalClassPath));
-        
+
         String[] classPath = new String[listClassPath.size()];
         listClassPath.toArray(classPath);
+
+        // Sanity check
+        for (String path : listClassPath) {
+            if(!Files.exists(Paths.get(path))) {
+                throw new AnalyzerException("The path " + path + " does not exist");
+            }
+        }
 
         return classPath;
     }
