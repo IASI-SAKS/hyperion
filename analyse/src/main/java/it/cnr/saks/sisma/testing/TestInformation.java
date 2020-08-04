@@ -17,11 +17,19 @@ public class TestInformation {
                 return;
             }
         }
+
         MethodCall md = new MethodCall(null, methodName, methodDescriptor, className);
         this.methodCalls.add(md);
     }
 
     protected void addEndPoint(String type, String endPoint, String args) {
+        for(EndPoint ep : this.endPoints) {
+            if(ep.getEndPoint().equals(endPoint)) {
+                ep.hit();;
+                return;
+            }
+        }
+
         EndPoint ep = new EndPoint(type, endPoint, args);
         this.endPoints.add(ep);
     }

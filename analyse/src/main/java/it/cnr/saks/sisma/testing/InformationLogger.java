@@ -33,46 +33,30 @@ public class InformationLogger {
     }
 
     public void onMethodCall(State s) {
+        Signature method = null;
+        ClassFile classFile = null;
+
         if(s.isStuck())
             return;
+
         try {
-            Signature method = s.getCurrentMethodSignature();
-            String name = method.getName();
-
-            if(name.equals("<init>"))
-                return;
-
-            ClassFile classFile = s.getCurrentClass();
-
-            if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
-                    && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
-                HeapObjekt parameter = s.getObject((Reference) s.getCurrentFrame().getLocalVariableValue(0));
-
-                if(parameter != null) {
-                    String value;
-
-                    if (parameter.isSymbolic()) {
-                        String className = ((ReferenceSymbolicMemberField)parameter.getOrigin()).getFieldClass().replace('/', '.');
-                        String fieldName = ((ReferenceSymbolicMemberField)parameter.getOrigin()).getFieldName();
-                        Class<?> clazz = this.methodEnumerator.findClass(className);
-                        Field f = clazz.getDeclaredField(fieldName);
-                        boolean accessible = f.isAccessible();
-                        if(!accessible)
-                            f.setAccessible(true);
-                        value = (String)f.get(null);
-                        if(!accessible)
-                            f.setAccessible(false);
-                    } else {
-                        value = valueString(s, (Reference) s.getCurrentFrame().getLocalVariableValue(0)); // OK!
-                    }
-                    this.loggedInformation.get(this.currClass).get(this.currMethod).addEndPoint(name, value, null);
-                }
-            }
-            this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName());
-
-        } catch (FrozenStateException | InvalidSlotException | ClassNotFoundException | NoSuchFieldException | IllegalAccessException | ThreadStackEmptyException e) {
-            System.err.print(e.getMessage());
+            method = s.getCurrentMethodSignature();
+            classFile = s.getCurrentClass();
+        } catch (ThreadStackEmptyException e) {
+            e.printStackTrace();
+            return;
         }
+
+        String name = method.getName();
+        if(name.equals("<init>"))
+            return;
+
+        if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
+                && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
+            this.inspectHttpRequest(s, name);
+        }
+
+        this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName());
     }
 
     public void setJsonOutputFile(String f) {
@@ -100,5 +84,33 @@ public class InformationLogger {
         ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
         String jsonString = mapper.writeValueAsString(this.loggedInformation);
         this.jsonOut.println(jsonString);
+    }
+
+    private void inspectHttpRequest(State s, String name) {
+        try {
+            HeapObjekt parameter = s.getObject((Reference) s.getCurrentFrame().getLocalVariableValue(0));
+
+            if(parameter != null) {
+                String value;
+
+                if (parameter.isSymbolic()) {
+                    String className = ((ReferenceSymbolicMemberField)parameter.getOrigin()).getFieldClass().replace('/', '.');
+                    String fieldName = ((ReferenceSymbolicMemberField)parameter.getOrigin()).getFieldName();
+                    Class<?> clazz = this.methodEnumerator.findClass(className);
+                    Field f = clazz.getDeclaredField(fieldName);
+                    boolean accessible = f.isAccessible();
+                    if(!accessible)
+                        f.setAccessible(true);
+                    value = (String)f.get(null);
+                    if(!accessible)
+                        f.setAccessible(false);
+                } else {
+                    value = valueString(s, (Reference) s.getCurrentFrame().getLocalVariableValue(0)); // OK!
+                }
+                this.loggedInformation.get(this.currClass).get(this.currMethod).addEndPoint(name, value, null);
+            }
+        } catch (FrozenStateException | ThreadStackEmptyException | InvalidSlotException | ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
+            e.printStackTrace();
+        }
     }
 }
