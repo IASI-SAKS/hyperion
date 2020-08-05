@@ -7,10 +7,10 @@ import jbse.bc.ClassFile;
 import jbse.bc.Signature;
 import jbse.mem.*;
 import jbse.mem.exc.FrozenStateException;
+import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.InvalidSlotException;
 import jbse.mem.exc.ThreadStackEmptyException;
-import jbse.val.Reference;
-import jbse.val.ReferenceSymbolicMemberField;
+import jbse.val.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -19,6 +19,8 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 
 import static jbse.algo.Util.valueString;
+import static jbse.common.Type.parametersNumber;
+import static jbse.common.Type.splitParametersDescriptors;
 
 public class InformationLogger {
     private final MethodEnumerator methodEnumerator;
@@ -48,7 +50,7 @@ public class InformationLogger {
         }
 
         String name = method.getName();
-        if(name.equals("<init>"))
+        if(name.equals("<init>") || name.equals(this.currMethod))
             return;
 
         if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
@@ -56,7 +58,7 @@ public class InformationLogger {
             this.inspectHttpRequest(s, name);
         }
 
-        this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName());
+        this.inspectMethodCall(s, name, method, classFile);
     }
 
     public void setJsonOutputFile(String f) {
@@ -112,5 +114,52 @@ public class InformationLogger {
         } catch (FrozenStateException | ThreadStackEmptyException | InvalidSlotException | ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
         }
+    }
+
+    private void inspectMethodCall(State s, String name, Signature method, ClassFile classFile) {
+
+        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName());
+
+        Value[] operands = null;
+        int numOperands = splitParametersDescriptors(method.getDescriptor()).length;
+
+        try {
+            operands = s.getCurrentFrame().operands(numOperands);
+        } catch (InvalidNumberOfOperandsException | ThreadStackEmptyException | FrozenStateException e) {
+            return;
+        }
+
+        TestInformation.ParameterSet pSet = new TestInformation.ParameterSet();
+
+        for (Value op : operands) {
+            try {
+                if (op instanceof Simplex) {
+                    pSet.addParameter(((Simplex) op).getActualValue());
+                } else {
+                    if(op.isSymbolic()) {
+                        pSet.addParameter("SYMBOLIC");
+                    } else {
+                        HeapObjekt operand = s.getObject((Reference) op);
+
+                        if (operand == null) {
+                            pSet.addParameter(null); // ???
+                            continue;
+                        }
+
+                        String className = operand.getType().getClassName();
+                        if (className.equals("java/lang/String")) {
+                            String string = valueString(s, (Instance) operand);
+                            pSet.addParameter(string);
+                        } else {
+                            pSet.addParameter(className); // ???
+                        }
+                    }
+                }
+            } catch (FrozenStateException e) {
+                return;
+            }
+        }
+
+        md.addInvocation(pSet);
     }
 }
