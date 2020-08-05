@@ -1,31 +1,30 @@
 package it.cnr.saks.sisma.testing;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Arrays;
 
 public class TestInformation {
     private final ArrayList<MethodCall> methodCalls = new ArrayList<>();
     private final ArrayList<EndPoint> endPoints = new ArrayList<>();
     private final ArrayList<String> exceptions = new ArrayList<>();
 
-    protected void addMethodCall(String methodName, String methodDescriptor, String className) {
+    protected MethodCall addMethodCall(String methodName, String methodDescriptor, String className) {
         for(MethodCall md : this.methodCalls) {
             if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className)) {
                 md.hit();
-                return;
+                return md;
             }
         }
 
-        MethodCall md = new MethodCall(null, methodName, methodDescriptor, className);
+        MethodCall md = new MethodCall(methodName, methodDescriptor, className);
         this.methodCalls.add(md);
+        return md;
     }
 
     protected void addEndPoint(String type, String endPoint, String args) {
         for(EndPoint ep : this.endPoints) {
             if(ep.getEndPoint().equals(endPoint)) {
-                ep.hit();;
+                ep.hit();
                 return;
             }
         }
@@ -51,7 +50,7 @@ public class TestInformation {
     }
 
 
-    protected class EndPoint {
+    protected static class EndPoint {
         private final String type;
         private final String endPoint;
         private final String args;
@@ -85,14 +84,14 @@ public class TestInformation {
     }
 
 
-    protected class MethodCall {
+    protected static class MethodCall {
         private final String methodName;
         private final String methodDescriptor;
         private final String className;
         private int hits;
+        private final ArrayList<ParameterSet> invokedWithParameters = new ArrayList<>();
 
-
-        public MethodCall(Method method, String methodName, String methodDescriptor, String className) {
+        public MethodCall(String methodName, String methodDescriptor, String className) {
             this.methodName = methodName;
             this.methodDescriptor = methodDescriptor;
             this.className = className;
@@ -118,5 +117,26 @@ public class TestInformation {
         public void hit() {
             this.hits++;
         }
+
+        public ArrayList<ParameterSet> getInvokedWithParameters() {
+            return invokedWithParameters;
+        }
+
+        public void addInvocation(ParameterSet pSet) {
+            this.invokedWithParameters.add(pSet);
+        }
     }
+
+    protected static class ParameterSet {
+        private final ArrayList<Object> parameters = new ArrayList<>();
+
+        public void addParameter(Object o) {
+            this.parameters.add(o);
+        }
+
+        public ArrayList<Object> getParameters() {
+            return this.parameters;
+        }
+    }
+
 }
