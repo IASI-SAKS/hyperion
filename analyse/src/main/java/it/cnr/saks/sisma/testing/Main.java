@@ -39,6 +39,7 @@ public class Main {
 
         inspector = new InformationLogger(methodEnumerator);
         inspector.setJsonOutputFile("inspection.json");
+        inspector.setDatalogOutputFile("inspection.datalog");
 
         for(MethodDescriptor method: methodEnumerator) {
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
@@ -75,13 +76,18 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "isTrue")
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
                 a.run();
+
+                break;
+
             } catch (AnalyzerException e) {
                 e.printStackTrace();
             }
+
         }
 
         try {
             inspector.emitJson();
+            inspector.emitDatalog();
         } catch (JsonProcessingException e) {
             System.err.println(e.getMessage());
         }

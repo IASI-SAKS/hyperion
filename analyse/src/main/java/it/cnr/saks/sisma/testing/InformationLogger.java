@@ -16,13 +16,14 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.lang.reflect.Field;
-import java.util.HashMap;
+import java.util.*;
 
 import static jbse.algo.Util.valueString;
 
 public class InformationLogger {
     private final MethodEnumerator methodEnumerator;
     private PrintStream jsonOut = null;
+    private PrintStream datalogOut = null;
     // Class -> Method -> Information Data
     private final HashMap<String, HashMap<String, TestInformation>> loggedInformation = new HashMap<>();
     private String currClass;
@@ -39,6 +40,10 @@ public class InformationLogger {
         if(s.isStuck())
             return;
 
+        int stackFrames = s.getStackSize();
+        if(stackFrames < 2)
+            return;
+
         try {
             method = s.getCurrentMethodSignature();
             classFile = s.getCurrentClass();
@@ -48,15 +53,29 @@ public class InformationLogger {
         }
 
         String name = method.getName();
-        if(name.equals("<init>"))
+        Signature caller = null;
+        int callerPC = -1;
+        try {
+             caller = s.getStack().get(stackFrames - 2).getMethodSignature();
+             callerPC = s.getStack().get(stackFrames - 2).getProgramCounter();
+        } catch (FrozenStateException e) {
+            e.printStackTrace();
+        }
+
+        if(name.equals("<init>") || caller.getName().equals("<init>"))
             return;
+
+        String branchId = s.getBranchIdentifier().substring(1);
+        String pathId = "[" + branchId.replaceAll("\\.", ", ") + "], " + s.getSequenceNumber();
 
         if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
                 && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
-            this.inspectHttpRequest(s, name);
+            this.inspectHttpRequest(s, name, pathId);
         }
 
-        this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName());
+        String programPoint = caller.getClassName() + ":" + caller.getDescriptor() + ":" + callerPC;
+
+        this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName(), pathId, programPoint);
     }
 
     public void setJsonOutputFile(String f) {
@@ -65,6 +84,15 @@ public class InformationLogger {
             this.jsonOut = new PrintStream(file);
         } catch (FileNotFoundException e) {
             this.jsonOut = null;
+        }
+    }
+
+    public void setDatalogOutputFile(String f) {
+        final File file = new File(f);
+        try {
+            this.datalogOut = new PrintStream(file);
+        } catch (FileNotFoundException e) {
+            this.datalogOut = null;
         }
     }
 
@@ -86,7 +114,56 @@ public class InformationLogger {
         this.jsonOut.println(jsonString);
     }
 
-    private void inspectHttpRequest(State s, String name) {
+    public void emitDatalog() {
+        if(this.datalogOut == null)
+            return;
+
+        this.loggedInformation.forEach((klass,methodsInKlass) -> { // for each class
+            if(methodsInKlass.size() == 0)
+                return;
+            methodsInKlass.forEach((method, methodLoggedInformation) -> { // for each analyzed method
+
+                // Process method calls
+                ArrayList<TestInformation.MethodCall> methodCalls = methodLoggedInformation.getMethodCalls();
+                for (ListIterator<TestInformation.MethodCall> iterator = methodCalls.listIterator(); iterator.hasNext(); ) {
+                    TestInformation.MethodCall methodCall = iterator.next();
+
+                    this.datalogOut.println("invokes("
+                            + klass + ":" + method + ", "
+                            + methodCall.getPathId() + ", " + methodCall.getProgramPoint() + ", " + "[PATH CONDITION]" + ", "
+                            + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + ", "
+                            + "[PARAMETRI]" + ")");
+
+//                    this.datalogOut.println("uses(" + klass + ":" + method + ", " + methodCall.getClassName() + ")");
+
+//                    for (ListIterator<TestInformation.MethodCall> i2 = methodCalls.listIterator(iterator.nextIndex()); i2.hasNext(); ) {
+//                        TestInformation.MethodCall subsequentMethodCall = i2.next();
+//                        this.datalogOut.println("invokesBefore(" + klass + ":" + method + ", "
+//                                + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + ", "
+//                                + subsequentMethodCall.getClassName() + ":" + subsequentMethodCall.getMethodName() + ":" + subsequentMethodCall.getMethodDescriptor() + ")");
+//                    }
+                }
+
+                // Process endpoints
+                ArrayList<TestInformation.EndPoint> endpoints = methodLoggedInformation.getEndPoints();
+                for (ListIterator<TestInformation.EndPoint> iterator = endpoints.listIterator(); iterator.hasNext(); ) {
+                    TestInformation.EndPoint endpoint = iterator.next();
+
+//                    this.datalogOut.println("contacts(" + klass + ":" + method + ", "
+//                            + endpoint.getType() + ", " + endpoint.getEndPoint() + ", " + endpoint.getPathId() + ")");
+
+//                    for (ListIterator<TestInformation.EndPoint> i2 = endpoints.listIterator(iterator.nextIndex()); i2.hasNext(); ) {
+//                        TestInformation.EndPoint subsequentEndpoint = i2.next();
+//                        this.datalogOut.println("contactsBefore(" + klass + ":" + method + ", "
+//                                + endpoint.getType() + ", " + endpoint.getEndPoint() + ", " + endpoint.getPathId() + ", "
+//                                + subsequentEndpoint.getType() + ", " + subsequentEndpoint.getEndPoint() + ", " + subsequentEndpoint.getPathId() + ")");
+//                    }
+                }
+            });
+        });
+    }
+
+    private void inspectHttpRequest(State s, String name, String pathId) {
         try {
             HeapObjekt parameter = s.getObject((Reference) s.getCurrentFrame().getLocalVariableValue(0));
 
@@ -107,7 +184,7 @@ public class InformationLogger {
                 } else {
                     value = valueString(s, (Reference) s.getCurrentFrame().getLocalVariableValue(0)); // OK!
                 }
-                this.loggedInformation.get(this.currClass).get(this.currMethod).addEndPoint(name, value, null);
+                this.loggedInformation.get(this.currClass).get(this.currMethod).addEndPoint(name, value, null, pathId);
             }
         } catch (FrozenStateException | ThreadStackEmptyException | InvalidSlotException | ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();

@@ -10,27 +10,25 @@ public class TestInformation {
     private final ArrayList<EndPoint> endPoints = new ArrayList<>();
     private final ArrayList<String> exceptions = new ArrayList<>();
 
-    protected void addMethodCall(String methodName, String methodDescriptor, String className) {
+    protected void addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint) {
         for(MethodCall md : this.methodCalls) {
-            if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className)) {
-                md.hit();
+            if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getPathId().equals(pathId)) {
                 return;
             }
         }
 
-        MethodCall md = new MethodCall(null, methodName, methodDescriptor, className);
+        MethodCall md = new MethodCall(null, methodName, methodDescriptor, className, pathId, programPoint);
         this.methodCalls.add(md);
     }
 
-    protected void addEndPoint(String type, String endPoint, String args) {
+    protected void addEndPoint(String type, String endPoint, String args, String pathId) {
         for(EndPoint ep : this.endPoints) {
-            if(ep.getEndPoint().equals(endPoint)) {
-                ep.hit();;
+            if(ep.getEndPoint().equals(endPoint) && ep.getPathId().equals(pathId)) {
                 return;
             }
         }
 
-        EndPoint ep = new EndPoint(type, endPoint, args);
+        EndPoint ep = new EndPoint(type, endPoint, args, pathId);
         this.endPoints.add(ep);
     }
 
@@ -55,12 +53,13 @@ public class TestInformation {
         private final String type;
         private final String endPoint;
         private final String args;
-        private int hits;
+        private final String pathId;
 
-        private EndPoint(String type, String endPoint, String args) {
+        private EndPoint(String type, String endPoint, String args, String pathId) {
             this.type = type;
             this.endPoint = endPoint;
             this.args = args;
+            this.pathId = pathId;
         }
 
         public String getType() {
@@ -75,13 +74,10 @@ public class TestInformation {
             return args;
         }
 
-        public int getHits() {
-            return this.hits;
+        public String getPathId() {
+            return pathId;
         }
 
-        public void hit() {
-            this.hits++;
-        }
     }
 
 
@@ -89,14 +85,16 @@ public class TestInformation {
         private final String methodName;
         private final String methodDescriptor;
         private final String className;
-        private int hits;
+        private final String pathId;
+        private final String programPoint;
 
 
-        public MethodCall(Method method, String methodName, String methodDescriptor, String className) {
+        public MethodCall(Method method, String methodName, String methodDescriptor, String className, String pathId, String programPoint) {
             this.methodName = methodName;
             this.methodDescriptor = methodDescriptor;
             this.className = className;
-            this.hits = 0;
+            this.pathId = pathId;
+            this.programPoint = programPoint;
         }
 
         public String getClassName() {
@@ -111,12 +109,13 @@ public class TestInformation {
             return methodName;
         }
 
-        public int getHits() {
-            return this.hits;
+        public String getPathId() {
+            return pathId;
         }
 
-        public void hit() {
-            this.hits++;
+        public String getProgramPoint() {
+            return programPoint;
         }
+
     }
 }
