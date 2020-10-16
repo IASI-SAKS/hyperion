@@ -75,6 +75,8 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "isTrue")
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
                 a.run();
+
+                break;
             } catch (AnalyzerException e) {
                 e.printStackTrace();
             }

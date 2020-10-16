@@ -109,7 +109,7 @@ public class InformationLogger {
                 } else {
                     value = valueString(s, (Reference) s.getCurrentFrame().getLocalVariableValue(0)); // OK!
                 }
-                this.loggedInformation.get(this.currClass).get(this.currMethod).addEndPoint(name, value, null);
+//                this.loggedInformation.get(this.currClass).get(this.currMethod).addEndPoint(name, value, null);
             }
         } catch (FrozenStateException | ThreadStackEmptyException | InvalidSlotException | ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();
