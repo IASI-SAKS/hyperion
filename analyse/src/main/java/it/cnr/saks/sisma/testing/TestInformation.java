@@ -8,15 +8,17 @@ public class TestInformation {
     private final ArrayList<EndPoint> endPoints = new ArrayList<>();
     private final ArrayList<String> exceptions = new ArrayList<>();
 
-    protected void addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint) {
+    protected MethodCall addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint) {
         for(MethodCall md : this.methodCalls) {
+            // TODO: siccome ora considero anche i parametri, probabilmente qui è necessario creare entry duplicate...
             if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getPathId().equals(pathId)) {
-                return;
+                return null;
             }
         }
 
         MethodCall md = new MethodCall(methodName, methodDescriptor, className, pathId, programPoint);
         this.methodCalls.add(md);
+        return md;
     }
 
     protected void addEndPoint(String type, String endPoint, String args, String pathId) {
@@ -85,7 +87,7 @@ public class TestInformation {
         private final String className;
         private final String pathId;
         private final String programPoint;
-        private final ArrayList<ParameterSet> invokedWithParameters = new ArrayList<>();
+        private ParameterSet parameters = new ParameterSet();
 
 
         public MethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint) {
@@ -116,24 +118,30 @@ public class TestInformation {
             return programPoint;
         }
 
-        public ArrayList<ParameterSet> getInvokedWithParameters() {
-            return invokedWithParameters;
+        public ParameterSet getParameterSet() {
+            return parameters;
         }
 
-        public void addInvocation(ParameterSet pSet) {
-            this.invokedWithParameters.add(pSet);
+        public void setParameterSet(ParameterSet parameters) {
+            this.parameters = parameters;
         }
     }
 
     protected static class ParameterSet {
-        private final ArrayList<Object> parameters = new ArrayList<>();
+        private final ArrayList<String> parameters = new ArrayList<>();
 
-        public void addParameter(Object o) {
-            this.parameters.add(o);
+        public void addParameter(String s) {
+            this.parameters.add(s);
         }
 
-        public ArrayList<Object> getParameters() {
-            return this.parameters;
+        public String getParameters() {
+            StringBuilder ret = new StringBuilder();
+            ret.append("[");
+            for(String s: parameters) {
+                ret.append(s + ", ");
+            }
+            ret.append("]");
+            return ret.toString();
         }
     }
 
