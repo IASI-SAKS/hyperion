@@ -1,9 +1,7 @@
 package it.cnr.saks.sisma.testing;
 
-import java.lang.reflect.Method;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
+import java.util.Arrays;
 
 public class TestInformation {
     private final ArrayList<MethodCall> methodCalls = new ArrayList<>();
@@ -17,7 +15,7 @@ public class TestInformation {
             }
         }
 
-        MethodCall md = new MethodCall(null, methodName, methodDescriptor, className, pathId, programPoint);
+        MethodCall md = new MethodCall(methodName, methodDescriptor, className, pathId, programPoint);
         this.methodCalls.add(md);
     }
 
@@ -49,7 +47,7 @@ public class TestInformation {
     }
 
 
-    protected class EndPoint {
+    protected static class EndPoint {
         private final String type;
         private final String endPoint;
         private final String args;
@@ -81,15 +79,16 @@ public class TestInformation {
     }
 
 
-    protected class MethodCall {
+    protected static class MethodCall {
         private final String methodName;
         private final String methodDescriptor;
         private final String className;
         private final String pathId;
         private final String programPoint;
+        private final ArrayList<ParameterSet> invokedWithParameters = new ArrayList<>();
 
 
-        public MethodCall(Method method, String methodName, String methodDescriptor, String className, String pathId, String programPoint) {
+        public MethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint) {
             this.methodName = methodName;
             this.methodDescriptor = methodDescriptor;
             this.className = className;
@@ -117,5 +116,25 @@ public class TestInformation {
             return programPoint;
         }
 
+        public ArrayList<ParameterSet> getInvokedWithParameters() {
+            return invokedWithParameters;
+        }
+
+        public void addInvocation(ParameterSet pSet) {
+            this.invokedWithParameters.add(pSet);
+        }
     }
+
+    protected static class ParameterSet {
+        private final ArrayList<Object> parameters = new ArrayList<>();
+
+        public void addParameter(Object o) {
+            this.parameters.add(o);
+        }
+
+        public ArrayList<Object> getParameters() {
+            return this.parameters;
+        }
+    }
+
 }
