@@ -19,7 +19,6 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 import static jbse.algo.Util.valueString;
-import static jbse.common.Type.parametersNumber;
 import static jbse.common.Type.splitParametersDescriptors;
 
 public class InformationLogger {
@@ -70,15 +69,14 @@ public class InformationLogger {
 
         String branchId = s.getBranchIdentifier().substring(1);
         String pathId = "[" + branchId.replaceAll("\\.", ", ") + "], " + s.getSequenceNumber();
+        String programPoint = caller.getClassName() + ":" + caller.getDescriptor() + "@" + callerPC;
 
         if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
                 && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
             this.inspectHttpRequest(s, name, pathId);
         }
 
-        String programPoint = caller.getClassName() + ":" + caller.getDescriptor() + ":" + callerPC;
-
-        this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName(), pathId, programPoint);
+        this.inspectMethodCall(s, name, method, classFile, pathId, programPoint);
     }
 
     public void setJsonOutputFile(String f) {
@@ -135,7 +133,7 @@ public class InformationLogger {
                             + klass + ":" + method + ", "
                             + methodCall.getPathId() + ", " + methodCall.getProgramPoint() + ", " + "[PATH CONDITION]" + ", "
                             + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + ", "
-                            + "[PARAMETRI]" + ")");
+                            + methodCall.getParameterSet().getParameters() + ")");
 
 //                    this.datalogOut.println("uses(" + klass + ":" + method + ", " + methodCall.getClassName() + ")");
 
@@ -194,11 +192,9 @@ public class InformationLogger {
         }
     }
 
-    private void inspectMethodCall(State s, String name, Signature method, ClassFile classFile) {
+    private void inspectMethodCall(State s, String name, Signature method, ClassFile classFile, String pathId, String programPoint) {
 
-//        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName());
-
-        TestInformation.MethodCall md = null;
+        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName(), pathId, programPoint);
         Value[] operands = null;
         int numOperands = splitParametersDescriptors(method.getDescriptor()).length;
 
@@ -213,7 +209,8 @@ public class InformationLogger {
         for (Value op : operands) {
             try {
                 if (op instanceof Simplex) {
-                    pSet.addParameter(((Simplex) op).getActualValue());
+//                    Simplex v = ((Simplex) op).getActualValue();
+                    pSet.addParameter(op.toString());
                 } else {
                     if(op.isSymbolic()) {
                         pSet.addParameter("SYMBOLIC");
@@ -239,6 +236,6 @@ public class InformationLogger {
             }
         }
 
-        md.addInvocation(pSet);
+        md.setParameterSet(pSet);
     }
 }
