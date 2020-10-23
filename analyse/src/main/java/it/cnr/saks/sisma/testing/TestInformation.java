@@ -8,7 +8,7 @@ public class TestInformation {
     private final ArrayList<EndPoint> endPoints = new ArrayList<>();
     private final ArrayList<String> exceptions = new ArrayList<>();
 
-    protected MethodCall addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint) {
+    protected MethodCall addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, String pathCondition) {
         for(MethodCall md : this.methodCalls) {
             // TODO: siccome ora considero anche i parametri, probabilmente qui è necessario creare entry duplicate...
             if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getPathId().equals(pathId)) {
@@ -16,7 +16,7 @@ public class TestInformation {
             }
         }
 
-        MethodCall md = new MethodCall(methodName, methodDescriptor, className, pathId, programPoint);
+        MethodCall md = new MethodCall(methodName, methodDescriptor, className, pathId, programPoint, pathCondition);
         this.methodCalls.add(md);
         return md;
     }
@@ -87,15 +87,18 @@ public class TestInformation {
         private final String className;
         private final String pathId;
         private final String programPoint;
+
+        private final String pathCondition;
         private ParameterSet parameters = new ParameterSet();
 
 
-        public MethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint) {
+        public MethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, String pathCondition) {
             this.methodName = methodName;
             this.methodDescriptor = methodDescriptor;
             this.className = className;
             this.pathId = pathId;
             this.programPoint = programPoint;
+            this.pathCondition = pathCondition;
         }
 
         public String getClassName() {
@@ -116,6 +119,10 @@ public class TestInformation {
 
         public String getProgramPoint() {
             return programPoint;
+        }
+
+        public String getPathCondition() {
+            return pathCondition;
         }
 
         public ParameterSet getParameterSet() {
