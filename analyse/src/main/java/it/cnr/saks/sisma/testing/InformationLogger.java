@@ -121,6 +121,12 @@ public class InformationLogger {
         if(this.datalogOut == null)
             return;
 
+        this.datalogOut.println("FORMATO:\n\ninvokes("
+                + "\"nome\" del test, "
+                + "branch point, sequence number" + ", " + "program point" + ", " + "path condition" + ", "
+                + "metodo chiamato" + ", "
+                + "parametri (WIP)" + ")\n\n");
+
         this.loggedInformation.forEach((klass,methodsInKlass) -> { // for each class
             if(methodsInKlass.size() == 0)
                 return;
@@ -133,11 +139,9 @@ public class InformationLogger {
 
                     this.datalogOut.println("invokes("
                             + klass + ":" + method + ", "
-                            + methodCall.getPathId() + ", " + methodCall.getProgramPoint() + ", " + "[PATH CONDITION]" + ", "
+                            + methodCall.getPathId() + ", " + methodCall.getProgramPoint() + ", " + methodCall.getPathCondition() + ", "
                             + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + ", "
                             + methodCall.getParameterSet().getParameters() + ")");
-
-                    this.datalogOut.println("\n" + methodCall.getPathCondition() + "\n");
 
 //                    this.datalogOut.println("uses(" + klass + ":" + method + ", " + methodCall.getClassName() + ")");
 
@@ -199,11 +203,13 @@ public class InformationLogger {
     private void inspectMethodCall(State s, String name, Signature method, ClassFile classFile, String pathId, String programPoint) {
 
         StringBuilder sb = new StringBuilder();
+        sb.append("[");
         try {
             formatPathCondition(s, sb);
         } catch (FrozenStateException e) {
             e.printStackTrace();
         }
+        sb.append("]");
 
         TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName(), pathId, programPoint, sb.toString());
         Value[] operands = null;
@@ -259,39 +265,43 @@ public class InformationLogger {
         HashSet<String> doneSymbols = new HashSet<String>();
         for (Clause c : s.getPathCondition()) {
             if (c instanceof ClauseAssume) {
-                expression.append(doneFirstExpression ? " &&" : "");
+                expression.append(doneFirstExpression ? ", " : "");
                 doneFirstExpression = true;
                 final Primitive cond = ((ClauseAssume) c).getCondition();
                 formatValue(s, expression, cond);
                 final StringBuilder expressionWhereCondition = new StringBuilder();
                 final boolean some = formatValueForPathCondition(cond, expressionWhereCondition, doneSymbols);
                 if (some) {
-                    where.append(doneFirstWhere ? " &&" : ""); where.append(expressionWhereCondition);
+                    where.append(doneFirstWhere ? ", " : "");
+                    where.append(expressionWhereCondition);
                     doneFirstWhere = true;
                 } //else does nothing
             } else if (c instanceof ClauseAssumeReferenceSymbolic) {
-                expression.append(doneFirstExpression ? " &&" : "");
+                expression.append(doneFirstExpression ? ", " : "");
                 doneFirstExpression = true;
                 final ReferenceSymbolic ref = ((ClauseAssumeReferenceSymbolic) c).getReference();
-                expression.append(ref.toString()); expression.append(" == ");
+                expression.append("(");
+                expression.append(ref.toString());
+                expression.append(", ");
                 if (s.isNull(ref)) {
                     expression.append("null");
                 } else {
                     final ReferenceSymbolic tgtOrigin = s.getObject(ref).getOrigin();
                     expression.append("Object["); expression.append(s.getResolution(ref)); expression.append("] ("); expression.append(ref.equals(tgtOrigin) ? "fresh" : ("aliases " + tgtOrigin)); expression.append(")");
                 }
+                expression.append(")");
                 final StringBuilder referenceFormatted = new StringBuilder();
                 final boolean someText = formatValueForPathCondition(ref, referenceFormatted, doneSymbols);
                 if (someText) {
                     if (doneFirstWhere) {
-                        where.append(" &&");
+                        where.append(", ");
                     }
                     where.append(referenceFormatted);
                     doneFirstWhere = true;
                 }
             } else {
                 if (!(c instanceof ClauseAssumeClassInitialized)) { //(c instanceof ClauseAssumeClassNotInitialized)
-                    expression.append(doneFirstExpression ? " &&" : "");
+                    expression.append(doneFirstExpression ? ", " : "");
                     doneFirstExpression = true;
                     expression.append(c.toString());
                 }
@@ -301,7 +311,7 @@ public class InformationLogger {
             sb.append(expression);
         }
         if (where.length() > 0) {
-            sb.append("where:");
+            sb.append("], [");
             sb.append(where);
         }
     }
@@ -318,7 +328,7 @@ public class InformationLogger {
         if (!someFirstOp || !someSecondOp) {
             //does nothing
         } else {
-            sb.append(" &&");
+            sb.append(", ");
         }
         sb.append(second);
         return (someFirstOp || someSecondOp);
@@ -332,7 +342,11 @@ public class InformationLogger {
                 return false;
             } else {
                 done.add(v.toString());
-                sb.append(v.toString()); sb.append(" == "); sb.append(((Symbolic) v).asOriginString());
+                sb.append("(");
+                sb.append(v.toString());
+                sb.append(", ");
+                sb.append(((Symbolic) v).asOriginString());
+                sb.append(")");
                 return true;
             }
         } else if (v instanceof PrimitiveSymbolicApply) {
@@ -360,7 +374,7 @@ public class InformationLogger {
             some = some || argSome;
             if (argSome) {
                 if (firstDone) {
-                    sb.append(" &&");
+                    sb.append("), ");
                 } else {
                     firstDone = true;
                 }
@@ -381,7 +395,7 @@ public class InformationLogger {
                 //does nothing
             } else {
                 if (!first) {
-                    sb.append(" &&");
+                    sb.append(", ");
                 }
                 sb.append(arg);
                 first = false;
