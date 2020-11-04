@@ -87,7 +87,6 @@ public class TestInformation {
         private final String className;
         private final String pathId;
         private final String programPoint;
-
         private final String pathCondition;
         private ParameterSet parameters = new ParameterSet();
 
