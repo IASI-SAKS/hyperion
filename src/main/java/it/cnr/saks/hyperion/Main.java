@@ -1,6 +1,4 @@
-package it.cnr.saks.sisma.testing;
-
-import com.fasterxml.jackson.core.JsonProcessingException;
+package it.cnr.saks.hyperion;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Main {
-    private static InformationLogger inspector;
     private static MethodEnumerator methodEnumerator;
 
     public static void main(String[] args) {
@@ -37,8 +34,10 @@ public class Main {
             System.exit(66); // EX_NOINPUT
         }
 
-        inspector = new InformationLogger(methodEnumerator);
-        inspector.setJsonOutputFile("inspection.json");
+        InformationLogger inspector = new InformationLogger(methodEnumerator);
+        inspector.setDatalogOutputFile("inspection.datalog");
+
+        int count = 0;
 
         for(MethodDescriptor method: methodEnumerator) {
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
@@ -48,7 +47,7 @@ public class Main {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(prepareFinalRuntimeClasspath(SUTPath, additionalClassPath))
                         .withMethodSignature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName())
-                        .withDepthScope(5)
+                        .withDepthScope(25)
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "state")
                         .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "state")
                         .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)V", "isAssignable")
@@ -75,16 +74,17 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "isTrue")
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
                 a.run();
+
+                if(++count == 1)
+                    break;
+
             } catch (AnalyzerException e) {
                 e.printStackTrace();
             }
+
         }
 
-        try {
-            inspector.emitJson();
-        } catch (JsonProcessingException e) {
-            System.err.println(e.getMessage());
-        }
+        inspector.emitDatalog();
 
         long endTime = System.nanoTime();
         double duration = (double)(endTime - startTime) / 1000000000;
@@ -99,7 +99,8 @@ public class Main {
         for (URL u : urlClassPath) {
             listClassPath.add(u.getPath());
         }
-        listClassPath.addAll(Arrays.asList(additionalClassPath));
+        if(additionalClassPath != null)
+            listClassPath.addAll(Arrays.asList(additionalClassPath));
 
         String[] classPath = new String[listClassPath.size()];
         listClassPath.toArray(classPath);
