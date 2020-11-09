@@ -1,7 +1,6 @@
 package it.cnr.saks.hyperion;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 
 public class TestInformation {
     private final ArrayList<MethodCall> methodCalls = new ArrayList<>();
@@ -10,8 +9,7 @@ public class TestInformation {
 
     protected MethodCall addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, String pathCondition) {
         for(MethodCall md : this.methodCalls) {
-            // TODO: siccome ora considero anche i parametri, probabilmente qui è necessario creare entry duplicate...
-            if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && /*md.getPathId().equals(pathId) &&*/ md.getProgramPoint().equals(programPoint)) {
+            if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getProgramPoint().equals(programPoint)) {
                 return md;
             }
         }
