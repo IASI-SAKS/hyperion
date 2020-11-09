@@ -1,4 +1,4 @@
-package it.cnr.saks.sisma.testing;
+package it.cnr.saks.hyperion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 
@@ -41,6 +41,8 @@ public class Main {
         inspector.setJsonOutputFile("inspection.json");
         inspector.setDatalogOutputFile("inspection.datalog");
 
+        int count = 0;
+
         for(MethodDescriptor method: methodEnumerator) {
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
             System.out.println("\tSymbolic execution starting from: " + method.getMethodName() + ", " + method.getMethodDescriptor());
@@ -77,7 +79,8 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
                 a.run();
 
-                break;
+                if(++count == 1)
+                    break;
 
             } catch (AnalyzerException e) {
                 e.printStackTrace();
@@ -105,7 +108,8 @@ public class Main {
         for (URL u : urlClassPath) {
             listClassPath.add(u.getPath());
         }
-        listClassPath.addAll(Arrays.asList(additionalClassPath));
+        if(additionalClassPath != null)
+            listClassPath.addAll(Arrays.asList(additionalClassPath));
 
         String[] classPath = new String[listClassPath.size()];
         listClassPath.toArray(classPath);
