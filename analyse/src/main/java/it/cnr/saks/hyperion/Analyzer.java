@@ -44,36 +44,13 @@ public final class Analyzer {
     private class ActionsRun extends Runner.Actions {
 
         @Override
-        public boolean atStart() {
-            return super.atStart();
-        }
-        
-        @Override
-        public boolean atInitial() {
-            Analyzer.this.trackMethods = true;
-        	return super.atInitial();
-        }
-
-        @Override
-        public void atEnd() {
-            super.atEnd();
-        }
-
-        @Override
-        public boolean atStepPost() {
-            return super.atStepPost();
-        }
-
-        @Override
-//        public boolean atMethodPost() {
         public boolean atMethodPre() {
             if(Analyzer.this.trackMethods) {
                 final State currentState = Analyzer.this.engine.getCurrentState();
                 Analyzer.this.informationLogger.onMethodCall(currentState);
             }
 
-            return super.atMethodPost();
-//            return super.atMethodPre();
+            return super.atMethodPre();
         }
     }
 

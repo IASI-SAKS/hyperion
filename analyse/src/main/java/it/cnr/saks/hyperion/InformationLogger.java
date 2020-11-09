@@ -1,19 +1,13 @@
 package it.cnr.saks.hyperion;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.google.common.collect.Iterables;
 import jbse.bc.ClassFile;
 import jbse.bc.Signature;
 import jbse.common.Type;
 import jbse.mem.*;
 import jbse.mem.exc.FrozenStateException;
-import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.InvalidSlotException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.val.*;
-import org.apache.commons.compress.utils.Lists;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -26,8 +20,8 @@ import static jbse.common.Type.splitParametersDescriptors;
 
 public class InformationLogger {
     private final MethodEnumerator methodEnumerator;
-    private PrintStream jsonOut = null;
     private PrintStream datalogOut = null;
+
     // Class -> Method -> Information Data
     private final HashMap<String, HashMap<String, TestInformation>> loggedInformation = new HashMap<>();
     private String currClass;
@@ -38,8 +32,8 @@ public class InformationLogger {
     }
 
     public void onMethodCall(State s) {
-        Signature callee = null;
-        ClassFile classFile = null;
+        Signature callee;
+        ClassFile classFile;
 
         if(s.isStuck())
             return;
@@ -67,9 +61,6 @@ public class InformationLogger {
             e.printStackTrace();
         }
 
-//        if(name.equals("<init>") || caller.getName().equals("<init>"))
-//            return;
-
         String branchId = s.getBranchIdentifier().substring(1);
         String pathId = "[" + branchId.replaceAll("\\.", ", ") + "], " + s.getSequenceNumber();
         String programPoint = caller.getClassName() + ":" + caller.getName() + ":" + caller.getDescriptor() + "@" + callerPC;
@@ -80,15 +71,6 @@ public class InformationLogger {
         }
 
         this.inspectMethodCall(s, name, callee, classFile, pathId, programPoint);
-    }
-
-    public void setJsonOutputFile(String f) {
-        final File file = new File(f);
-        try {
-            this.jsonOut = new PrintStream(file);
-        } catch (FileNotFoundException e) {
-            this.jsonOut = null;
-        }
     }
 
     public void setDatalogOutputFile(String f) {
@@ -109,15 +91,6 @@ public class InformationLogger {
         loggedInformation.get(this.currClass).put(currMethod, new TestInformation());
     }
 
-    public void emitJson() throws JsonProcessingException {
-        if(this.jsonOut == null)
-            return;
-
-        ObjectMapper mapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
-        String jsonString = mapper.writeValueAsString(this.loggedInformation);
-        this.jsonOut.println(jsonString);
-    }
-
     public void emitDatalog() {
         if(this.datalogOut == null)
             return;
@@ -131,46 +104,22 @@ public class InformationLogger {
         this.loggedInformation.forEach((klass,methodsInKlass) -> { // for each class
             if(methodsInKlass.size() == 0)
                 return;
-            methodsInKlass.forEach((method, methodLoggedInformation) -> { // for each analyzed method
 
+            methodsInKlass.forEach((method, methodLoggedInformation) -> { // for each analyzed method
                 // Process method calls
                 ArrayList<TestInformation.MethodCall> methodCalls = methodLoggedInformation.getMethodCalls();
-                for (ListIterator<TestInformation.MethodCall> iterator = methodCalls.listIterator(); iterator.hasNext(); ) {
-                    TestInformation.MethodCall methodCall = iterator.next();
-
+                for (TestInformation.MethodCall methodCall : methodCalls) {
                     StringBuilder invokes = new StringBuilder();
-                    invokes.append("invokes(");
-                    invokes.append("'" + klass + ":" + method + "', ");
-                    invokes.append(methodCall.getPathId() + ", ");
-                    invokes.append("'" + methodCall.getProgramPoint() + "', ");
-                    invokes.append(methodCall.getPathCondition() + ", ");
-                    invokes.append("'" + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + "', ");
-                    invokes.append(methodCall.getParameterSet().getParameters());
-                    invokes.append(").");
+                    invokes.append("invokes(")
+                            .append("'" + klass + ":" + method + "', ")
+                            .append(methodCall.getPathId() + ", ")
+                            .append("'" + methodCall.getProgramPoint() + "', ")
+                            .append(methodCall.getPathCondition() + ", ")
+                            .append("'" + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + "', ")
+                            .append(methodCall.getParameterSet().getParameters())
+                            .append(").");
 
                     this.datalogOut.println(invokes.toString());
-
-//                    this.datalogOut.println("invokes("
-//                            + "'" + klass + ":" + method + "', "
-//                            + methodCall.getPathId() + ", '" + methodCall.getProgramPoint() + "', " + methodCall.getPathCondition() + ", "
-//                            + "'" + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + "', "
-//                            + methodCall.getParameterSet().getParameters() + ")");
-                }
-
-                // Process endpoints
-                ArrayList<TestInformation.EndPoint> endpoints = methodLoggedInformation.getEndPoints();
-                for (ListIterator<TestInformation.EndPoint> iterator = endpoints.listIterator(); iterator.hasNext(); ) {
-                    TestInformation.EndPoint endpoint = iterator.next();
-
-//                    this.datalogOut.println("contacts(" + klass + ":" + method + ", "
-//                            + endpoint.getType() + ", " + endpoint.getEndPoint() + ", " + endpoint.getPathId() + ")");
-
-//                    for (ListIterator<TestInformation.EndPoint> i2 = endpoints.listIterator(iterator.nextIndex()); i2.hasNext(); ) {
-//                        TestInformation.EndPoint subsequentEndpoint = i2.next();
-//                        this.datalogOut.println("contactsBefore(" + klass + ":" + method + ", "
-//                                + endpoint.getType() + ", " + endpoint.getEndPoint() + ", " + endpoint.getPathId() + ", "
-//                                + subsequentEndpoint.getType() + ", " + subsequentEndpoint.getEndPoint() + ", " + subsequentEndpoint.getPathId() + ")");
-//                    }
                 }
             });
         });
@@ -207,16 +156,14 @@ public class InformationLogger {
     private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint) {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
-        try {
-            formatPathCondition(s, sb);
-        } catch (FrozenStateException e) {
-            e.printStackTrace();
-        }
+        formatPathCondition(s, sb);
         sb.append("]");
+
         TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, callee.getDescriptor(), classFile.getClassName(), pathId, programPoint, sb.toString());
-        Value[] operands = null;
         int numOperands = splitParametersDescriptors(callee.getDescriptor()).length;
 
+        if(numOperands == 0)
+            return;
 
         SortedMap<Integer, Variable> localVariablesTreeMap = null;
         try {
@@ -228,7 +175,7 @@ public class InformationLogger {
 
         TestInformation.ParameterSet pSet = new TestInformation.ParameterSet();
 
-        for(Map.Entry<Integer, Variable> v: localVariablesTreeMap.entrySet()) {
+        for(Map.Entry<Integer, Variable> v: Objects.requireNonNull(localVariablesTreeMap).entrySet()) {
             Value op = v.getValue().getValue();
 
             sb = new StringBuilder();
@@ -246,9 +193,13 @@ public class InformationLogger {
                         sb.append("null");
                     } else {
                         if (obj.getType().getClassName().equals("java/lang/String")) {
-                            sb.append("'" + valueString(s, (Instance)obj) + "'");
+                            sb.append("'")
+                              .append(valueString(s, (Instance) obj))
+                              .append("'");
                         } else {
-                            sb.append("'" + op + "'");
+                            sb.append("'")
+                              .append(op)
+                              .append("'");
                         }
                     }
                 } catch (FrozenStateException e) {
@@ -264,12 +215,10 @@ public class InformationLogger {
         md.setParameterSet(pSet);
     }
 
-    private static void formatPathCondition(State s, StringBuilder sb) throws FrozenStateException {
+    private static void formatPathCondition(State s, StringBuilder sb) {
         final StringBuilder expression = new StringBuilder();
-        final StringBuilder where = new StringBuilder();
         boolean doneFirstExpression = false;
-        boolean doneFirstWhere = false;
-        HashSet<String> doneSymbols = new HashSet<String>();
+        HashSet<String> doneSymbols = new HashSet<>();
         for (Clause c : s.getPathCondition()) {
             if (c instanceof ClauseAssume) {
                 expression.append(doneFirstExpression ? ", " : "");
@@ -278,32 +227,10 @@ public class InformationLogger {
                 expression.append("constr('");
                 formatValue(s, expression, cond);
                 expression.append("')");
-//                final StringBuilder expressionWhereCondition = new StringBuilder();
-//
-//                // Questo stampa il nome della variabile
-//                final boolean some = formatValueForPathCondition(cond, expressionWhereCondition, doneSymbols);
-//                if (some) {
-//                    where.append(doneFirstWhere ? ", " : "");
-//                    where.append(expressionWhereCondition);
-//                    doneFirstWhere = true;
-//                } //else does nothing
             } else if (c instanceof ClauseAssumeReferenceSymbolic) {
                 expression.append(doneFirstExpression ? ", " : "");
                 doneFirstExpression = true;
                 final ReferenceSymbolic ref = ((ClauseAssumeReferenceSymbolic) c).getReference();
-                //expression.append("(");
-                //expression.append(ref.toString());
-                //expression.append(", ");
-                //expression.append(")");
-                //final StringBuilder referenceFormatted = new StringBuilder();
-//                final boolean someText = formatValueForPathCondition(ref, referenceFormatted, doneSymbols);
-//                if (someText) {
-//                    if (doneFirstWhere) {
-//                        where.append(", ");
-//                    }
-//                    where.append(referenceFormatted);
-//                    doneFirstWhere = true;
-//                }
                 if (s.isNull(ref)) {
                     expression.append("isNull('");
                     formatValueForPathCondition(ref, expression, doneSymbols);
@@ -311,16 +238,13 @@ public class InformationLogger {
                 } else {
                     expression.append("pointsTo('");
                     formatValueForPathCondition(ref, expression, doneSymbols);
-                    expression.append("', ");
-                    final ReferenceSymbolic tgtOrigin = s.getObject(ref).getOrigin();
-                    expression.append("'Object[");
-                    expression.append(s.getResolution(ref));
-                    expression.append("]')");
-                    //expression.append(ref.equals(tgtOrigin) ? "fresh" : ("aliases " + tgtOrigin));
-//                    expression.append(")");
+                    expression.append("', ")
+                            .append("'Object[")
+                            .append(s.getResolution(ref))
+                            .append("]')");
                 }
             } else {
-                if (!(c instanceof ClauseAssumeClassInitialized)) { //(c instanceof ClauseAssumeClassNotInitialized)
+                if (!(c instanceof ClauseAssumeClassInitialized)) {
                     expression.append(doneFirstExpression ? ", " : "");
                     doneFirstExpression = true;
                     expression.append(c.toString());
@@ -329,10 +253,6 @@ public class InformationLogger {
         }
         if (expression.length() > 0) {
             sb.append(expression);
-        }
-        if (where.length() > 0) {
-            sb.append("], [");
-            sb.append(where);
         }
     }
 
@@ -361,18 +281,12 @@ public class InformationLogger {
             if (done.contains(v.toString())) {
                 return false;
             } else {
-//                done.add(v.toString());
-//                sb.append("(");
-//                sb.append(v.toString());
-//                sb.append(", ");
-//                sb.append(((Symbolic) v).asOriginString());
                 if(v instanceof ReferenceSymbolicLocalVariable)
                     sb.append(((ReferenceSymbolicLocalVariable) v).getVariableName());
                 else if(v instanceof PrimitiveSymbolicMemberField)
                     sb.append(((PrimitiveSymbolicMemberField) v).getFieldName());
                 else
                     sb.append(((Symbolic) v).asOriginString());
-//                sb.append(")");
                 return true;
             }
         } else if (v instanceof PrimitiveSymbolicApply) {
@@ -432,7 +346,7 @@ public class InformationLogger {
 
     private static void formatValue(State s, StringBuilder sb, Value val) {
         if (val.getType() == Type.CHAR && val instanceof Simplex) {
-            final char c = ((Character) ((Simplex) val).getActualValue()).charValue();
+            final char c = (Character)((Simplex) val).getActualValue();
             if (c == '\t') {
                 sb.append("\\t");
             } else if (c == '\b') {
@@ -446,7 +360,7 @@ public class InformationLogger {
             } else if (c == '\"') {
                 sb.append("\\\"");
             } else if (c == '\'') {
-                sb.append("\\\'");
+                sb.append("\\'");
             } else if (c == '\\') {
                 sb.append("\\\\");
             } else if (c == '\u0000') {
@@ -460,6 +374,8 @@ public class InformationLogger {
             else
                 sb.append(val.toString());
         }
+
+        // TODO: recheck this part
         if (val instanceof ReferenceSymbolic) {
             final ReferenceSymbolic ref = (ReferenceSymbolic) val;
             if (s.resolved(ref)) {

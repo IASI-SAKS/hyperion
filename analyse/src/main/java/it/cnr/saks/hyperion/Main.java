@@ -1,7 +1,5 @@
 package it.cnr.saks.hyperion;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
@@ -11,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Main {
-    private static InformationLogger inspector;
     private static MethodEnumerator methodEnumerator;
 
     public static void main(String[] args) {
@@ -37,8 +34,7 @@ public class Main {
             System.exit(66); // EX_NOINPUT
         }
 
-        inspector = new InformationLogger(methodEnumerator);
-        inspector.setJsonOutputFile("inspection.json");
+        InformationLogger inspector = new InformationLogger(methodEnumerator);
         inspector.setDatalogOutputFile("inspection.datalog");
 
         int count = 0;
@@ -51,7 +47,7 @@ public class Main {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(prepareFinalRuntimeClasspath(SUTPath, additionalClassPath))
                         .withMethodSignature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName())
-                        .withDepthScope(5)
+                        .withDepthScope(25)
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "state")
                         .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "state")
                         .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)V", "isAssignable")
@@ -88,12 +84,7 @@ public class Main {
 
         }
 
-        try {
-            inspector.emitJson();
-            inspector.emitDatalog();
-        } catch (JsonProcessingException e) {
-            System.err.println(e.getMessage());
-        }
+        inspector.emitDatalog();
 
         long endTime = System.nanoTime();
         double duration = (double)(endTime - startTime) / 1000000000;
