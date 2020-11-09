@@ -1,4 +1,4 @@
-package it.cnr.saks.sisma.testing;
+package it.cnr.saks.hyperion;
 
 import java.io.File;
 import java.io.IOException;
@@ -18,8 +18,8 @@ import java.util.List;
 public class MethodEnumerator implements Iterable<MethodDescriptor> {
     private final List<MethodDescriptor> methods = new ArrayList<>();
     private final URL[] classPath;
-    private List<Class> classes = null;
-    private List<Class> SUTClasses = null;
+    private List<Class> classes;
+    private List<Class> SUTClasses;
 
     public MethodEnumerator(String classPath, String SUTPath) throws IOException, AnalyzerException {
         this.classPath = this.initializeClasspath(classPath, SUTPath);
@@ -76,10 +76,10 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
 
     private String getMethodDescriptor(Method m)
     {
-        String s="(";
+        StringBuilder s= new StringBuilder("(");
         for(final Class c:(m.getParameterTypes()))
-            s += this.getDescriptorForClass(c);
-        s+=')';
+            s.append(this.getDescriptorForClass(c));
+        s.append(')');
         return s + this.getDescriptorForClass(m.getReturnType());
     }
 
@@ -147,7 +147,7 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
         String classPkg = classFile.substring(0, classFile.lastIndexOf('.')).replace(path, "").replace(File.separator, ".");
 
         ClassLoader cl;
-        Class<?> dynamicClass = null;
+        Class<?> dynamicClass;
 
         try {
             cl = new URLClassLoader(urls);
