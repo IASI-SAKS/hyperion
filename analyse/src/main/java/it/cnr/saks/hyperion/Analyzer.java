@@ -1,4 +1,4 @@
-package it.cnr.saks.sisma.testing;
+package it.cnr.saks.hyperion;
 
 import jbse.algo.exc.CannotManageStateException;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
@@ -65,15 +65,16 @@ public final class Analyzer {
         }
 
         @Override
-        public boolean atMethodPost() {
+//        public boolean atMethodPost() {
+        public boolean atMethodPre() {
             if(Analyzer.this.trackMethods) {
                 final State currentState = Analyzer.this.engine.getCurrentState();
                 Analyzer.this.informationLogger.onMethodCall(currentState);
             }
 
             return super.atMethodPost();
+//            return super.atMethodPre();
         }
-
     }
 
     public void run() throws AnalyzerException {

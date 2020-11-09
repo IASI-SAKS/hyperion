@@ -1,8 +1,9 @@
-package it.cnr.saks.sisma.testing;
+package it.cnr.saks.hyperion;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import com.google.common.collect.Iterables;
 import jbse.bc.ClassFile;
 import jbse.bc.Signature;
 import jbse.common.Type;
@@ -12,6 +13,7 @@ import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.InvalidSlotException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.val.*;
+import org.apache.commons.compress.utils.Lists;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -20,7 +22,6 @@ import java.lang.reflect.Field;
 import java.util.*;
 
 import static jbse.algo.Util.valueString;
-import static jbse.apps.Util.LINE_SEP;
 import static jbse.common.Type.splitParametersDescriptors;
 
 public class InformationLogger {
@@ -37,25 +38,25 @@ public class InformationLogger {
     }
 
     public void onMethodCall(State s) {
-        Signature method = null;
+        Signature callee = null;
         ClassFile classFile = null;
 
         if(s.isStuck())
             return;
 
         int stackFrames = s.getStackSize();
-        if(stackFrames < 2)
+        if(stackFrames < 2) // Skip test program entry point
             return;
 
         try {
-            method = s.getCurrentMethodSignature();
+            callee = s.getCurrentMethodSignature();
             classFile = s.getCurrentClass();
         } catch (ThreadStackEmptyException e) {
             e.printStackTrace();
             return;
         }
 
-        String name = method.getName();
+        String name = callee.getName();
 
         Signature caller = null;
         int callerPC = -1;
@@ -66,19 +67,19 @@ public class InformationLogger {
             e.printStackTrace();
         }
 
-        if(name.equals("<init>") || caller.getName().equals("<init>"))
-            return;
+//        if(name.equals("<init>") || caller.getName().equals("<init>"))
+//            return;
 
         String branchId = s.getBranchIdentifier().substring(1);
         String pathId = "[" + branchId.replaceAll("\\.", ", ") + "], " + s.getSequenceNumber();
-        String programPoint = caller.getClassName() + ":" + caller.getDescriptor() + "@" + callerPC;
+        String programPoint = caller.getClassName() + ":" + caller.getName() + ":" + caller.getDescriptor() + "@" + callerPC;
 
         if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
                 && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
             this.inspectHttpRequest(s, name, pathId);
         }
 
-        this.inspectMethodCall(s, name, method, classFile, pathId, programPoint);
+        this.inspectMethodCall(s, name, callee, classFile, pathId, programPoint);
     }
 
     public void setJsonOutputFile(String f) {
@@ -125,7 +126,7 @@ public class InformationLogger {
                 + "\"nome\" del test, "
                 + "branch point, sequence number" + ", " + "program point" + ", " + "path condition" + ", "
                 + "metodo chiamato" + ", "
-                + "parametri (WIP)" + ")\n\n");
+                + "parametri" + ").\n\n");
 
         this.loggedInformation.forEach((klass,methodsInKlass) -> { // for each class
             if(methodsInKlass.size() == 0)
@@ -137,20 +138,23 @@ public class InformationLogger {
                 for (ListIterator<TestInformation.MethodCall> iterator = methodCalls.listIterator(); iterator.hasNext(); ) {
                     TestInformation.MethodCall methodCall = iterator.next();
 
-                    this.datalogOut.println("invokes("
-                            + klass + ":" + method + ", "
-                            + methodCall.getPathId() + ", " + methodCall.getProgramPoint() + ", " + methodCall.getPathCondition() + ", "
-                            + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + ", "
-                            + methodCall.getParameterSet().getParameters() + ")");
+                    StringBuilder invokes = new StringBuilder();
+                    invokes.append("invokes(");
+                    invokes.append("'" + klass + ":" + method + "', ");
+                    invokes.append(methodCall.getPathId() + ", ");
+                    invokes.append("'" + methodCall.getProgramPoint() + "', ");
+                    invokes.append(methodCall.getPathCondition() + ", ");
+                    invokes.append("'" + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + "', ");
+                    invokes.append(methodCall.getParameterSet().getParameters());
+                    invokes.append(").");
 
-//                    this.datalogOut.println("uses(" + klass + ":" + method + ", " + methodCall.getClassName() + ")");
+                    this.datalogOut.println(invokes.toString());
 
-//                    for (ListIterator<TestInformation.MethodCall> i2 = methodCalls.listIterator(iterator.nextIndex()); i2.hasNext(); ) {
-//                        TestInformation.MethodCall subsequentMethodCall = i2.next();
-//                        this.datalogOut.println("invokesBefore(" + klass + ":" + method + ", "
-//                                + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + ", "
-//                                + subsequentMethodCall.getClassName() + ":" + subsequentMethodCall.getMethodName() + ":" + subsequentMethodCall.getMethodDescriptor() + ")");
-//                    }
+//                    this.datalogOut.println("invokes("
+//                            + "'" + klass + ":" + method + "', "
+//                            + methodCall.getPathId() + ", '" + methodCall.getProgramPoint() + "', " + methodCall.getPathCondition() + ", "
+//                            + "'" + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + "', "
+//                            + methodCall.getParameterSet().getParameters() + ")");
                 }
 
                 // Process endpoints
@@ -200,8 +204,7 @@ public class InformationLogger {
         }
     }
 
-    private void inspectMethodCall(State s, String name, Signature method, ClassFile classFile, String pathId, String programPoint) {
-
+    private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint) {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         try {
@@ -210,54 +213,58 @@ public class InformationLogger {
             e.printStackTrace();
         }
         sb.append("]");
-
-        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, method.getDescriptor(), classFile.getClassName(), pathId, programPoint, sb.toString());
+        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, callee.getDescriptor(), classFile.getClassName(), pathId, programPoint, sb.toString());
         Value[] operands = null;
-        int numOperands = splitParametersDescriptors(method.getDescriptor()).length;
+        int numOperands = splitParametersDescriptors(callee.getDescriptor()).length;
 
+
+        SortedMap<Integer, Variable> localVariablesTreeMap = null;
         try {
-            operands = s.getCurrentFrame().operands(numOperands);
-        } catch (InvalidNumberOfOperandsException | ThreadStackEmptyException | FrozenStateException e) {
-            return;
+            localVariablesTreeMap = s.getCurrentFrame().localVariables();
+            localVariablesTreeMap = localVariablesTreeMap.tailMap(localVariablesTreeMap.size() - numOperands);
+        } catch (ThreadStackEmptyException | FrozenStateException e) {
+            e.printStackTrace();
         }
 
         TestInformation.ParameterSet pSet = new TestInformation.ParameterSet();
 
-        for (Value op : operands) {
-            try {
-                if (op instanceof Simplex) {
-//                    Simplex v = ((Simplex) op).getActualValue();
-                    pSet.addParameter(op.toString());
-                } else {
-                    if(op.isSymbolic()) {
-                        pSet.addParameter("SYMBOLIC");
+        for(Map.Entry<Integer, Variable> v: localVariablesTreeMap.entrySet()) {
+            Value op = v.getValue().getValue();
+
+            sb = new StringBuilder();
+
+            if (op instanceof Simplex) {
+                sb.append(op.toString());
+            } else if(op.isSymbolic()) {
+                sb.append("'");
+                formatValueForPathCondition(op, sb, new HashSet<>());
+                sb.append("'");
+            } else if(op instanceof Reference) {
+                try {
+                    HeapObjekt obj = s.getObject((Reference) op);
+                    if (obj == null) {
+                        sb.append("null");
                     } else {
-                        HeapObjekt operand = s.getObject((Reference) op);
-
-                        if (operand == null) {
-                            pSet.addParameter(null); // ???
-                            continue;
-                        }
-
-                        String className = operand.getType().getClassName();
-                        if (className.equals("java/lang/String")) {
-                            String string = valueString(s, (Instance) operand);
-                            pSet.addParameter(string);
+                        if (obj.getType().getClassName().equals("java/lang/String")) {
+                            sb.append("'" + valueString(s, (Instance)obj) + "'");
                         } else {
-                            pSet.addParameter(className); // ???
+                            sb.append("'" + op + "'");
                         }
                     }
+                } catch (FrozenStateException e) {
+                    e.printStackTrace();
                 }
-            } catch (FrozenStateException e) {
-                return;
+            } else {
+                sb.append(op.getClass().toString());
             }
+
+            pSet.addParameter(sb.toString());
         }
 
         md.setParameterSet(pSet);
     }
 
-    private static void formatPathCondition(State s, StringBuilder sb)
-            throws FrozenStateException {
+    private static void formatPathCondition(State s, StringBuilder sb) throws FrozenStateException {
         final StringBuilder expression = new StringBuilder();
         final StringBuilder where = new StringBuilder();
         boolean doneFirstExpression = false;
@@ -268,36 +275,49 @@ public class InformationLogger {
                 expression.append(doneFirstExpression ? ", " : "");
                 doneFirstExpression = true;
                 final Primitive cond = ((ClauseAssume) c).getCondition();
+                expression.append("constr('");
                 formatValue(s, expression, cond);
-                final StringBuilder expressionWhereCondition = new StringBuilder();
-                final boolean some = formatValueForPathCondition(cond, expressionWhereCondition, doneSymbols);
-                if (some) {
-                    where.append(doneFirstWhere ? ", " : "");
-                    where.append(expressionWhereCondition);
-                    doneFirstWhere = true;
-                } //else does nothing
+                expression.append("')");
+//                final StringBuilder expressionWhereCondition = new StringBuilder();
+//
+//                // Questo stampa il nome della variabile
+//                final boolean some = formatValueForPathCondition(cond, expressionWhereCondition, doneSymbols);
+//                if (some) {
+//                    where.append(doneFirstWhere ? ", " : "");
+//                    where.append(expressionWhereCondition);
+//                    doneFirstWhere = true;
+//                } //else does nothing
             } else if (c instanceof ClauseAssumeReferenceSymbolic) {
                 expression.append(doneFirstExpression ? ", " : "");
                 doneFirstExpression = true;
                 final ReferenceSymbolic ref = ((ClauseAssumeReferenceSymbolic) c).getReference();
-                expression.append("(");
-                expression.append(ref.toString());
-                expression.append(", ");
+                //expression.append("(");
+                //expression.append(ref.toString());
+                //expression.append(", ");
+                //expression.append(")");
+                //final StringBuilder referenceFormatted = new StringBuilder();
+//                final boolean someText = formatValueForPathCondition(ref, referenceFormatted, doneSymbols);
+//                if (someText) {
+//                    if (doneFirstWhere) {
+//                        where.append(", ");
+//                    }
+//                    where.append(referenceFormatted);
+//                    doneFirstWhere = true;
+//                }
                 if (s.isNull(ref)) {
-                    expression.append("null");
+                    expression.append("isNull('");
+                    formatValueForPathCondition(ref, expression, doneSymbols);
+                    expression.append("')");
                 } else {
+                    expression.append("pointsTo('");
+                    formatValueForPathCondition(ref, expression, doneSymbols);
+                    expression.append("', ");
                     final ReferenceSymbolic tgtOrigin = s.getObject(ref).getOrigin();
-                    expression.append("Object["); expression.append(s.getResolution(ref)); expression.append("] ("); expression.append(ref.equals(tgtOrigin) ? "fresh" : ("aliases " + tgtOrigin)); expression.append(")");
-                }
-                expression.append(")");
-                final StringBuilder referenceFormatted = new StringBuilder();
-                final boolean someText = formatValueForPathCondition(ref, referenceFormatted, doneSymbols);
-                if (someText) {
-                    if (doneFirstWhere) {
-                        where.append(", ");
-                    }
-                    where.append(referenceFormatted);
-                    doneFirstWhere = true;
+                    expression.append("'Object[");
+                    expression.append(s.getResolution(ref));
+                    expression.append("]')");
+                    //expression.append(ref.equals(tgtOrigin) ? "fresh" : ("aliases " + tgtOrigin));
+//                    expression.append(")");
                 }
             } else {
                 if (!(c instanceof ClauseAssumeClassInitialized)) { //(c instanceof ClauseAssumeClassNotInitialized)
@@ -341,12 +361,18 @@ public class InformationLogger {
             if (done.contains(v.toString())) {
                 return false;
             } else {
-                done.add(v.toString());
-                sb.append("(");
-                sb.append(v.toString());
-                sb.append(", ");
-                sb.append(((Symbolic) v).asOriginString());
-                sb.append(")");
+//                done.add(v.toString());
+//                sb.append("(");
+//                sb.append(v.toString());
+//                sb.append(", ");
+//                sb.append(((Symbolic) v).asOriginString());
+                if(v instanceof ReferenceSymbolicLocalVariable)
+                    sb.append(((ReferenceSymbolicLocalVariable) v).getVariableName());
+                else if(v instanceof PrimitiveSymbolicMemberField)
+                    sb.append(((PrimitiveSymbolicMemberField) v).getFieldName());
+                else
+                    sb.append(((Symbolic) v).asOriginString());
+//                sb.append(")");
                 return true;
             }
         } else if (v instanceof PrimitiveSymbolicApply) {
@@ -429,7 +455,10 @@ public class InformationLogger {
                 sb.append(c);
             }
         } else {
-            sb.append(val.toString());
+            if(val instanceof Expression)
+                sb.append(((Expression)val).asOriginString());
+            else
+                sb.append(val.toString());
         }
         if (val instanceof ReferenceSymbolic) {
             final ReferenceSymbolic ref = (ReferenceSymbolic) val;
@@ -437,7 +466,9 @@ public class InformationLogger {
                 if (s.isNull(ref)) {
                     sb.append(" == null");
                 } else {
-                    sb.append(" == Object["); sb.append(s.getResolution(ref)); sb.append("]");
+                    sb.append(" == Object[");
+                    sb.append(s.getResolution(ref));
+                    sb.append("]");
                 }
             }
         }

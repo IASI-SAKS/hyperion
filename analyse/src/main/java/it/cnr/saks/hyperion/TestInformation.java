@@ -1,4 +1,4 @@
-package it.cnr.saks.sisma.testing;
+package it.cnr.saks.hyperion;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -11,8 +11,8 @@ public class TestInformation {
     protected MethodCall addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, String pathCondition) {
         for(MethodCall md : this.methodCalls) {
             // TODO: siccome ora considero anche i parametri, probabilmente qui è necessario creare entry duplicate...
-            if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getPathId().equals(pathId)) {
-                return null;
+            if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && /*md.getPathId().equals(pathId) &&*/ md.getProgramPoint().equals(programPoint)) {
+                return md;
             }
         }
 
@@ -143,8 +143,11 @@ public class TestInformation {
         public String getParameters() {
             StringBuilder ret = new StringBuilder();
             ret.append("[");
+            boolean doneFirst = false;
             for(String s: parameters) {
-                ret.append(s + ", ");
+                ret.append(doneFirst ? ", " : "");
+                doneFirst = true;
+                ret.append(s);
             }
             ret.append("]");
             return ret.toString();

@@ -1,4 +1,4 @@
-package it.cnr.saks.sisma.testing;
+package it.cnr.saks.hyperion;
 
 import java.io.File;
 import java.io.IOException;

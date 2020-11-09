@@ -1,4 +1,4 @@
-package it.cnr.saks.sisma.testing;
+package it.cnr.saks.hyperion;
 
 public class AnalyzerException extends Exception {
 
