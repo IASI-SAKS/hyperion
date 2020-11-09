@@ -1,43 +1,25 @@
-# Analyse
+# Hyperion
 
-Symbolic execution of test programs.
+> Of Hyperion we are told that he was the first to understand, by diligent attention and observation, the movement of both the sun and the moon and the other stars, and the seasons as well, in that they are caused by these bodies, and to make these facts known to others; and that for this reason he was called the father of these bodies, since he had begotten, so to speak, the speculation about them and their nature.
+>  — Diodorus Siculus (5.67.1)
 
-## Dipendenze
+Hyperion is a tool aiming at analysing Java test programs, to generate multiple similarity metrics. To this end, hyperion relies on [JBSE](https://github.com/pietrobraione/jbse) to carry out symbolic execution of JUnit test programs, generate prolog facts, and carry out multiple analyses on these facts.
 
-Il progetto è un progetto maven, che deve essere installato nel sistema.
+## Dependencies
 
-L'unica dipendenza esterna necessaria è `z3`, che deve essere disponibile nel path di sistema.
+There are several dependencies to hyperion:
 
-## Esecuzione
+* JBSE (burrently bundled in the project)
+* z3
+* ...
 
-È necessario clonare [full teaching](https://github.com/OpenVidu/full-teaching) e compilare il backend ed i test program lanciando:
+The source is organized as a maven project, so running `mvn build` should be enough to get everything up and running.
 
-```
-mvn -DskipTests=true clean package
-mvn test
-```
+`z3` is the only external dependency, which should be available in the system path for the tool to correctly run.
 
-I test program falliranno, ma le classi compilate saranno a quel punto disponibili.
+## Running
 
-Dopo aver compilato il codice nella cartella `analyse` di questo repo con `mvn package`, lo si può lanciare come:
+Hyperion can be run as:
 
-`java -cp target/analyse-shaded-1.0-SNAPSHOT.jar it.cnr.saks.sisma.testing.Main <path to test classes> <path to SUT classes> [additional path to add in classpath]` 
+`java -cp target/analyse-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path to test classes> <path to SUT classes> [additional path to add in classpath]` 
 
-Ad esempio, supponendo che il progetto fullteaching sia al livello superiore, rispetto alla cartella in cui si è clonato il progetto, si può lanciare:
-
-`java -cp target/analyse-shaded-1.0-SNAPSHOT.jar it.cnr.saks.sisma.testing.Main ../../full-teaching/target/test-classes/ ../../full-teaching/target/classes/ ./target/analyse-shaded-1.0-SNAPSHOT.jar`
-
-Al termine dell'esecuzione, verrà creato un file `inspection.json` nella stessa cartella in cui è stata lanciata l'applicazione, che mostra le informazioni raccolte durante l'esecuzione simbolica, ad esempio:
-
-```
-{
-  "com.fullteaching.backend.integration.course.CourseControllerTest" : {
-    "delteteCourseTest" : {
-      "methodCalls" : [ {
-        "methodName" : "deleteCourseTest",
-        "methodDescriptor" : "()V",
-        "className" : "com/fullteaching/backend/integration/course/CourseControllerTest",
-        "hits" : 7
-      },		
-[...]
-```
