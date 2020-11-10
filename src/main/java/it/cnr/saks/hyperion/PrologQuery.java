@@ -1,13 +1,11 @@
 package it.cnr.saks.hyperion;
 
-import org.jpl7.Atom;
-import org.jpl7.JPL;
-import org.jpl7.Query;
-import org.jpl7.Term;
+import org.jpl7.*;
 import org.jpl7.fli.Prolog;
 
-import java.net.URL;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Map;
 
 public class PrologQuery {
     public static void init() throws AnalyzerException {
@@ -22,7 +20,7 @@ public class PrologQuery {
                                     String.format("-x %s", System.getenv("SWIPL_BOOT_FILE")),
                             System.getenv("SWI_HOME_DIR") == null ? "" :
                                     String.format("--home=%s", System.getenv("SWI_HOME_DIR")));
-            System.out.println(String.format("\nSWIPL initialized with: %s", init_swi_config));
+            System.out.printf("\nSWIPL initialized with: %s%n", init_swi_config);
 
             JPL.setDefaultInitArgs(init_swi_config.split("\\s+"));
         } else
@@ -50,4 +48,30 @@ public class PrologQuery {
         if(!q.hasSolution())
             throw new AnalyzerException("Unable to load analysis facts.");
     }
+
+    public static boolean query(String function, String ... arguments) {
+        Term[] terms = new Term[arguments.length];
+        for(int i = 0; i < arguments.length; i++) {
+            terms[i] = new Atom(arguments[i]);
+        }
+
+        Query q = new Query(function, terms);
+        return q.hasSolution();
+    }
+
+    public static Map<String,Term>[] query(String function, String[] variables, String ... arguments) {
+        Term[] terms = new Term[variables.length + arguments.length];
+
+        for(int i = 0; i < variables.length; i++) {
+            terms[i] = new Variable(variables[i]);
+        }
+        for(int i = 0; i < arguments.length; i++) {
+            terms[variables.length + i] = new Atom(arguments[i]);
+        }
+
+        Query q = new Query(function, terms);
+        return q.allSolutions();
+    }
+
+
 }
