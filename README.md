@@ -9,17 +9,30 @@ Hyperion is a tool aiming at analysing Java test programs, to generate multiple 
 
 There are several dependencies to hyperion:
 
-* JBSE (burrently bundled in the project)
+* JBSE (currently bundled in the project)
 * z3
-* ...
+* SWI Prolog
 
 The source is organized as a maven project, so running `mvn build` should be enough to get everything up and running.
 
-`z3` is the only external dependency, which should be available in the system path for the tool to correctly run.
+`z3` is an external dependency, which should be available in the system path for the tool to correctly run. Similarly,
+SWI Prolog must be manually installed in the system.
+
+### Configuring integration with SWI Prolog
+
+To interact with SWI Prolog, hyperion uses JPL. While java bindings are resolved through maven, there is the need to
+let JPL know how to interact with SWI Prolog. To this end, some environmental variables should be set. Depending on your
+OS, this configuration requires some care. You can refer the official deployment pages, depending on your OS:
+
+* [Linux](https://jpl7.org/DeploymentLinux)
+* [Windows](https://jpl7.org/DeploymentWindows)
+* [Mac OS](https://jpl7.org/DeploymentMacos)
+
 
 ## Running
 
 Hyperion can be run as:
 
-`java -cp target/analyse-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path to test classes> <path to SUT classes> [additional path to add in classpath]` 
-
+```bash
+java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path to test classes> <path to SUT classes> [additional path to add in classpath]
+```
