@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>it.cnr.saks.sisma.testing</groupId>
-    <artifactId>analyse</artifactId>
+    <groupId>it.cnr.saks.sisma.hyperion</groupId>
+    <artifactId>hyperion</artifactId>
     <version>1.0-SNAPSHOT</version>
 
     <licenses>
@@ -15,6 +15,15 @@
             <distribution>repo</distribution>
         </license>
     </licenses>
+
+    <repositories>
+        <!-- JitPack used for getting Maven packages from GitHub -->
+        <repository>
+            <id>jitpack.io</id>
+            <name>JitPack Repository</name>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <!-- hic sunt leones -->
     <parent>
@@ -62,6 +71,12 @@
             <artifactId>maven-jdk-tools-wrapper</artifactId>
             <version>0.1</version>
         </dependency>
+        <dependency>
+            <groupId>com.github.SWI-Prolog</groupId>
+            <artifactId>packages-jpl</artifactId>
+            <version>V8.3.2</version>	<!-- version 7.6.1 of JPL -->
+        </dependency>
+
         <!-- hic sunt leones -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
