@@ -4,10 +4,10 @@
 
 % MODE: same_SET_of_invoked_methods(+TP1,+TP2)
 % SEMANTICS: the test programs TP1 and TP2 invoke the same *set* of methods
-% same_SET_of_invoked_methods(TP1,TP2) :-
-%   invoked_methods(TP1,S1),
-%   invoked_methods(TP2,S2),
-%   eq_set(S1,S2).
+same_SET_of_invoked_methods(TP1,TP2) :-
+  invoked_methods(TP1,S1),
+  invoked_methods(TP2,S2),
+  eq_set(S1,S2).
 
 % MODE: invoked_methods(+TP,?L)
 % SEMANTICS: L is the list of methods invoked by the test program TP
