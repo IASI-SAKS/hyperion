@@ -95,11 +95,11 @@ public class InformationLogger {
         if(this.datalogOut == null)
             return;
 
-        this.datalogOut.println("FORMATO:\n\ninvokes("
-                + "\"nome\" del test, "
-                + "branch point, sequence number" + ", " + "program point" + ", " + "path condition" + ", "
-                + "metodo chiamato" + ", "
-                + "parametri" + ").\n\n");
+//        this.datalogOut.println("FORMATO:\n\ninvokes("
+//                + "\"nome\" del test, "
+//                + "branch point, sequence number" + ", " + "program point" + ", " + "path condition" + ", "
+//                + "metodo chiamato" + ", "
+//                + "parametri" + ").\n\n");
 
         this.loggedInformation.forEach((klass,methodsInKlass) -> { // for each class
             if(methodsInKlass.size() == 0)
