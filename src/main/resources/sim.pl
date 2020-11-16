@@ -1,4 +1,4 @@
-% NOTES: think about using
+%% NOTES: think about using
 % Ordered set manipulation:
 % https://www.swi-prolog.org/pldoc/man?section=ordsets
 
