@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 public class Main {
+    private static final String FACTS = "inspection.datalog";
     private static MethodEnumerator methodEnumerator;
 
     public static void main(String[] args) {
@@ -35,7 +36,7 @@ public class Main {
         }
 
         InformationLogger inspector = new InformationLogger(methodEnumerator);
-        inspector.setDatalogOutputFile("inspection.datalog");
+        inspector.setDatalogOutputFile(FACTS);
 
         int count = 0;
 
@@ -75,7 +76,7 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
                 a.run();
 
-                if(++count == 1)
+                if(++count == 1) // TODO: remove after debugging
                     break;
 
             } catch (AnalyzerException e) {
@@ -85,6 +86,14 @@ public class Main {
         }
 
         inspector.emitDatalog();
+
+        try {
+            PrologQuery.init();
+            PrologQuery.load(FACTS);
+        } catch (AnalyzerException e) {
+            System.err.println(e.getMessage());
+            System.exit(1);
+        }
 
         long endTime = System.nanoTime();
         double duration = (double)(endTime - startTime) / 1000000000;
