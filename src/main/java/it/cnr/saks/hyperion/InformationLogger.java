@@ -63,14 +63,14 @@ public class InformationLogger {
 
         String branchId = s.getBranchIdentifier().substring(1);
         String pathId = "[" + branchId.replaceAll("\\.", ", ") + "], " + s.getSequenceNumber();
-        String programPoint = caller.getClassName() + ":" + caller.getName() + ":" + caller.getDescriptor() + "@" + callerPC;
+        String programPoint = caller.getClassName() + ":" + caller.getName() + ":" + caller.getDescriptor();
 
         if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
                 && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
             this.inspectHttpRequest(s, name, pathId);
         }
 
-        this.inspectMethodCall(s, name, callee, classFile, pathId, programPoint);
+        this.inspectMethodCall(s, name, callee, classFile, pathId, programPoint, callerPC);
     }
 
     public void setDatalogOutputFile(String f) {
@@ -114,6 +114,7 @@ public class InformationLogger {
                             .append("'" + klass + ":" + method + "', ")
                             .append(methodCall.getPathId() + ", ")
                             .append("'" + methodCall.getProgramPoint() + "', ")
+                            .append(methodCall.getCallerPC() + ", ")
                             .append(methodCall.getPathCondition() + ", ")
                             .append("'" + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + "', ")
                             .append(methodCall.getParameterSet().getParameters())
@@ -153,13 +154,13 @@ public class InformationLogger {
         }
     }
 
-    private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint) {
+    private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint, int callerPC) {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         formatPathCondition(s, sb);
         sb.append("]");
 
-        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, callee.getDescriptor(), classFile.getClassName(), pathId, programPoint, sb.toString());
+        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, callee.getDescriptor(), classFile.getClassName(), pathId, programPoint, callerPC, sb.toString());
         int numOperands = splitParametersDescriptors(callee.getDescriptor()).length;
 
         if(numOperands == 0)
