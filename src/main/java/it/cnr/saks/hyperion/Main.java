@@ -5,11 +5,15 @@ import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Date;
+import java.util.TimeZone;
 
 public class Main {
-    private static final String FACTS = "inspection.datalog";
+    private static String facts;
     private static MethodEnumerator methodEnumerator;
 
     public static void main(String[] args) {
@@ -35,8 +39,14 @@ public class Main {
             System.exit(66); // EX_NOINPUT
         }
 
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+        df.setTimeZone(tz);
+        String nowAsISO = df.format(new Date());
+        facts = "inspection-" + nowAsISO + ".datalog";
+
         InformationLogger inspector = new InformationLogger(methodEnumerator);
-        inspector.setDatalogOutputFile(FACTS);
+        inspector.setDatalogOutputFile(facts);
 
         int count = 0;
 
@@ -89,7 +99,7 @@ public class Main {
 
         try {
             PrologQuery.init();
-            PrologQuery.load(FACTS);
+            PrologQuery.load(facts);
         } catch (AnalyzerException e) {
             System.err.println(e.getMessage());
             System.exit(1);
