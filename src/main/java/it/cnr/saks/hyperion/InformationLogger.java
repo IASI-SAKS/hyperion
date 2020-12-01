@@ -182,7 +182,10 @@ public class InformationLogger {
             sb = new StringBuilder();
 
             if (op instanceof Simplex) {
-                sb.append(op.toString());
+                String representation = op.toString();
+                if(v.getValue().getType().equals("J"))
+                    representation = representation.replaceAll("L", "");
+                sb.append(representation);
             } else if(op.isSymbolic()) {
                 sb.append("'");
                 formatValueForPathCondition(op, sb, new HashSet<>());
