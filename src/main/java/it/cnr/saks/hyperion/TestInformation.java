@@ -7,14 +7,14 @@ public class TestInformation {
     private final ArrayList<EndPoint> endPoints = new ArrayList<>();
     private final ArrayList<String> exceptions = new ArrayList<>();
 
-    protected MethodCall addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, String pathCondition) {
+    protected MethodCall addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
         for(MethodCall md : this.methodCalls) {
             if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getProgramPoint().equals(programPoint)) {
                 return md;
             }
         }
 
-        MethodCall md = new MethodCall(methodName, methodDescriptor, className, pathId, programPoint, pathCondition);
+        MethodCall md = new MethodCall(methodName, methodDescriptor, className, pathId, programPoint, callerPC, pathCondition);
         this.methodCalls.add(md);
         return md;
     }
@@ -86,15 +86,17 @@ public class TestInformation {
         private final String pathId;
         private final String programPoint;
         private final String pathCondition;
+        private final int callerPC;
         private ParameterSet parameters = new ParameterSet();
 
 
-        public MethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, String pathCondition) {
+        public MethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
             this.methodName = methodName;
             this.methodDescriptor = methodDescriptor;
             this.className = className;
             this.pathId = pathId;
             this.programPoint = programPoint;
+            this.callerPC = callerPC;
             this.pathCondition = pathCondition;
         }
 
@@ -120,6 +122,10 @@ public class TestInformation {
 
         public String getPathCondition() {
             return pathCondition;
+        }
+
+        public int getCallerPC() {
+            return callerPC;
         }
 
         public ParameterSet getParameterSet() {

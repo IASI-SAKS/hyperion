@@ -48,7 +48,7 @@ public class Main {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(prepareFinalRuntimeClasspath(SUTPath, additionalClassPath))
                         .withMethodSignature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName())
-                        .withDepthScope(25)
+                        .withDepthScope(5)
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "state")
                         .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "state")
                         .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)V", "isAssignable")
@@ -76,7 +76,7 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
                 a.run();
 
-                if(++count == 1) // TODO: remove after debugging
+                if(++count == 5) // TODO: remove after debugging
                     break;
 
             } catch (AnalyzerException e) {
