@@ -43,7 +43,7 @@ public class Main {
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
         df.setTimeZone(tz);
         String nowAsISO = df.format(new Date());
-        facts = "inspection-" + nowAsISO + ".datalog";
+        facts = "inspection-" + nowAsISO + ".pl";
 
         InformationLogger inspector = new InformationLogger(methodEnumerator);
         inspector.setDatalogOutputFile(facts);
