@@ -44,6 +44,12 @@ public final class Analyzer {
     private class ActionsRun extends Runner.Actions {
 
         @Override
+        public boolean atInitial() {
+            Analyzer.this.trackMethods = true;
+            return super.atInitial();
+        }
+
+        @Override
         public boolean atMethodPre() {
             if(Analyzer.this.trackMethods) {
                 final State currentState = Analyzer.this.engine.getCurrentState();
