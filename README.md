@@ -36,3 +36,8 @@ Hyperion can be run as:
 ```bash
 java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path to test classes> <path to SUT classes> [additional path to add in classpath]
 ```
+
+## Dev Notes
+
+invokes format:
+invokes(test name, branch point, branch sequence number, caller, callerPC, frameEpoch, path condition, callee, parameters)
