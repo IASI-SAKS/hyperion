@@ -83,7 +83,8 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;)V", "isNull")
                         .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;Ljava/lang/String;)V", "isNull")
                         .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "isTrue")
-                        .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
+                        .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue")
+                        .withGuided(true);
                 a.run();
 
                 if(++count == 1) // TODO: remove after debugging
