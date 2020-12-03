@@ -21,6 +21,8 @@ import static jbse.common.Type.splitParametersDescriptors;
 public class InformationLogger {
     private final MethodEnumerator methodEnumerator;
     private PrintStream datalogOut = null;
+    private final Stack<Integer> callerFrame = new Stack<>();
+    private Integer invocationEpoch = 0;
 
     // Class -> Method -> Information Data
     private final HashMap<String, HashMap<String, TestInformation>> loggedInformation = new HashMap<>();
@@ -29,11 +31,18 @@ public class InformationLogger {
 
     public InformationLogger(MethodEnumerator methodEnumerator) {
         this.methodEnumerator = methodEnumerator;
+        this.callerFrame.push(this.invocationEpoch++);
+    }
+
+    public void onMethodReturn() {
+        this.callerFrame.pop();
     }
 
     public void onMethodCall(State s) {
         Signature callee;
         ClassFile classFile;
+
+        this.callerFrame.push(this.invocationEpoch++);
 
         if(s.isStuck())
             return;
@@ -97,9 +106,11 @@ public class InformationLogger {
 
 //        this.datalogOut.println("FORMATO:\n\ninvokes("
 //                + "\"nome\" del test, "
-//                + "branch point, sequence number" + ", " + "program point" + ", " + "path condition" + ", "
+//                + "branch point, sequence number" + ", " + "caller" + ", " + "path condition" + ", "
 //                + "metodo chiamato" + ", "
 //                + "parametri" + ").\n\n");
+//        Formato:
+//        invokes(test name, branch point, branch sequence number, caller, callerPC, frameEpoch, path condition, callee, parameters)
 
         this.loggedInformation.forEach((klass,methodsInKlass) -> { // for each class
             if(methodsInKlass.size() == 0)
@@ -115,6 +126,7 @@ public class InformationLogger {
                             .append(methodCall.getPathId() + ", ")
                             .append("'" + methodCall.getProgramPoint() + "', ")
                             .append(methodCall.getCallerPC() + ", ")
+                            .append(methodCall.getCallerEpoch() + ", ")
                             .append(methodCall.getPathCondition() + ", ")
                             .append("'" + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + "', ")
                             .append(methodCall.getParameterSet().getParameters())
@@ -160,9 +172,10 @@ public class InformationLogger {
         formatPathCondition(s, sb);
         sb.append("]");
 
-        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, callee.getDescriptor(), classFile.getClassName(), pathId, programPoint, callerPC, sb.toString());
-        int numOperands = splitParametersDescriptors(callee.getDescriptor()).length;
+        int callerEpoch = this.callerFrame.peek();
+        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, callerEpoch, callee.getDescriptor(), classFile.getClassName(), pathId, programPoint, callerPC, sb.toString());
 
+        int numOperands = splitParametersDescriptors(callee.getDescriptor()).length;
         if(numOperands == 0)
             return;
 

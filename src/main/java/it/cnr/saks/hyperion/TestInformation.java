@@ -7,14 +7,14 @@ public class TestInformation {
     private final ArrayList<EndPoint> endPoints = new ArrayList<>();
     private final ArrayList<String> exceptions = new ArrayList<>();
 
-    protected MethodCall addMethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
+    protected MethodCall addMethodCall(String methodName, int callerEpoch, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
         for(MethodCall md : this.methodCalls) {
             if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getProgramPoint().equals(programPoint)) {
                 return md;
             }
         }
 
-        MethodCall md = new MethodCall(methodName, methodDescriptor, className, pathId, programPoint, callerPC, pathCondition);
+        MethodCall md = new MethodCall(methodName, callerEpoch, methodDescriptor, className, pathId, programPoint, callerPC, pathCondition);
         this.methodCalls.add(md);
         return md;
     }
@@ -81,6 +81,7 @@ public class TestInformation {
 
     protected static class MethodCall {
         private final String methodName;
+        private final int callerEpoch;
         private final String methodDescriptor;
         private final String className;
         private final String pathId;
@@ -90,8 +91,9 @@ public class TestInformation {
         private ParameterSet parameters = new ParameterSet();
 
 
-        public MethodCall(String methodName, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
+        public MethodCall(String methodName, int callerEpoch, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
             this.methodName = methodName;
+            this.callerEpoch = callerEpoch;
             this.methodDescriptor = methodDescriptor;
             this.className = className;
             this.pathId = pathId;
@@ -106,6 +108,10 @@ public class TestInformation {
 
         public String getMethodDescriptor() {
             return methodDescriptor;
+        }
+
+        public int getCallerEpoch() {
+            return callerEpoch;
         }
 
         public String getMethodName() {
