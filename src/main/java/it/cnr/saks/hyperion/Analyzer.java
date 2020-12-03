@@ -30,16 +30,13 @@ public final class Analyzer {
 
     private final RunnerParameters runnerParameters;
     private Engine engine;
+    private boolean isGuided = false;
 
     private final InformationLogger informationLogger;
 
     public Analyzer(InformationLogger informationLogger) throws AnalyzerException {
-        final CalculatorRewriting calc = createCalculator();
-
         this.runnerParameters = new RunnerParameters();
         this.runnerParameters.setActions(new ActionsRun());
-        this.runnerParameters.setCalculator(calc);
-        this.runnerParameters.setDecisionProcedure(createDecisionProcedure(calc));
 
         this.informationLogger = informationLogger;
     }
@@ -80,6 +77,10 @@ public final class Analyzer {
     }
 
     public void run() throws AnalyzerException {
+        final CalculatorRewriting calc = createCalculator();
+        this.runnerParameters.setCalculator(calc);
+        this.runnerParameters.setDecisionProcedure(createDecisionProcedure(calc));
+
         try {
             final RunnerBuilder rb = new RunnerBuilder();
             final Runner runner = rb.build(this.runnerParameters);
@@ -91,37 +92,6 @@ public final class Analyzer {
         }
     }
 
-
-    private CalculatorRewriting createCalculator() {
-        final CalculatorRewriting calc = new CalculatorRewriting();
-        calc.addRewriter(new RewriterOperationOnSimplex()); //indispensable
-        return calc;
-    }
-
-
-    private DecisionProcedureAlgorithms createDecisionProcedure(CalculatorRewriting calc) throws AnalyzerException {
-        //initializes cores
-        DecisionProcedure core = new DecisionProcedureAlwSat(calc);
-
-        //wraps cores with external numeric decision procedure
-        try {
-            final String switchChar = System.getProperty("os.name").toLowerCase().contains("windows") ? "/" : "-";
-            final ArrayList<String> z3CommandLine = new ArrayList<>();
-            z3CommandLine.add("z3");
-            z3CommandLine.add(switchChar + "smt2");
-            z3CommandLine.add(switchChar + "in");
-            z3CommandLine.add(switchChar + "t:10");
-            core = new DecisionProcedureSMTLIB2_AUFNIRA(core, z3CommandLine);
-            core = new DecisionProcedureLICS(core, new LICSRulesRepo());
-            core = new DecisionProcedureClassInit(core, new ClassInitRulesRepo());
-
-            //sets the result
-            return new DecisionProcedureAlgorithms(core);
-
-        } catch (DecisionException | InvalidInputException e) {
-            throw new AnalyzerException(e);
-        }
-    }
 
     public Analyzer withUserClasspath(String... paths) {
         this.runnerParameters.addUserClasspath(paths);
@@ -136,6 +106,49 @@ public final class Analyzer {
     public Analyzer withDepthScope(int depthScope) {
         this.runnerParameters.setDepthScope(depthScope);
         return this;
+    }
+
+    public Analyzer withGuided(boolean isGuided) {
+        this.isGuided = isGuided;
+        return this;
+    }
+
+
+    private DecisionProcedureAlgorithms createDecisionProcedure(CalculatorRewriting calc) throws AnalyzerException {
+        // initializes cores
+        DecisionProcedure core = new DecisionProcedureAlwSat(calc);
+
+        // wraps cores with external numeric decision procedure
+        try {
+
+            // Setup external numeric decision procedure
+            final String switchChar = System.getProperty("os.name").toLowerCase().contains("windows") ? "/" : "-";
+            final ArrayList<String> z3CommandLine = new ArrayList<>();
+            z3CommandLine.add("z3");
+            z3CommandLine.add(switchChar + "smt2");
+            z3CommandLine.add(switchChar + "in");
+            z3CommandLine.add(switchChar + "t:10");
+            core = new DecisionProcedureSMTLIB2_AUFNIRA(core, z3CommandLine);
+            core = new DecisionProcedureLICS(core, new LICSRulesRepo());
+            core = new DecisionProcedureClassInit(core, new ClassInitRulesRepo());
+
+            // Setup guidance using JDI
+            if(this.isGuided) {
+                core = new DecisionProcedureGuidanceJDI(core, calc, this.runnerParameters);
+            }
+
+            // sets the result
+            return new DecisionProcedureAlgorithms(core);
+
+        } catch (DecisionException | InvalidInputException e) {
+            throw new AnalyzerException(e);
+        }
+    }
+
+    private CalculatorRewriting createCalculator() {
+        final CalculatorRewriting calc = new CalculatorRewriting();
+        calc.addRewriter(new RewriterOperationOnSimplex()); //indispensable
+        return calc;
     }
 
     public Analyzer withUninterpreted(String methodClassName, String methodDescriptor, String methodName) {
