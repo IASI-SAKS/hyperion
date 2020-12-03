@@ -39,7 +39,7 @@ java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path
 
 ## Dev Notes
 
-The invokes format for files like [this one](src/test/resources/inspection-2020-12-03T11:33Z.pl):
+Format for the statement `invokes` in files like [this one](src/test/resources/inspection-2020-12-03T11:33Z.pl):
 ```
 invokes(test name, branch point, branch sequence number, caller, callerProgramCounter, frameEpoch, path condition, callee, parameters)
 ```
