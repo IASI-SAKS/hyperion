@@ -29,6 +29,8 @@ public class PrologQuery {
         JPL.init();
         System.out.println("Prolog engine actual init args: " + Arrays.toString(Prolog.get_actual_init_args()));
 
+        new Query("set_prolog_flag(character_escapes,false)").hasSolution();
+
         // Load the prolog program
         Query q = new Query(
                 "consult",
