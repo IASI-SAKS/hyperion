@@ -86,7 +86,7 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
                 a.run();
 
-                if(++count == 5) // TODO: remove after debugging
+                if(++count == 1) // TODO: remove after debugging
                     break;
 
             } catch (AnalyzerException e) {
