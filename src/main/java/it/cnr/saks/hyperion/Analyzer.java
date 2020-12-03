@@ -14,6 +14,7 @@ import jbse.jvm.RunnerParameters;
 import jbse.jvm.exc.*;
 import jbse.mem.State;
 import jbse.mem.exc.ContradictionException;
+import jbse.mem.exc.FrozenStateException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.rewr.CalculatorRewriting;
 import jbse.rewr.RewriterOperationOnSimplex;
@@ -21,6 +22,8 @@ import jbse.rules.ClassInitRulesRepo;
 import jbse.rules.LICSRulesRepo;
 
 import java.util.ArrayList;
+
+import static jbse.bc.Opcodes.*;
 
 public final class Analyzer {
     private boolean trackMethods = false;
@@ -57,6 +60,22 @@ public final class Analyzer {
             }
 
             return super.atMethodPre();
+        }
+
+        @Override
+        public boolean atStepPre() {
+            if(Analyzer.this.trackMethods) {
+                final State currentState = Analyzer.this.engine.getCurrentState();
+                try {
+                    byte opcode = currentState.getInstruction();
+                    if(opcode == OP_IRETURN || opcode == OP_LRETURN || opcode == OP_FRETURN || opcode == OP_DRETURN || opcode == OP_ARETURN || opcode == OP_RETURN)
+                        Analyzer.this.informationLogger.onMethodReturn();
+                } catch (ThreadStackEmptyException | FrozenStateException e) {
+                    e.printStackTrace();
+                }
+            }
+
+            return super.atStepPre();
         }
     }
 
