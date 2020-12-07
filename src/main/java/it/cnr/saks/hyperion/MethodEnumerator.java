@@ -12,14 +12,16 @@ import java.net.URLClassLoader;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 
 public class MethodEnumerator implements Iterable<MethodDescriptor> {
     private final List<MethodDescriptor> methods = new ArrayList<>();
+    private final Hashtable<String, ArrayList<MethodDescriptor>> beforeMethods = new Hashtable<>();
     private final URL[] classPath;
-    private List<Class> classes;
-    private List<Class> SUTClasses;
+    private final List<Class> classes;
+    private final List<Class> SUTClasses;
 
     public MethodEnumerator(String classPath, String SUTPath) throws IOException, AnalyzerException {
         this.classPath = this.initializeClasspath(classPath, SUTPath);
@@ -38,15 +40,31 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
             Method[] m = this.getAccessibleMethods(clazz);
             for(Method met: m) {
                 boolean isTest = false;
+                boolean isBefore = false;
 
                 if(!met.getDeclaringClass().getName().equals(clazz.getName()))
                     continue;
 
                 for(Annotation ann: met.getAnnotations()) {
+                    if(ann.toString().equals("@org.junit.Before()")) {
+                        isBefore = true;
+                        break;
+                    }
                     if(ann.toString().contains("@org.junit.Test")) {
                         isTest = true;
                         break;
                     }
+                }
+
+                if(isBefore) {
+                    if(!beforeMethods.containsKey(clazz.getName())) {
+                        ArrayList<MethodDescriptor> befores = new ArrayList<>();
+                        befores.add(new MethodDescriptor(met, met.getName(), this.getMethodDescriptor(met), clazz.getName()));
+                        beforeMethods.put(clazz.getName(), befores);
+                    } else {
+                        beforeMethods.get(clazz.getName()).add(new MethodDescriptor(met, met.getName(), this.getMethodDescriptor(met), clazz.getName()));
+                    }
+                    continue;
                 }
 
                 if(!isTest)
@@ -60,6 +78,10 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     @Override
     public Iterator<MethodDescriptor> iterator() {
         return this.methods.iterator();
+    }
+    
+    public List<MethodDescriptor> getBefores(String clazz) {
+        return this.beforeMethods.get(clazz);
     }
 
     public Class findClass(String fqn) throws ClassNotFoundException {
