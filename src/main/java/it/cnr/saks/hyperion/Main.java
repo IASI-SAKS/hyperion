@@ -7,10 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.TimeZone;
+import java.util.*;
 
 public class Main {
     private static String facts;
@@ -85,10 +82,21 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "isTrue")
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue")
                         .withGuided(true);
-                a.run();
 
-                if(++count == 1) // TODO: remove after debugging
-                    break;
+                final List<MethodDescriptor> befores = methodEnumerator.getBefores(method.getClassName());
+                if(befores == null) {
+                    System.out.println("No before methods found");
+                } else {
+                    System.out.print("YES FOUND: ");
+                    for(MethodDescriptor foo: befores) {
+                        System.out.print(foo.getMethodName() + ", ");
+                        System.out.println("");
+                    }
+                }
+//                a.run();
+//
+//                if(++count == 1) // TODO: remove after debugging
+//                    break;
 
             } catch (AnalyzerException e) {
                 e.printStackTrace();
