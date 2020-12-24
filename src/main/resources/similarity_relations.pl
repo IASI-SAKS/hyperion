@@ -70,17 +70,6 @@ invoked_methods(TP,L) :-
   findall(M, invokes(TP,_,_,_,_,_,_,M,_), L).
 
 % ------------------------------------------------------------------------------
-% SEMANTICS: invokeSequenceInCallHierarchy(TP,Caller, Seq)
-% Seq is the sequence of  direct invocations performed by Caller in TP
-invokeSequenceInCallHierarchy(TP,Caller,Seq) :-
-  invokeSequenceInCallHierarchy_stack(TP,[Caller],Seq).
-%
-invokeSequenceInCallHierarchy_stack(_TP,[],[]).
-invokeSequenceInCallHierarchy_stack(TP,[C|Cs],[C|Ms]) :-
-  invokeSequence(TP,C, S),
-  append(S,Cs,Cs1),
-  invokeSequenceInCallHierarchy_stack(TP,Cs1,Ms).
-
 % SEMANTICS: invokeSequence(TP,Caller,Seq)
 % Seq is a sequence of direct invocations performed by Caller in TP
 invokeSequence(TP,Caller,ISeq) :-
@@ -149,15 +138,15 @@ exists_intermediate_invokes(Invokes1,Invokes2) :-
 method_first_invokes(TP,Caller,Invokes) :-
   Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
   \+ exist_preceeding_invokes(Invokes).
-%
+% method_first_invokes utility predicate
 exist_preceeding_invokes(Invokes) :-
   next(_,Invokes).
 % Invokes is the last invocation performed by Caller in TP
 method_last_invokes(TP,Caller,Invokes) :-
   Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  \+ exist_succeeging_invokes(Invokes).
-%
-exist_succeeging_invokes(Invokes) :-
+  \+ exist_succeeding_invokes(Invokes).
+% method_last_invokes utility predicate
+exist_succeeding_invokes(Invokes) :-
   next(Invokes,_).
 
 % SEMANTICS: callees(Is,Ms)
