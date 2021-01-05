@@ -1,5 +1,3 @@
-% reconsult('src/main/resources/similarity_relations.pl').
-
 :- set_prolog_flag(character_escapes,false).
 
 %% Checking similarity of test programs
@@ -25,7 +23,25 @@ check_sim_all(SelTP,Sim,[TP|TPs]) :-
   ( call(Sim,SelTP,TP) -> write('PASS'); write('FAIL') ), nl,
   check_sim_all(SelTP,Sim,TPs).
 
-% ------------------------------------------------------------------------------
+% MODE: invoked_methods(+TP,?L)
+% SEMANTICS: L is the list of methods invoked by the test program TP
+% invokes/9 semantics
+% invokes(
+% 1 test name,
+% 2 branch point,
+% 3 branch sequence number,
+% 4 caller,
+% 5 callerProgramCounter,
+% 6 frameEpoch,
+% 7 path condition,
+% 8 callee,
+% 9 parameters)
+invoked_methods(TP,L) :-
+  % L is the list of all the instances of M for which
+  % invoke(TP,_,_,_,_,_,_,M,_) succeeds
+  findall(M, invokes(TP,_,_,_,_,_,_,M,_), L).
+
+% SIMILARITY relations ---------------------------------------------------------
 % MODE: sub_set_of_invoked_methods(+TP1,+TP2)
 % SEMANTICS: sub_set_of_invoked_methods(+TP1,+TP2) holds if all methods invoked
 % by TP1 are invoked by TP2.
@@ -53,23 +69,17 @@ exists_method_not_invoked(TP1,TP2) :-
 tp_invokes_m(TP,M) :-
   invokes(TP,_,_,_,_,_,_,M,_).
 
-% MODE: invoked_methods(+TP,?L)
-% SEMANTICS: L is the list of methods invoked by the test program TP
-% invokes/9 semantics
-% invokes(
-% 1 test name,
-% 2 branch point,
-% 3 branch sequence number,
-% 4 caller,
-% 5 callerProgramCounter,
-% 6 frameEpoch,
-% 7 path condition,
-% 8 callee,
-% 9 parameters)
-invoked_methods(TP,L) :-
-  % L is the list of all the instances of M for which
-  % invoke(TP,_,_,_,_,M,_) succeeds
-  findall(M, invokes(TP,_,_,_,_,_,_,M,_), L).
+% MODE: eq_set_maximalInvokeSequence(+TP1,+TP2,+Caller)
+% SEMANTICS: eq_set_maximalInvokeSequence(TP1,TP2,Caller) holds if the set of
+% maximal sequences of direct invocations performed by Caller in TP1 is the same
+% as the set of maximal sequences of direct invocations performed by Caller in TP2
+% (library(ordsets): https://www.swi-prolog.org/pldoc/man?section=ordsets)
+eq_set_maximalInvokeSequence(TP1,TP2,Caller) :-
+  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), callees(ISeq,MSeq)), MSeq1Lst),
+  findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), callees(ISeq,MSeq)), MSeq2Lst),
+  list_to_ord_set(MSeq1Lst,S1), % library(ordsets) predicate
+  list_to_ord_set(MSeq2Lst,S2),
+  ord_seteq(S1,S2).             % library(ordsets) predicate
 
 % ------------------------------------------------------------------------------
 % SEMANTICS: invokeSequence(TP,Caller,ISeq)
@@ -78,16 +88,9 @@ invokeSequence(TP,Caller,ISeq) :-
   Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
   iseq(Invokes,ISeq).
 
-% SEMANTICS: invokeMaximalSequence(TP,Caller,ISeq)
+% SEMANTICS: maximalInvokeSequence(TP,Caller,ISeq)
 % ISeq is a maximal sequence of direct invocations performed by Caller in TP
-% TEST:
-% ?- invokeMaximalSequence('t3','m',Seq1), callees(Seq1,M1).
-% Seq1 = [invokes(t3, [1, 1], 1, m, 11, 3, [], a, []), invokes(t3, [1, 1], 3, m, 11, 3, [], b, []), invokes(t3, [1, 1], 5, m, 11, 3, [], c, [])],
-% M1 = [a, b, c] ;
-% Seq1 = [invokes(t3, [1, 2], 7, m, 11, 3, [], a, []), invokes(t3, [1, 2], 9, m, 11, 3, [], b, [])],
-% M1 = [a, b] ;
-% false.
-invokeMaximalSequence(TP,Caller,ISeq) :-
+maximalInvokeSequence(TP,Caller,ISeq) :-
   method_first_invokes(TP,Caller,FirstInvokes),
   method_last_invokes(TP,Caller,LastInvokes),
   FirstInvokes \= LastInvokes, % sequences with at least two method invocations
