@@ -2,6 +2,7 @@ package jbse.apps.run;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 
 public class DecisionProcedureGuidanceJDILauncher {
     /**
@@ -28,11 +29,14 @@ public class DecisionProcedureGuidanceJDILauncher {
     public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, 
     SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, 
     InvocationTargetException {
-        System.out.println("Parto!");
         final Class<?> clazz = Class.forName(args[0]);
         final Method method = clazz.getDeclaredMethod(args[1]);
         method.setAccessible(true);
-        Object o = clazz.newInstance();
-        method.invoke(o);
+        if(Modifier.isStatic(method.getModifiers())) {
+            method.invoke(null);
+        } else {
+            Object o = clazz.newInstance();
+            method.invoke(o);
+        }
     }
 }
