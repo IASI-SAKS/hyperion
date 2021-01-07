@@ -3,7 +3,6 @@ package it.cnr.saks.hyperion;
 import org.jpl7.*;
 import org.jpl7.fli.Prolog;
 
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Map;
 
