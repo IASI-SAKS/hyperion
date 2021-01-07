@@ -37,15 +37,15 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
             }
 
             System.out.println(" retrieving valid methods...");
-            Method[] m = this.getAccessibleMethods(clazz);
-            for(Method met: m) {
+            Method[] methods = this.getAccessibleMethods(clazz);
+            for(Method currentMethod: methods) {
                 boolean isTest = false;
                 boolean isBefore = false;
 
-                if(!met.getDeclaringClass().getName().equals(clazz.getName()))
+                if(!currentMethod.getDeclaringClass().getName().equals(clazz.getName()))
                     continue;
 
-                for(Annotation ann: met.getAnnotations()) {
+                for(Annotation ann: currentMethod.getAnnotations()) {
                     if(ann.toString().equals("@org.junit.Before()")) {
                         isBefore = true;
                         break;
@@ -59,10 +59,10 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 if(isBefore) {
                     if(!beforeMethods.containsKey(clazz.getName())) {
                         ArrayList<MethodDescriptor> befores = new ArrayList<>();
-                        befores.add(new MethodDescriptor(met, met.getName(), this.getMethodDescriptor(met), clazz.getName()));
+                        befores.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), clazz.getName()));
                         beforeMethods.put(clazz.getName(), befores);
                     } else {
-                        beforeMethods.get(clazz.getName()).add(new MethodDescriptor(met, met.getName(), this.getMethodDescriptor(met), clazz.getName()));
+                        beforeMethods.get(clazz.getName()).add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), clazz.getName()));
                     }
                     continue;
                 }
@@ -70,7 +70,7 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 if(!isTest)
                     continue;
 
-                methods.add(new MethodDescriptor(met, met.getName(), this.getMethodDescriptor(met), clazz.getName()));
+                this.methods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), clazz.getName()));
             }
         }
     }
@@ -158,6 +158,9 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 (filePath, fileAttr) -> fileAttr.isRegularFile() && filePath.toString().endsWith(".class"))
                 .forEach(pathVal -> paths.add(pathVal.toString()));
 
+
+        //ClassPathHacker.addFiles(paths); // TODO: serve?!
+
         for (String classFile: paths) {
             classes.add(loadClass(classFile, classPath, this.getClassPath()));
         }
@@ -174,6 +177,13 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
         try {
             cl = new URLClassLoader(urls);
             dynamicClass = cl.loadClass(classPkg);
+
+            try {
+                Class.forName(dynamicClass.getName(), true, dynamicClass.getClassLoader());
+            } catch (ClassNotFoundException e) {
+                throw new AssertionError(e);  // Can't happen
+            }
+
         } catch (ClassNotFoundException e) {
             throw new AnalyzerException("Unable to find class " + e.getMessage());
         }

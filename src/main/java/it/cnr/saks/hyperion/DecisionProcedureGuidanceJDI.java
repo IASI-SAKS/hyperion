@@ -40,35 +40,17 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 	 * @param runnerParameters the {@link RunnerParameters} of the symbolic execution.
 	 *        The constructor modifies this object by adding the {@link Runner.Actions}s
 	 *        necessary to the execution.
-	 * @throws GuidanceException if something fails during creation (and the caller
-	 *         is to blame).
-	 * @throws InvalidInputException if {@code component == null}.
-	 */
-	public DecisionProcedureGuidanceJDI(DecisionProcedure component, Calculator calc, RunnerParameters runnerParameters)
-			throws GuidanceException, InvalidInputException {
-		this(component, calc, runnerParameters, runnerParameters.getMethodSignature(), 1);
-	}
-
-	/**
-	 * Builds the {@link DecisionProcedureGuidanceJDI}.
-	 *
-	 * @param component the component {@link DecisionProcedure} it decorates.
-	 * @param calc a {@link Calculator}.
-	 * @param runnerParameters the {@link RunnerParameters} of the symbolic execution.
-	 *        The constructor modifies this object by adding the {@link Runner.Actions}s
-	 *        necessary to the execution.
 	 * @param stopSignature the {@link Signature} of a method. The guiding concrete execution 
 	 *        will stop at the entry of the {@code numberOfHits}-th invocation of the 
 	 *        method whose signature is {@code stopSignature}, and the reached state will be 
 	 *        used as the initial one.
-	 * @param numberOfHits an {@code int} greater or equal to one.
 	 * @throws GuidanceException if something fails during creation (and the caller
 	 *         is to blame).
 	 * @throws InvalidInputException if {@code component == null}.
 	 */
-	public DecisionProcedureGuidanceJDI(DecisionProcedure component, Calculator calc, RunnerParameters runnerParameters, Signature stopSignature, int numberOfHits)
+	public DecisionProcedureGuidanceJDI(DecisionProcedure component, Calculator calc, RunnerParameters runnerParameters, Signature stopSignature)
 			throws GuidanceException, InvalidInputException {
-		super(component, new JVMJDI(calc, runnerParameters, stopSignature, numberOfHits));
+		super(component, new JVMJDI(calc, runnerParameters, stopSignature, 1));
 	}
 
 	private static class JVMJDI extends JVM {
@@ -91,7 +73,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		
 		// Handling of uninterpreted functions
 		private Map<SymbolicApply, SymbolicApplyJVMJDI> symbolicApplyCache = new HashMap<>();
-		private Map<String, Integer> symbolicApplyOperatorOccurrences = new HashMap<>();		
+		private Map<String, Integer> symbolicApplyOperatorOccurrences = new HashMap<>();
 		
 		public JVMJDI(Calculator calc, RunnerParameters runnerParameters, Signature stopSignature, int numberOfHits)
 		throws GuidanceException {
@@ -303,7 +285,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		}
 
 		protected boolean handleBreakpointEvents(Event event, int numberOfHits) throws GuidanceException {
-			if (event.request().equals(breakpoint)) {
+			if (event.request() != null && event.request().equals(breakpoint)) {
 				//System.out.println("Breakpoint: stopped at: " + event);
 				this.currentExecutionPointEvent = event;
 				++this.hitCounter;
