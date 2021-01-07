@@ -13,7 +13,6 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Main {
-    private static String facts;
     private static MethodEnumerator methodEnumerator;
     private static TestWrapper testWrapper;
 
@@ -46,7 +45,7 @@ public class Main {
             System.exit(70); // EX_SOFTWARE
         }
 
-        Signature testWrapperSignature = new Signature("it/cnr/saks/hyperion/TestWrapper", "()V", "run");
+        Signature testWrapperSignature = new Signature("it/cnr/saks/hyperion/TestWrapper", "()V", "wrapperEntryPoint");
         try {
             testWrapper = new TestWrapper(runtimeClasspath);
         } catch (NotFoundException e) {
@@ -58,7 +57,7 @@ public class Main {
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
         df.setTimeZone(tz);
         String nowAsISO = df.format(new Date());
-        facts = "inspection-" + nowAsISO + ".pl";
+        String facts = "inspection-" + nowAsISO + ".pl";
 
         InformationLogger inspector = new InformationLogger(methodEnumerator);
         inspector.setDatalogOutputFile(facts);
@@ -69,7 +68,7 @@ public class Main {
 
         for(MethodDescriptor method: methodEnumerator) {
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
-            System.out.println("\tSymbolic execution starting from: " + method.getMethodName() + ", " + method.getMethodDescriptor());
+            System.out.println("Analysing: " + method.getMethodName() + ":" + method.getMethodDescriptor());
 
             Signature testProgramSignature = new Signature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName());
 
@@ -103,25 +102,15 @@ public class Main {
                         .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "isTrue")
                         .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
 
-                final List<MethodDescriptor> beforeMethods = methodEnumerator.getBefores(method.getClassName());
+                final List<MethodDescriptor> beforeMethods = methodEnumerator.getBeforeMethods(method.getClassName());
                 if(beforeMethods == null) {
                     a.withMethodSignature(testProgramSignature);
-                    continue; // FIXME: REMOVE THIS ONE!
                 } else {
-                    System.out.print("YES FOUND: ");
-                    for(MethodDescriptor foo: beforeMethods) {
-                        System.out.println(foo.getMethodName() + ", ");
-                    }
-                    System.out.println("");
-
+                    System.out.println("Generating wrapper for @Before methods");
                     testWrapper.generateWrapper(testProgramSignature, beforeMethods);
 
                     a.withMethodSignature(testWrapperSignature)
                      .withGuided(true, testProgramSignature);
-//                    a.withMethodSignature(testWrapperSignature)
-//                     .withGuided(true, testWrapperSignature);
-//                    a.withMethodSignature(testProgramSignature)
-//                     .withGuided(true, testProgramSignature);
                 }
                 a.run();
 
@@ -132,7 +121,7 @@ public class Main {
             inspector.emitDatalog();
             System.gc();
 
-            if(++count == 1) // TODO: remove after debugging
+            if(++count == 10) // TODO: remove after debugging
                 break;
         }
 

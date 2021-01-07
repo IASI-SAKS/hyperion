@@ -28,21 +28,21 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
         this.classes = this.enumerateClasses(classPath);
         this.SUTClasses = this.enumerateClasses(SUTPath); // To load classes from the SUT
 
-        for (Class clazz: this.classes) {
-            System.out.print("Analysing class " + clazz.getName() + ":");
+        for (Class klass: this.classes) {
+            System.out.print("Analysing class " + klass.getName() + ":");
 
-            if(Modifier.isAbstract(clazz.getModifiers())) {
+            if(Modifier.isAbstract(klass.getModifiers())) {
                 System.out.println(" skipping, it's an abstract class.");
                 continue;
             }
 
             System.out.println(" retrieving valid methods...");
-            Method[] methods = this.getAccessibleMethods(clazz);
+            Method[] methods = this.getAccessibleMethods(klass);
             for(Method currentMethod: methods) {
                 boolean isTest = false;
                 boolean isBefore = false;
 
-                if(!currentMethod.getDeclaringClass().getName().equals(clazz.getName()))
+                if(!currentMethod.getDeclaringClass().getName().equals(klass.getName()))
                     continue;
 
                 for(Annotation ann: currentMethod.getAnnotations()) {
@@ -57,12 +57,12 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 }
 
                 if(isBefore) {
-                    if(!beforeMethods.containsKey(clazz.getName())) {
-                        ArrayList<MethodDescriptor> befores = new ArrayList<>();
-                        befores.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), clazz.getName()));
-                        beforeMethods.put(clazz.getName(), befores);
+                    if(!beforeMethods.containsKey(klass.getName())) {
+                        ArrayList<MethodDescriptor> beforeMethods = new ArrayList<>();
+                        beforeMethods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
+                        this.beforeMethods.put(klass.getName(), beforeMethods);
                     } else {
-                        beforeMethods.get(clazz.getName()).add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), clazz.getName()));
+                        beforeMethods.get(klass.getName()).add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
                     }
                     continue;
                 }
@@ -70,7 +70,7 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 if(!isTest)
                     continue;
 
-                this.methods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), clazz.getName()));
+                this.methods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
             }
         }
     }
@@ -80,18 +80,18 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
         return this.methods.iterator();
     }
     
-    public List<MethodDescriptor> getBefores(String clazz) {
-        return this.beforeMethods.get(clazz);
+    public List<MethodDescriptor> getBeforeMethods(String klass) {
+        return this.beforeMethods.get(klass);
     }
 
     public Class findClass(String fqn) throws ClassNotFoundException {
-        for (Class clazz: this.classes) {
-            if(clazz.getName().equals(fqn))
-                return clazz;
+        for (Class klass: this.classes) {
+            if(klass.getName().equals(fqn))
+                return klass;
         }
-        for (Class clazz: this.SUTClasses) {
-            if(clazz.getName().equals(fqn))
-                return clazz;
+        for (Class klass: this.SUTClasses) {
+            if(klass.getName().equals(fqn))
+                return klass;
         }
         throw new ClassNotFoundException("Unable to find class " + fqn);
     }
@@ -99,53 +99,53 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     private String getMethodDescriptor(Method m)
     {
         StringBuilder s= new StringBuilder("(");
-        for(final Class c:(m.getParameterTypes()))
-            s.append(this.getDescriptorForClass(c));
+        for(final Class klass:(m.getParameterTypes()))
+            s.append(this.getDescriptorForClass(klass));
         s.append(')');
         return s + this.getDescriptorForClass(m.getReturnType());
     }
 
-    private String getDescriptorForClass(final Class c)
+    private String getDescriptorForClass(final Class klass)
     {
-        if(c.isPrimitive())
+        if(klass.isPrimitive())
         {
-            if(c==byte.class)
+            if(klass==byte.class)
                 return "B";
-            if(c==char.class)
+            if(klass==char.class)
                 return "C";
-            if(c==double.class)
+            if(klass==double.class)
                 return "D";
-            if(c==float.class)
+            if(klass==float.class)
                 return "F";
-            if(c==int.class)
+            if(klass==int.class)
                 return "I";
-            if(c==long.class)
+            if(klass==long.class)
                 return "J";
-            if(c==short.class)
+            if(klass==short.class)
                 return "S";
-            if(c==boolean.class)
+            if(klass==boolean.class)
                 return "Z";
-            if(c==void.class)
+            if(klass==void.class)
                 return "V";
-            throw new RuntimeException("Unrecognized primitive "+c);
+            throw new RuntimeException("Unrecognized primitive "+klass);
         }
-        if(c.isArray()) return c.getName().replace('.', '/');
-        return ('L'+c.getName()+';').replace('.', '/');
+        if(klass.isArray()) return klass.getName().replace('.', '/');
+        return ('L'+klass.getName()+';').replace('.', '/');
     }
 
-    private Method[] getAccessibleMethods(Class clazz)
+    private Method[] getAccessibleMethods(Class klass)
     {
         List<Method> result = new ArrayList<>();
-        while (clazz != null) {
-            for (Method method: clazz.getDeclaredMethods()) {
+        while (klass != null) {
+            for (Method method: klass.getDeclaredMethods()) {
                 int modifiers = method.getModifiers();
                 if (Modifier.isPublic(modifiers) || Modifier.isProtected(modifiers)) {
                     result.add(method);
                 }
             }
-            clazz = clazz.getSuperclass();
+            klass = klass.getSuperclass();
         }
-        return result.toArray(new Method[result.size()]);
+        return result.toArray(new Method[0]);
     }
 
 

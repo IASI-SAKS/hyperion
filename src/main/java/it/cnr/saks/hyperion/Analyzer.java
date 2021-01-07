@@ -102,7 +102,7 @@ public final class Analyzer {
     }
 
     public Analyzer withMethodSignature(Signature method) {
-        this.runnerParameters.setMethodSignature(method.getClassName(), method.getDescriptor(), method.getName());
+        this.runnerParameters.setMethodSignature(method);
         return this;
     }
 

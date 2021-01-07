@@ -9,11 +9,9 @@ import jbse.common.exc.UnexpectedInternalException;
 import jbse.dec.DecisionProcedure;
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.dec.exc.DecisionException;
-import jbse.jvm.RunnerParameters;
 import jbse.mem.*;
 import jbse.mem.State.Phase;
 import jbse.mem.exc.FrozenStateException;
-import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.tree.*;
 import jbse.val.*;
 import jbse.val.exc.InvalidOperandException;
@@ -43,15 +41,11 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
      * Builds the {@link DecisionProcedureGuidance}.
      *
      * @param component the component {@link DecisionProcedure} it decorates.
-     * @param calc a {@link Calculator}.
      * @param jvm a {@link JVM}.
-     * @param numberOfHits an {@code int} greater or equal to one.
-     * @throws GuidanceException if something fails during creation (and the caller
-     *         is to blame).
      * @throws InvalidInputException if {@code component == null}.
      */
     public DecisionProcedureGuidance(DecisionProcedure component, JVM jvm) 
-    throws GuidanceException, InvalidInputException {
+    throws InvalidInputException {
         super(component);
         goFastAndImprecise(); //disables theorem proving of component until guidance ends
         this.jvm = jvm;
@@ -275,15 +269,15 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
     private void updateExpansionBackdoor(State state, ReferenceSymbolic refToLoad) throws GuidanceException {
         final String refType = className(refToLoad.getStaticType());
         final String objType = this.jvm.typeOfObject(refToLoad);
-        if (objType != null && !refType.equals(objType)) {
+        if (objType != null && !(refType != null && refType.equals(objType))) {
             state.getClassHierarchy().addToExpansionBackdoor(refType, objType);
             try {
                 final ClassFile cf = state.getClassHierarchy().loadCreateClass(CLASSLOADER_APP, objType, true);
                 state.ensureKlassSymbolic(this.calc, cf);
                 final Klass k = state.getKlass(cf);
                 super.pushAssumption(new ClauseAssumeClassInitialized(cf, k));
-            } catch (DecisionException | ClassFileNotFoundException | ClassFileIllFormedException | 
-                     ClassFileNotAccessibleException | IncompatibleClassFileException | 
+            } catch (DecisionException | ClassFileNotFoundException | ClassFileIllFormedException |
+                     ClassFileNotAccessibleException | IncompatibleClassFileException |
                      BadClassFileVersionException | WrongClassNameException e) {
                 throw new GuidanceException(e);
             } catch (InvalidInputException | RenameUnsupportedException | PleaseLoadClassException e) {
@@ -327,7 +321,7 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
     }
     
     private void clearSeen() {
-        this.seen.clear();;
+        this.seen.clear();
     }
     
     @Override
@@ -346,19 +340,9 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
          * times.
          * 
          * @param calc a {@link Calculator}
-         * @param runnerParameters the {@link RunnerParameters} with information
          *        about the classpath and the method to run.
-         * @param stopSignature the {@link Signature} of the method where to stop
-         *        execution.
-         * @param numberOfHits an {@code int}, the number of times {@code stopSignature}
-         *        must be hit for the execution to stop.
-         * @throws GuidanceException if something goes wrong while the JVM runs.
          */
-        public JVM(Calculator calc, Signature stopSignature, int numberOfHits)
-        throws GuidanceException {
-            if (numberOfHits < 1) {
-                throw new GuidanceException("Invalid number of hits " + numberOfHits + ".");
-            }
+        public JVM(Calculator calc) {
             this.calc = calc;
         }
 
@@ -587,26 +571,26 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
             }
         }
 
-        protected abstract void step(State state) throws GuidanceException;
+        protected abstract void step(State state);
 
-        protected abstract Signature getCurrentMethodSignature() throws ThreadStackEmptyException;
+        protected abstract Signature getCurrentMethodSignature();
 
-        protected abstract int getCurrentProgramCounter() throws ThreadStackEmptyException;
+        protected abstract int getCurrentProgramCounter();
 
         protected void close() { }
     }
 
-    public final void step(State state) throws GuidanceException {
+    public final void step(State state) {
         if (state.phase() == Phase.POST_INITIAL && this.guiding) {
             this.jvm.step(state);
         }
     }
 
-    public Signature getCurrentMethodSignature() throws ThreadStackEmptyException {
+    public Signature getCurrentMethodSignature() {
         return this.jvm.getCurrentMethodSignature();
     }
 
-    public int getCurrentProgramCounter() throws ThreadStackEmptyException {
+    public int getCurrentProgramCounter() {
         return this.jvm.getCurrentProgramCounter();
     }
 }
