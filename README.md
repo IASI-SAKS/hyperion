@@ -43,3 +43,18 @@ Format for the statement `invokes` in files like [this one](src/test/resources/i
 ```
 invokes(test name, branch point, branch sequence number, caller, callerProgramCounter, frameEpoch, path condition, callee, parameters)
 ```
+
+## Playing with Prolog
+
+To load `similarity_relations.pl`:
+
+```prolog
+consult('src/main/prolog/similarity_relations.pl').
+```
+
+To get a maximal sequence of direct invocations `MSeq` performed by a caller `M` in the test program `TP`:
+
+```prolog
+maximalInvokeSequence(TP,M,ISeq), callees(ISeq,MSeq).
+```
+(`ISeq` is a list of `invokes`).
