@@ -28,6 +28,7 @@ public class DecisionProcedureGuidanceJDILauncher {
     public static void main(String[] args) throws ClassNotFoundException, NoSuchMethodException, 
     SecurityException, InstantiationException, IllegalAccessException, IllegalArgumentException, 
     InvocationTargetException {
+        System.out.println("Parto!");
         final Class<?> clazz = Class.forName(args[0]);
         final Method method = clazz.getDeclaredMethod(args[1]);
         method.setAccessible(true);

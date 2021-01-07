@@ -25,7 +25,7 @@ public class InformationLogger {
     private Integer invocationEpoch = 0;
 
     // Class -> Method -> Information Data
-    private final HashMap<String, HashMap<String, TestInformation>> loggedInformation = new HashMap<>();
+    private HashMap<String, HashMap<String, TestInformation>> loggedInformation = new HashMap<>();
     private String currClass;
     private String currMethod;
 
@@ -136,6 +136,9 @@ public class InformationLogger {
                 }
             });
         });
+
+        // Get rid of dumped data from memory
+        this.loggedInformation = new HashMap<>();
     }
 
     private void inspectHttpRequest(State s, String name, String pathId) {

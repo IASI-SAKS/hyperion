@@ -1,6 +1,7 @@
 package it.cnr.saks.hyperion;
 
 import jbse.algo.exc.CannotManageStateException;
+import jbse.bc.Signature;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
 import jbse.common.exc.ClasspathException;
 import jbse.common.exc.InvalidInputException;
@@ -30,7 +31,9 @@ public final class Analyzer {
 
     private final RunnerParameters runnerParameters;
     private Engine engine;
+
     private boolean isGuided = false;
+    private Signature guidedStopSignature;
 
     private final InformationLogger informationLogger;
 
@@ -98,8 +101,8 @@ public final class Analyzer {
         return this;
     }
 
-    public Analyzer withMethodSignature(String className, String descriptor, String name) {
-        this.runnerParameters.setMethodSignature(className, descriptor, name);
+    public Analyzer withMethodSignature(Signature method) {
+        this.runnerParameters.setMethodSignature(method.getClassName(), method.getDescriptor(), method.getName());
         return this;
     }
 
@@ -108,8 +111,9 @@ public final class Analyzer {
         return this;
     }
 
-    public Analyzer withGuided(boolean isGuided) {
+    public Analyzer withGuided(boolean isGuided, Signature stopSignature) {
         this.isGuided = isGuided;
+        this.guidedStopSignature = stopSignature;
         return this;
     }
 
@@ -134,7 +138,7 @@ public final class Analyzer {
 
             // Setup guidance using JDI
             if(this.isGuided) {
-                core = new DecisionProcedureGuidanceJDI(core, calc, this.runnerParameters);
+                core = new DecisionProcedureGuidanceJDI(core, calc, this.runnerParameters, this.guidedStopSignature);
             }
 
             // sets the result
