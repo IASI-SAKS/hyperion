@@ -75,32 +75,9 @@ public class Main {
             try {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(runtimeClasspath)
-                        .withDepthScope(15)
-                        .withUninterpreted("org/springframework/util/Assert", "(Z)V", "state")
-                        .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "state")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Class;Ljava/lang/String;)V", "isAssignable")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Class;)V", "isAssignable")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Object;Ljava/lang/String;)V", "isInstanceOf")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Class;Ljava/lang/Object;)V", "isInstanceOf")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/util/Map;)V", "notEmpty")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/util/Map;Ljava/lang/String;)V", "notEmpty")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/util/Collection;)V", "notEmpty")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/util/Collection;Ljava/lang/String;)V", "notEmpty")
-                        .withUninterpreted("org/springframework/util/Assert", "([Ljava/lang/Object;)V", "noNullElements")
-                        .withUninterpreted("org/springframework/util/Assert", "([Ljava/lang/Object;Ljava/lang/String;)V", "noNullElements")
-                        .withUninterpreted("org/springframework/util/Assert", "([Ljava/lang/Object;)V", "notEmpty")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;Ljava/lang/String;)V", "doesNotContain")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)V", "doesNotContain")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;)V", "hasText")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;Ljava/lang/String;)V", "hasText")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;)V", "hasLength")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/String;Ljava/lang/String;)V", "hasLength")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;)V", "notNull")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;Ljava/lang/String;)V", "notNull")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;)V", "isNull")
-                        .withUninterpreted("org/springframework/util/Assert", "(Ljava/lang/Object;Ljava/lang/String;)V", "isNull")
-                        .withUninterpreted("org/springframework/util/Assert", "(ZLjava/lang/String;)V", "isTrue")
-                        .withUninterpreted("org/springframework/util/Assert", "(Z)V", "isTrue");
+                        .withDepthScope(60);
+
+                a.setupStatic();
 
                 final List<MethodDescriptor> beforeMethods = methodEnumerator.getBeforeMethods(method.getClassName());
                 if(beforeMethods == null) {
@@ -109,6 +86,7 @@ public class Main {
                     System.out.println("Generating wrapper for @Before methods");
                     testWrapper.generateWrapper(testProgramSignature, beforeMethods);
 
+//                    a.withMethodSignature(testWrapperSignature);
                     a.withMethodSignature(testWrapperSignature)
                      .withGuided(true, testProgramSignature);
                 }
@@ -116,12 +94,13 @@ public class Main {
 
             } catch (AnalyzerException e) {
                 e.printStackTrace();
+                return;
             }
 
             inspector.emitDatalog();
             System.gc();
 
-            if(++count == 10) // TODO: remove after debugging
+            if(++count == 1) // TODO: remove after debugging
                 break;
         }
 
