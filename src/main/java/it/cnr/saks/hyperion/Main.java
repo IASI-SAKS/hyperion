@@ -2,6 +2,8 @@ package it.cnr.saks.hyperion;
 
 import javassist.NotFoundException;
 import jbse.bc.Signature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -13,6 +15,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 
 public class Main {
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
     private static MethodEnumerator methodEnumerator;
     private static TestWrapper testWrapper;
 
@@ -26,7 +29,8 @@ public class Main {
         }
 
         if(testPath == null || SUTPath == null) {
-            System.out.println("Need paths");
+            System.err.println("Need paths");
+            log.error("No paths specified");
             System.exit(64); // EX_USAGE
         }
 
@@ -68,7 +72,7 @@ public class Main {
 
         for(MethodDescriptor method: methodEnumerator) {
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
-            System.out.println("Analysing: " + method.getMethodName() + ":" + method.getMethodDescriptor());
+            log.info("Analysing: " + method.getMethodName() + ":" + method.getMethodDescriptor());
 
             Signature testProgramSignature = new Signature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName());
 
@@ -83,7 +87,7 @@ public class Main {
                 if(beforeMethods == null) {
                     a.withMethodSignature(testProgramSignature);
                 } else {
-                    System.out.println("Generating wrapper for @Before methods");
+                    log.info("Generating wrapper for @Before methods");
                     testWrapper.generateWrapper(testProgramSignature, beforeMethods);
 
 //                    a.withMethodSignature(testWrapperSignature);
@@ -114,7 +118,7 @@ public class Main {
 
         long endTime = System.nanoTime();
         double duration = (double)(endTime - startTime) / 1000000000;
-        System.out.println("Analyzed " + methodEnumerator.getMethodsCount() + " methods in " + duration + " seconds.");
+        log.info("Analyzed " + methodEnumerator.getMethodsCount() + " methods in " + duration + " seconds.");
     }
 
     private static String[] prepareFinalRuntimeClasspath(String SUTPath, String[] additionalClassPath) throws AnalyzerException {

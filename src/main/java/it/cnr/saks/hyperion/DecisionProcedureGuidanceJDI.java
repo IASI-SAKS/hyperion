@@ -19,6 +19,8 @@ import jbse.jvm.Runner;
 import jbse.jvm.RunnerParameters;
 import jbse.mem.State;
 import jbse.val.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.*;
 import java.nio.file.Path;
@@ -31,6 +33,9 @@ import static jbse.common.Type.*;
  * perform concrete execution. 
  */
 public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidance {
+
+	private static final Logger log = LoggerFactory.getLogger(DecisionProcedureGuidanceJDI.class);
+
 	/**
 	 * Builds the {@link DecisionProcedureGuidanceJDI}.
 	 *
@@ -267,7 +272,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 				List<Method> methods = classType.methodsByName(stopMethodName);
 				for (Method m: methods) {
 					if(stopMethodDescr.equals(m.signature())) {
-						System.out.println("** Set breakpoint at: " + m.locationOfCodeIndex(0));
+						log.info("** Set breakpoint at: " + m.locationOfCodeIndex(0));
 						final EventRequestManager mgr = this.vm.eventRequestManager();
 						this.breakpoint = mgr.createBreakpointRequest(m.locationOfCodeIndex(0));
 						this.breakpoint.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
@@ -282,7 +287,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 
 		protected boolean handleBreakpointEvents(Event event) throws GuidanceException {
 			if (event.request() != null && event.request().equals(breakpoint)) {
-				System.out.println("Breakpoint: stopped at: " + event);
+				log.info("Breakpoint: stopped at: " + event);
 				this.currentExecutionPointEvent = event;
 				return true;
 			}
@@ -316,7 +321,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 				object = (ObjectReference) this.getValue(origin);
 			} catch (IndexOutOfBoundsException e) {
 				if (!origin.asOriginString().equals(e.getMessage())) {
-					System.out.println("[JDI] WARNING: In DecisionProcedureGuidanceJDI.typeOfObject: " + origin.asOriginString() + " leads to invalid throw reference: " + e + 
+					log.info("[JDI] WARNING: In DecisionProcedureGuidanceJDI.typeOfObject: " + origin.asOriginString() + " leads to invalid throw reference: " + e +
 							"\n ** Normally this happens when JBSE wants to extract concrete types for Fresh-expands, but the reference is null in the concrete state, thus we can safely assume that no Fresh object shall be considered"
 							+ "\n ** However it seems that the considered references do not to match with this assumtion in this case.");
 				}

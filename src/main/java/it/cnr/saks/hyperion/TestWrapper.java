@@ -2,11 +2,14 @@ package it.cnr.saks.hyperion;
 
 import javassist.*;
 import jbse.bc.Signature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.List;
 
 public class TestWrapper {
+    private static final Logger log = LoggerFactory.getLogger(Main.class);
     final ClassPool cp;
     final CtClass selfKlass;
 
@@ -47,8 +50,8 @@ public class TestWrapper {
             body.append("obj." + testProgramSignature.getName() + "();\n");
             body.append("}");
 
-            System.out.println("wrapper method body:");
-            System.out.println(body.toString());
+            log.info("wrapper method body:");
+            log.info(body.toString());
 
             if (this.selfKlass.isFrozen())
                 this.selfKlass.defrost();

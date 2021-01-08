@@ -1,5 +1,8 @@
 package it.cnr.saks.hyperion;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
@@ -17,6 +20,7 @@ import java.util.Iterator;
 import java.util.List;
 
 public class MethodEnumerator implements Iterable<MethodDescriptor> {
+    private static final Logger log = LoggerFactory.getLogger(MethodEnumerator.class);
     private final List<MethodDescriptor> methods = new ArrayList<>();
     private final Hashtable<String, ArrayList<MethodDescriptor>> beforeMethods = new Hashtable<>();
     private final URL[] classPath;
@@ -32,11 +36,11 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
             System.out.print("Analysing class " + klass.getName() + ":");
 
             if(Modifier.isAbstract(klass.getModifiers())) {
-                System.out.println(" skipping, it's an abstract class.");
+                log.info(" skipping, it's an abstract class.");
                 continue;
             }
 
-            System.out.println(" retrieving valid methods...");
+            log.info(" retrieving valid methods...");
             Method[] methods = this.getAccessibleMethods(klass);
             for(Method currentMethod: methods) {
                 boolean isTest = false;
