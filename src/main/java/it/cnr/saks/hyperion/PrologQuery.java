@@ -2,11 +2,15 @@ package it.cnr.saks.hyperion;
 
 import org.jpl7.*;
 import org.jpl7.fli.Prolog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Map;
 
 public class PrologQuery {
+    private static final Logger log = LoggerFactory.getLogger(PrologQuery.class);
+
     public static void init() throws AnalyzerException {
         if (System.getenv("SWI_HOME_DIR") != null ||
                 System.getenv("SWI_EXEC_FILE") != null ||
@@ -19,14 +23,14 @@ public class PrologQuery {
                                     String.format("-x %s", System.getenv("SWIPL_BOOT_FILE")),
                             System.getenv("SWI_HOME_DIR") == null ? "" :
                                     String.format("--home=%s", System.getenv("SWI_HOME_DIR")));
-            System.out.printf("\nSWIPL initialized with: %s%n", init_swi_config);
+            log.info("\nSWIPL initialized with: %s%n", init_swi_config);
 
             JPL.setDefaultInitArgs(init_swi_config.split("\\s+"));
         } else
             throw new AnalyzerException("No explicit initialization done: no SWI_HOME_DIR, SWI_EXEC_FILE, or SWIPL_BOOT_FILE defined");
 
         JPL.init();
-        System.out.println("Prolog engine actual init args: " + Arrays.toString(Prolog.get_actual_init_args()));
+        log.info("Prolog engine actual init args: " + Arrays.toString(Prolog.get_actual_init_args()));
 
         new Query("set_prolog_flag(character_escapes,false)").hasSolution();
 
