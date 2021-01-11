@@ -34,10 +34,10 @@ OS, this configuration requires some care. You can refer the official deployment
 Hyperion can be run as:
 
 ```bash
-java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path to test classes> <path to SUT classes> [additional path to add in classpath]
+java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path to test classes> <path to SUT classes> [additional paths to add in classpath]
 ```
 
-## Dev Notes
+# Dev Notes
 
 Format for the statement `invokes` in files like [this one](src/test/resources/inspection-2020-12-03T11:33Z.pl):
 ```
@@ -58,3 +58,10 @@ To get a maximal sequence of direct invocations `MSeq` performed by a caller `M`
 maximalInvokeSequence(TP,M,ISeq), callees(ISeq,MSeq).
 ```
 (`ISeq` is a list of `invokes`).
+
+## Wrapping @Before and @BeforeEach
+
+To wrap @Before and @BeforeEach methods, we rely on Javassist. In particular, for each test class which is discovered
+during the test program analysis, we keep track of every @Before method for each class.
+We then dynamically generate a static method in a custom class (TestWrapper) which allocates an object of the test
+class, invokes (in random order) all methods annotated as @Before, and then invokes the test program.
