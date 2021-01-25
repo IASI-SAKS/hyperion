@@ -1,30 +1,5 @@
 :- set_prolog_flag(character_escapes,false).
 
-%% Checking similarity of test programs
-check_sim(Src) :-
-  retractall(invokes(_,_,_,_,_,_,_,_,_)),
-  consult(Src),
-  % S is the set of Test Programs
-  setof(TP, [A,B,C,D,E,F,G,H]^invokes(TP,A,B,C,D,E,F,G,H), S),
-  member(Sim,[sub_set_of_invoked_methods,
-              eq_set_of_invoked_methods]),
-  % SelTP is the Test Program selected program from S and R is S \ {SelTP}
-  select(SelTP,S,R),
-  nl, write('Checking '), write(Sim), write(' between  '), write(SelTP), write('  and '), nl,
-  % checks Sim between SelTP and all test programs in R
-  check_sim_all(SelTP,Sim,R),
-  fail.
-check_sim(_Src) :-
-  nl, write('done!').
-
-check_sim_all(_,_,[]).
-check_sim_all(SelTP,Sim,[TP|TPs]) :-
-  write(' '), write(TP), write(' '),
-  ( call(Sim,SelTP,TP) -> write('PASS'); write('FAIL') ), nl,
-  check_sim_all(SelTP,Sim,TPs).
-
-% MODE: invoked_methods(+TP,?L)
-% SEMANTICS: L is the list of methods invoked by the test program TP
 % invokes/9 semantics
 % invokes(
 % 1 test name,
@@ -36,12 +11,8 @@ check_sim_all(SelTP,Sim,[TP|TPs]) :-
 % 7 path condition,
 % 8 callee,
 % 9 parameters)
-invoked_methods(TP,L) :-
-  % L is the list of all the instances of M for which
-  % invoke(TP,_,_,_,_,_,_,M,_) succeeds
-  findall(M, invokes(TP,_,_,_,_,_,_,M,_), L).
 
-% SIMILARITY relations ---------------------------------------------------------
+%% SIMILARITY RELATION ---------------------------------------------------------
 % MODE: sub_set_of_invoked_methods(+TP1,+TP2)
 % SEMANTICS: sub_set_of_invoked_methods(+TP1,+TP2) holds if all methods invoked
 % by TP1 are invoked by TP2.
@@ -51,6 +22,7 @@ sub_set_of_invoked_methods(TP1,TP2) :-
   fail.
 sub_set_of_invoked_methods(_TP1,_TP2).
 
+%% SIMILARITY RELATION ---------------------------------------------------------
 % MODE: eq_set_of_invoked_methods(+TP1,+TP2)
 % SEMANTICS: eq_set_of_invoked_methods(+TP1,+TP2) holds if TP1 and TP2 invoke
 % the same set of methods.
@@ -69,19 +41,20 @@ exists_method_not_invoked(TP1,TP2) :-
 tp_invokes_m(TP,M) :-
   invokes(TP,_,_,_,_,_,_,M,_).
 
+%% SIMILARITY RELATION ---------------------------------------------------------
 % MODE: eq_set_maximalInvokeSequence(+TP1,+TP2,+Caller)
 % SEMANTICS: eq_set_maximalInvokeSequence(TP1,TP2,Caller) holds if the set of
 % maximal sequences of direct invocations performed by Caller in TP1 is the same
 % as the set of maximal sequences of direct invocations performed by Caller in TP2
 % (library(ordsets): https://www.swi-prolog.org/pldoc/man?section=ordsets)
 eq_set_maximalInvokeSequence(TP1,TP2,Caller) :-
-  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), callees(ISeq,MSeq)), MSeq1Lst),
-  findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), callees(ISeq,MSeq)), MSeq2Lst),
+  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
   list_to_ord_set(MSeq1Lst,S1), % library(ordsets) predicate
+  \+ ord_empty(S1),
+  findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
   list_to_ord_set(MSeq2Lst,S2),
   ord_seteq(S1,S2).             % library(ordsets) predicate
 
-% ------------------------------------------------------------------------------
 % SEMANTICS: invokeSequence(TP,Caller,ISeq)
 % ISeq is a sequence of direct invocations performed by Caller in TP
 invokeSequence(TP,Caller,ISeq) :-
@@ -161,9 +134,42 @@ method_last_invokes(TP,Caller,Invokes) :-
 % method_last_invokes utility predicate
 exists_succeeding_invokes(Invokes) :- next(Invokes,_).
 
-% SEMANTICS: callees(Is,Ms)
-% Ms is the list of calee occurring in the list of invokes Is
-callees([],[]).
-callees([I|Is],[M|Ms]) :-
-  I = invokes(_,_,_,_,_,_,_,M,_),
-  callees(Is,Ms).
+% Utility predicates -----------------------------------------------------------
+% MODE: testPrograms(-TPs)
+% SEMANTICS: TPs is the set of executed Test Programs
+testPrograms(TPs) :-
+  setof(TP, [B,C,D,E,F,G,H,I]^invokes(TP,B,C,D,E,F,G,H,I), TPs).
+
+% MODE: callers(-Cs)
+% SEMANTICS: Cs is the set of callers occurring in the symbolic execution
+callers(Cs) :-
+  setof(Caller, [A,B,C,E,F,G,H,I]^invokes(A,B,C,Caller,E,F,G,H,I), Cs).
+
+% MODE: tp_callers(+TP,-Cs)
+% SEMANTICS: Cs is the set of callers occurring in the symbolic execution of TP
+tp_callers(TP,Cs) :-
+  setof(Caller, [B,C,E,F,G,H,I]^invokes(TP,B,C,Caller,E,F,G,H,I), Cs).
+
+% MODE: invokes_callers(+Is,-Cs)
+% SEMANTICS: Cs is the list of callers occurring in the list of invokes Is
+invokes_callers([],[]).
+invokes_callers([I|Is],[C|Cs]) :-
+  I = invokes(_,_,_,C,_,_,_,_,_),
+  invokes_callers(Is,Cs).
+
+% MODE: callees(?Cs)
+% SEMANTICS: Cs is the set of callees occurring in the symbolic execution
+callees(Cs) :-
+  setof(Callee, [A,B,C,D,E,F,G,I]^invokes(A,B,C,D,E,F,G,Callee,I), Cs).
+
+% MODE: tp_callees(+TP,-Cs)
+% SEMANTICS: Cs is the set of callees occurring in the symbolic execution of TP
+tp_callees(TP,Cs) :-
+  setof(Callee, [B,C,D,E,F,G,I]^invokes(TP,B,C,D,E,F,G,Callee,I), Cs).
+
+% MODE: invokes_callees(+Is,-Cs)
+% SEMANTICS: Cs is the list of callees occurring in the list of invokes Is
+invokes_callees([],[]).
+invokes_callees([I|Is],[C|Cs]) :-
+  I = invokes(_,_,_,_,_,_,_,C,_),
+  invokes_callees(Is,Cs).
