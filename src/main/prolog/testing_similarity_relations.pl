@@ -1,8 +1,11 @@
+:- consult(similarity_relations).
+
 %% Checking similarity of test programs
 check(Src) :-
   retractall(invokes(_,_,_,_,_,_,_,_,_)),
   consult(Src),
   %%
+  tell('testing_similarity_relations.out.txt'),
   write('* Test Programs:'), nl,
   testPrograms(TPs),
   print_numbered_list(TPs), nl,
@@ -14,7 +17,8 @@ check(Src) :-
   check_eq_set_of_invoked_methods(TPs), nl, nl,
   %%
   write('* Checking eq_set_maximalInvokeSequence'), nl,
-  check_eq_set_maximalInvokeSequence(TPs).
+  check_eq_set_maximalInvokeSequence(TPs),
+  told.
 
 check_sub_set_of_invoked_methods(TPs) :-
   select(TP1,TPs,RTPs), member(TP2,RTPs),
