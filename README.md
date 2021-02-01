@@ -55,7 +55,7 @@ consult('src/main/prolog/similarity_relations.pl').
 To get a maximal sequence of direct invocations `MSeq` performed by a caller `M` in the test program `TP`:
 
 ```prolog
-maximalInvokeSequence(TP,M,ISeq), callees(ISeq,MSeq).
+maximalInvokeSequence(TP,M,ISeq), invokes_callees(ISeq,MSeq).
 ```
 (`ISeq` is a list of `invokes`).
 
