@@ -210,23 +210,6 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
     }
 
     @Override
-    protected final Outcome resolve_XLOAD_GETX_Unresolved(State state, ReferenceSymbolic refToLoad, SortedSet<DecisionAlternative_XLOAD_GETX> result)
-    throws DecisionException, ClassFileNotFoundException, ClassFileIllFormedException, 
-    BadClassFileVersionException, RenameUnsupportedException, WrongClassNameException, 
-    IncompatibleClassFileException, ClassFileNotAccessibleException {
-        updateExpansionBackdoor(state, refToLoad);
-        final Outcome retVal = super.resolve_XLOAD_GETX_Unresolved(state, refToLoad, result);
-        if (this.guiding) {
-            final Iterator<DecisionAlternative_XLOAD_GETX> it = result.iterator();
-            while (it.hasNext()) {
-                final DecisionAlternative_XYLOAD_GETX_Unresolved dar = (DecisionAlternative_XYLOAD_GETX_Unresolved) it.next();
-                filter(state, refToLoad, dar, it);
-            }
-        }
-        return retVal;
-    }
-
-    @Override
     protected final Outcome resolve_XALOAD_ResolvedNonconcrete(ArrayAccessInfo arrayAccessInfo, SortedSet<DecisionAlternative_XALOAD> result)
     throws DecisionException {
         final Outcome retVal = super.resolve_XALOAD_ResolvedNonconcrete(arrayAccessInfo, result);
@@ -237,29 +220,6 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
                 final Primitive valueInConcreteState = this.jvm.eval_XALOAD(da);
                 if (valueInConcreteState != null && valueInConcreteState.surelyFalse()) {
                     it.remove();
-                }
-            }
-        }
-        return retVal;
-    }
-
-    @Override
-    protected final Outcome resolve_XALOAD_Unresolved(State state, ArrayAccessInfo arrayAccessInfo, SortedSet<DecisionAlternative_XALOAD> result)
-    throws DecisionException, ClassFileNotFoundException, ClassFileIllFormedException, 
-    BadClassFileVersionException, RenameUnsupportedException, WrongClassNameException, 
-    IncompatibleClassFileException, ClassFileNotAccessibleException {
-        final ReferenceSymbolic readReference = (ReferenceSymbolic) arrayAccessInfo.readValue;
-        updateExpansionBackdoor(state, readReference);
-        final Outcome retVal = super.resolve_XALOAD_Unresolved(state, arrayAccessInfo, result);
-        if (this.guiding) {
-            final Iterator<DecisionAlternative_XALOAD> it = result.iterator();
-            while (it.hasNext()) {
-                final DecisionAlternative_XALOAD_Unresolved dar = (DecisionAlternative_XALOAD_Unresolved) it.next();
-                final Primitive valueInConcreteState = this.jvm.eval_XALOAD(dar);
-                if (valueInConcreteState != null && valueInConcreteState.surelyFalse()) {
-                    it.remove();
-                } else {
-                    filter(state, readReference, dar, it);
                 }
             }
         }

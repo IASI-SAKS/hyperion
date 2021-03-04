@@ -87,10 +87,7 @@ StrategyUpdate<DecisionAlternative_IFX>> {
     @Override
     protected StrategyDecide<DecisionAlternative_IFX> decider() {
         return (state, result) -> {
-        	//trivially always adds both alternatives
-        	result.add(DecisionAlternative_IFX.toNonconcrete(true));
-        	result.add(DecisionAlternative_IFX.toNonconcrete(false));
-            final Outcome o = Outcome.val(true, true);
+            final Outcome o = this.ctx.decisionProcedure.decide_IFX(this.keyIn, result);
             return o;
         };
     }
@@ -103,7 +100,7 @@ StrategyUpdate<DecisionAlternative_IFX>> {
     		try {
     			final Snippet snippet;
     			if (alt.value()) {
-    				final Reference value = state.createSymbolMemberMapValue(this.map.getOrigin(), this.keyReference);
+    				final ReferenceSymbolic value = state.createSymbolMemberMapValueKeyCurrentHistoryPoint(this.map.getOrigin(), this.keyReference);
     				state.pushOperand(this.thisReference);
     				state.pushOperand(this.keyReference);
     				state.pushOperand(value);
