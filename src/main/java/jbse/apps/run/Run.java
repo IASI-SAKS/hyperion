@@ -67,6 +67,7 @@ import jbse.rewr.RewriterCalculatorRewriting;
 import jbse.rewr.RewriterOperationOnSimplex;
 import jbse.tree.StateTree.BranchPoint;
 import jbse.val.PrimitiveSymbolic;
+import jbse.val.ReferenceSymbolic;
 import jbse.val.Simplex;
 
 /**
@@ -374,9 +375,9 @@ public final class Run {
             
             //if a resolved reference has not been expanded, prints a warning
             if (Run.this.parameters.getShowWarnings() && 
-                getEngine().someReferenceNotExpanded()) {
+                getEngine().someReferencePartiallyResolved()) {
                 Run.this.log(currentState.getBranchIdentifier() + "[" + currentState.getSequenceNumber() + "]" + " " +
-                             getEngine().getNonExpandedReferencesOrigins() +
+                             String.join(", ",getEngine().getPartiallyResolvedReferences().stream().map(ReferenceSymbolic::asOriginString).toArray(String[]::new)) +
                              WARNING_PARTIAL_REFERENCE_RESOLUTION);
             }
             
@@ -761,11 +762,11 @@ public final class Run {
         }
 
         // tries to open the dump file
-        if (this.parameters.getOutputFileName() == null) {
+        if (this.parameters.getOutputFilePath() == null) {
             this.err[1] = null;
         } else {
             try {
-                final File f = new File(this.parameters.getOutputFileName());
+                final File f = this.parameters.getOutputFilePath().toFile();
                 this.err[1] = new PrintStream(f);
             } catch (FileNotFoundException | SecurityException e) {
                 err(ERROR_DUMP_FILE_OPEN);
@@ -964,8 +965,6 @@ public final class Run {
     			@SuppressWarnings("resource")
     			final DecisionProcedureConservativeRepOk dec = 
     			new DecisionProcedureConservativeRepOk(core, checkerParameters, this.parameters.getConservativeRepOks());
-    			dec.setInitialStateSupplier(this::getInitialState); 
-    			dec.setCurrentStateSupplier(this::getCurrentState); 
     			core = dec;
     		}
 
@@ -992,9 +991,9 @@ public final class Run {
     			}
     			try {
     				if (this.parameters.getGuidanceType() == GuidanceType.JBSE) {
-    					this.guidance = new DecisionProcedureGuidanceJBSE(core, calc, guidanceDriverParameters, this.parameters.getMethodSignature());
+    					this.guidance = new DecisionProcedureGuidanceJBSE(core, calc, guidanceDriverParameters, this.parameters.getMethodSignature(), this.parameters.getGuidedNumberOfHits());
     				} else if (this.parameters.getGuidanceType() == GuidanceType.JDI) {
-    					this.guidance = new DecisionProcedureGuidanceJDI(core, calc, guidanceDriverParameters, this.parameters.getMethodSignature());
+    					this.guidance = new DecisionProcedureGuidanceJDI(core, calc, guidanceDriverParameters, this.parameters.getMethodSignature(), this.parameters.getGuidedNumberOfHits());
     				} else {
     					throw new UnexpectedInternalException(ERROR_DECISION_PROCEDURE_GUIDANCE_UNRECOGNIZED + this.parameters.getGuidanceType().toString());
     				}
@@ -1248,8 +1247,8 @@ public final class Run {
     private static final String WARNING_PARAMETERS_UNRECOGNIZABLE_VARIABLE = "Unrecognizable variable will not be observed: ";
 
     /** Warning: partial reference resolution (part 2). */
-    private static final String WARNING_PARTIAL_REFERENCE_RESOLUTION = " not expanded. It may be a " +
-    "hint of too strong user-defined constraints, possibly correct when enforcing redundancy by representation invariant.";
+    private static final String WARNING_PARTIAL_REFERENCE_RESOLUTION = " not expanded, because no concrete, compatible, pre-initialized " + 
+    "class was found.";
 
     /** Warning: timeout. */
     private static final String WARNING_TIMEOUT = "Timeout.";
@@ -1309,7 +1308,7 @@ public final class Run {
     private static final String ERROR_ENGINE_INIT_INITIAL_STATE = "Failed initialization of the symbolic execution.";
 
     /** Error: failure of the decision procedure. */
-    private static final String ERROR_ENGINE_DECISION_PROCEDURE = "Unexpected failure of the decision procedude.";
+    private static final String ERROR_ENGINE_DECISION_PROCEDURE = "Unexpected failure of the decision procedure.";
 
     /**
      * Error: unable to quit engine, because unable to quit the decision

@@ -291,6 +291,34 @@ public final class Base {
     }
     
     /**
+     * Used as overriding implementation of several {@code registerNatives()}, 
+     * {@code initIDs()}, and other native static initialization methods.
+     */
+    private static void doNothing() {
+        return;
+    }
+    
+    /**
+     * Overriding implementation of {@link java.lang.Object#notify()} and
+     * {@link java.lang.Object#notifyAll()}.
+     * @see java.lang.Object#notify()
+     * @see java.lang.Object#notifyAll()
+     */
+    private static void base_JAVA_OBJECT_NOTIFY(Object _this) {
+        //no concurrency
+        return;
+    }
+    
+    /**
+     * Overriding implementation of {@link java.lang.Object#wait(long)}.
+     * @see java.lang.Object#wait(long)
+     */
+    private static void base_JAVA_OBJECT_WAIT(Object _this, long timeout) {
+        //no concurrency
+        return;
+    }
+    
+    /**
      * Overriding implementation of {@link java.lang.Thread#isAlive()}.
      * @see java.lang.Thread#isAlive()
      */
@@ -344,15 +372,6 @@ public final class Base {
     }
 
     /**
-     * Overriding implementation of {@link sun.misc.Unsafe#addressSize()}.
-     * @see sun.misc.Unsafe#addressSize()
-     */
-    private static int base_SUN_UNSAFE_ADDRESSSIZE(Unsafe _this) {
-        //JBSE offers no raw access to its data structures, so we return a dummy value
-        return 8; //can be either 4 or 8, we choose 8 
-    }
-
-    /**
      * Overriding implementation of {@link sun.misc.Unsafe#arrayBaseOffset(Class)}.
      * @see sun.misc.Unsafe#arrayBaseOffset(Class)
      */
@@ -368,6 +387,33 @@ public final class Base {
     private static int base_SUN_UNSAFE_ARRAYINDEXSCALE(Unsafe _this, Class<?> arrayClass) {
         //JBSE raw array offsets are plain array indices, so scale is one
         return 1; 
+    }
+    
+    /**
+     * Overriding implementation of {@link sun.misc.Unsafe#fullFence()}.
+     * @see sun.misc.Unsafe#fullFence()
+     */
+    private static void base_SUN_UNSAFE_FULLFENCE(Unsafe _this) {
+        //no concurrency in JBSE
+        return; 
+    }
+    
+    /**
+     * Overriding implementation of {@link sun.misc.Unsafe#park(boolean, long)}.
+     * @see sun.misc.Unsafe#park(boolean, long)
+     */
+    private static void base_SUN_UNSAFE_PARK(Unsafe _this, boolean isAbsolute, long time) {
+        //no threads in JBSE
+        return; 
+    }
+    
+    /**
+     * Overriding implementation of {@link sun.misc.Unsafe#unpark(Object)}.
+     * @see sun.misc.Unsafe#unpark(Object)
+     */
+    private static void base_SUN_UNSAFE_UNPARK(Unsafe _this, Object thread) {
+        //no threads in JBSE
+        return; 
     }
     
     /**
@@ -519,6 +565,24 @@ public final class Base {
     }
     
     /**
+     * Helper method for {@link sun.reflect.NativeMethodAccessorImpl#newInstance0(Constructor, Object[])}
+     * when it has void return type.
+     * Boxes the exceptions that are raised by the execution of a method 
+     * into an {@link InvocationTargetException} and rethrows them. Also, 
+     * returns {@code null} to comply with the fact that {@code newInstance0} 
+     * has {@code Object} as a return type. 
+     */
+    private static Object boxInvocationTargetExceptionAndReturn_null() 
+    throws InvocationTargetException {
+        try {
+            foo_V(); //skip this
+            return null;
+        } catch (Exception e) {
+            throw new InvocationTargetException(e);
+        }
+    }
+
+    /**
      * Helper method for {@link sun.reflect.NativeMethodAccessorImpl#invoke0(Method, Object, Object[])}.
      * Boxes the exceptions that are raised by the execution of a method 
      * into an {@link InvocationTargetException} and rethrows them. Also, 
@@ -536,8 +600,7 @@ public final class Base {
     }
     
     /**
-     * Helper method for {@link sun.reflect.NativeConstructorAccessorImpl#newInstance0(Constructor, Object[])}
-     * and {@link sun.reflect.NativeMethodAccessorImpl#invoke0(Method, Object, Object[])}.
+     * Helper method for {@link sun.reflect.NativeConstructorAccessorImpl#newInstance0(Constructor, Object[])}.
      * Boxes the exceptions that are raised by the execution of a constructor 
      * into an {@link InvocationTargetException} and rethrows them.
      */
