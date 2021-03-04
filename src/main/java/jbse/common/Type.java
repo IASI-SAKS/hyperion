@@ -13,8 +13,11 @@ public final class Type {
     /** Not recognized as a value of any type. */
     public static final char ERROR          = '\0';
 
-    /** The (almost) top type, which fits a default datum. */
+    /** The (cat 1) "top" type that, when input, can receive from any output. */
     public static final char UNKNOWN        = '?';
+
+    /** The (cat 1) "bottom" type that, when output, can feed any input. */
+    public static final char KNOWN        = '£';
 
     /** The type {@code void}. */
     public static final char VOID           = 'V';
@@ -405,14 +408,42 @@ public final class Type {
             return ERROR;
         }
     }
+    
+    /**
+     * Converts the canonical name of a type or void to its 
+     * corresponding internal name.
+     * @param typeCanonical a {@link String}, the canonical
+     *        name of a primitive type or void.
+     * @return a {@link String}, the internal name for
+     *         {@code typeCanonical}.
+     */
+    public static String toInternalName(String typeCanonical) {
+    	final StringBuilder retVal = new StringBuilder();
+    	String currentType = typeCanonical;
+    	while (true) {
+    		if (currentType.endsWith("[]")) {
+    			retVal.append(ARRAYOF);
+    			currentType = currentType.substring(0, currentType.length() - 2);
+    		} else if (isPrimitiveOrVoidCanonicalName(currentType)) {
+    			retVal.append(toPrimitiveOrVoidInternalName(currentType));
+    			return retVal.toString();
+    		} else {
+    			retVal.append(REFERENCE);
+    			retVal.append(currentType);
+    			retVal.append(TYPEEND);
+    			return retVal.toString();
+    		}
+    	}
+    }
 
     /**
      * Checks whether a primitive type is a category 1
      * primitive type.
      * 
      * @param c a {@code char}. It must be {@link #isPrimitive(char) isPrimitive}{@code (c) || 
-     *        c == }{@link #UNKNOWN} (note that {@link #UNKNOWN} is assumed to be category 1 because 
-     *        DefaultValues must be able to fill single slots).
+     *        c == }{@link #UNKNOWN}{@code || 
+     *        c == }{@link #KNOWN} (note that {@link #UNKNOWN} and {@link #KNOWN} are assumed to be category 1 
+     *        because DefaultValues must be able to fill single slots).
      * @return a {@code boolean}.
      */
     public static boolean isCat_1(char c) {
@@ -850,6 +881,33 @@ public final class Type {
             return BYTE;
         } 
         return BOOLEAN; //firstType == BOOLEAN && secondType == BOOLEAN
+    }
+    
+    /**
+     * Returns the simplified type as used 
+     * in lambda forms corresponding to a type.
+     * 
+     * @param type a {@link String} representing a type.
+     * @return the corresponding simplified type.
+     */
+    public static String simplifyType(String type) {
+    	if (isPrimitiveIntegral(type.charAt(0))) {
+    		if (isCat_1(type.charAt(0))) {
+    			return "" + INT;
+    		} else {
+    			return "" + LONG;
+    		}
+    	} else if (isPrimitiveFloating(type.charAt(0))) {
+    		if (isCat_1(type.charAt(0))) {
+    			return "" + FLOAT;
+    		} else {
+    			return "" + DOUBLE;
+    		}
+    	} else if (isVoid(type)) {
+    		return type;
+    	} else {
+    		return "" + REFERENCE + "java/lang/Object" + TYPEEND;
+    	}
     }
 
     /**
