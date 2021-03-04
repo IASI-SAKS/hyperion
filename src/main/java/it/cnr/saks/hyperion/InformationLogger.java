@@ -25,7 +25,7 @@ public class InformationLogger {
     private Integer invocationEpoch = 0;
 
     // Class -> Method -> Information Data
-    private final HashMap<String, HashMap<String, TestInformation>> loggedInformation = new HashMap<>();
+    private HashMap<String, HashMap<String, TestInformation>> loggedInformation = new HashMap<>();
     private String currClass;
     private String currMethod;
 
@@ -136,6 +136,9 @@ public class InformationLogger {
                 }
             });
         });
+
+        // Get rid of dumped data from memory
+        this.loggedInformation = new HashMap<>();
     }
 
     private void inspectHttpRequest(State s, String name, String pathId) {
@@ -159,7 +162,7 @@ public class InformationLogger {
                 } else {
                     value = valueString(s, (Reference) s.getCurrentFrame().getLocalVariableValue(0)); // OK!
                 }
-                this.loggedInformation.get(this.currClass).get(this.currMethod).addEndPoint(name, value, null, pathId);
+                this.loggedInformation.get(this.currClass).get(this.currMethod).addEndPoint(name, value, pathId);
             }
         } catch (FrozenStateException | ThreadStackEmptyException | InvalidSlotException | ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
             e.printStackTrace();

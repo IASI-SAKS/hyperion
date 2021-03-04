@@ -19,14 +19,14 @@ public class TestInformation {
         return md;
     }
 
-    protected void addEndPoint(String type, String endPoint, String args, String pathId) {
+    protected void addEndPoint(String type, String endPoint, String pathId) {
         for(EndPoint ep : this.endPoints) {
             if(ep.getEndPoint().equals(endPoint) && ep.getPathId().equals(pathId)) {
                 return;
             }
         }
 
-        EndPoint ep = new EndPoint(type, endPoint, args, pathId);
+        EndPoint ep = new EndPoint(type, endPoint, null, pathId);
         this.endPoints.add(ep);
     }
 
