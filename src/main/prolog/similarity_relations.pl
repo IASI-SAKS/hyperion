@@ -22,14 +22,6 @@ sub_set_of_invoked_methods(TP1,TP2) :-
   fail.
 sub_set_of_invoked_methods(_TP1,_TP2).
 
-%% SIMILARITY RELATION ---------------------------------------------------------
-% MODE: eq_set_of_invoked_methods(+TP1,+TP2)
-% SEMANTICS: eq_set_of_invoked_methods(+TP1,+TP2) holds if TP1 and TP2 invoke
-% the same set of methods.
-eq_set_of_invoked_methods(TP1,TP2) :-
-  sub_set_of_invoked_methods(TP1,TP2),
-  sub_set_of_invoked_methods(TP2,TP1).
-
 % MODE: exists_method_not_invoked(+TP1,+TP2)
 % SEMANTICS: there exists a method M invoked by TP1 that is not invoked by TP2
 exists_method_not_invoked(TP1,TP2) :-
@@ -42,33 +34,63 @@ tp_invokes_m(TP,M) :-
   invokes(TP,_,_,_,_,_,_,M,_).
 
 %% SIMILARITY RELATION ---------------------------------------------------------
-% MODE: eq_set_maximalInvokeSequence(+TP1,+TP2,+Caller)
-% SEMANTICS: eq_set_maximalInvokeSequence(TP1,TP2,Caller) holds if the set of
-% maximal sequences of direct invocations performed by Caller in TP1 is the same
-% as the set of maximal sequences of direct invocations performed by Caller in TP2
+% MODE: eq_set_of_invoked_methods(+TP1,+TP2)
+% SEMANTICS: eq_set_of_invoked_methods(+TP1,+TP2) holds if TP1 and TP2 invoke
+% the same set of methods.
+eq_set_of_invoked_methods(TP1,TP2) :-
+  sub_set_of_invoked_methods(TP1,TP2),
+  sub_set_of_invoked_methods(TP2,TP1).
+
+%% SIMILARITY RELATION ---------------------------------------------------------
+% MODE: sub_set_of_maximalInvokeSequences(+TP1,+TP2,+Caller)
+% SEMANTICS: sub_set_of_maximalInvokeSequences(TP1,TP2,Caller) holds if
+% the set of maximal sequences of direct invocations performed by Caller in TP1
+% is a subset of those performed by Caller in TP2
 % (library(ordsets): https://www.swi-prolog.org/pldoc/man?section=ordsets)
-eq_set_maximalInvokeSequence(TP1,TP2,Caller) :-
+sub_set_of_maximalInvokeSequences(TP1,TP2,Caller) :-
   findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
   list_to_ord_set(MSeq1Lst,S1), % library(ordsets) predicate
-  \+ ord_empty(S1),
+  ( ord_empty(S1) ->
+    true
+  ; (
+      findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
+      list_to_ord_set(MSeq2Lst,S2),
+      ord_subset(S1,S2)          % library(ordsets) predicate
+    )
+  ).
+
+% MODE: eq_set_of_maximalInvokeSequences(+TP1,+TP2,+Caller)
+% SEMANTICS: eq_set_of_maximalInvokeSequences(TP1,TP2,Caller) holds if
+% the set of maximal sequences of direct invocations performed by Caller in TP1 and
+% the set of maximal sequences of direct invocations performed by Caller in TP2
+% have the same elements
+eq_set_of_maximalInvokeSequences(TP1,TP2,Caller) :-
+  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
+  list_to_ord_set(MSeq1Lst,S1),
   findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
   list_to_ord_set(MSeq2Lst,S2),
   ord_seteq(S1,S2).             % library(ordsets) predicate
 
-% SEMANTICS: invokeSequence(TP,Caller,ISeq)
-% ISeq is a sequence of direct invocations performed by Caller in TP
-invokeSequence(TP,Caller,ISeq) :-
-  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  iseq(Invokes,ISeq).
-
 % SEMANTICS: maximalInvokeSequence(TP,Caller,ISeq)
 % ISeq is a maximal sequence of direct invocations performed by Caller in TP
-maximalInvokeSequence(TP,Caller,ISeq) :-
-  method_first_invokes(TP,Caller,FirstInvokes),
-  method_last_invokes(TP,Caller,LastInvokes),
-  FirstInvokes \= LastInvokes, % sequences with at least two method invocations
-  iseq(FirstInvokes,ISeq),
-  append([FirstInvokes|_],[LastInvokes],ISeq).
+maximalInvokeSequence(TP,Caller,[FirstInvokes|ISeqTail]) :-
+  first_invokes(TP,Caller,FirstInvokes),
+  last_invokes(TP,Caller,LastInvokes),
+  iseq(FirstInvokes,[FirstInvokes|ISeqTail]),
+  last(ISeqTail,LastInvokes).
+
+% Invokes is the first invocation performed by Caller in TP
+first_invokes(TP,Caller,Invokes) :-
+  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
+  \+ exists_preceeding_invokes(Invokes).
+% first_invokes utility predicate
+exists_preceeding_invokes(Invokes) :- next(_,Invokes).
+% Invokes is the last invocation performed by Caller in TP
+last_invokes(TP,Caller,Invokes) :-
+  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
+  \+ exists_succeeding_invokes(Invokes).
+% last_invokes utility predicate
+exists_succeeding_invokes(Invokes) :- next(Invokes,_).
 
 % SEMANTICS: iseq(I,ISeq)
 % ISeq is a sequence of invocations performed by Caller in TP starting from I
@@ -121,18 +143,12 @@ exists_intermediate_invokes(Invokes1,Invokes2) :-
     ( Infix = [], SN < SN2 ) % (b.2.2)
   ).
 
-% Invokes is the first invocation performed by Caller in TP
-method_first_invokes(TP,Caller,Invokes) :-
-  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  \+ exists_preceeding_invokes(Invokes).
-% method_first_invokes utility predicate
-exists_preceeding_invokes(Invokes) :- next(_,Invokes).
-% Invokes is the last invocation performed by Caller in TP
-method_last_invokes(TP,Caller,Invokes) :-
-  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  \+ exists_succeeding_invokes(Invokes).
-% method_last_invokes utility predicate
-exists_succeeding_invokes(Invokes) :- next(Invokes,_).
+% SEMANTICS: invokeSequence(TP,Caller,ISeq)
+% ISeq is a sequence of direct invocations performed by Caller in TP
+invokeSequence(TP,Caller,ISeq) :-
+  maximalInvokeSequence(TP,Caller,MSeq),
+  ISeq=[_,_|_], % subsequences with at least two methods
+  prefix(ISeq,MSeq).
 
 % Utility predicates -----------------------------------------------------------
 % MODE: testPrograms(-TPs)
@@ -173,3 +189,23 @@ invokes_callees([],[]).
 invokes_callees([I|Is],[C|Cs]) :-
   I = invokes(_,_,_,_,_,_,_,C,_),
   invokes_callees(Is,Cs).
+
+% SEMANTICS: mseq_invokes(Ms,Is) holds if Ms is a list of the form [M1,...,Mk],
+% and I is a list of invokes of length k s.t. for i=1,...,k Mi is the callee
+% method of Ii, and I can be obtained by deleting zero or more invokes from Is.
+mseq_invokes([],_).
+mseq_invokes([M|Ms],[I|Is]) :-
+  I = invokes(_,_,_,_,_,_,_,M,_),
+  mseq_invokes(Ms,Is).
+mseq_invokes([M|Ms],[_|Is]) :-
+  mseq_invokes([M|Ms],Is).
+
+% SEMANTICS: mset_invokes(Ms,Is) holds if Ms is a list of the form [M1,...,Mk],
+% and I is a list of invokes of length k s.t. for i=1,...,k Mi is the callee
+% method of Ii and Ii is a member of Is.
+% ASSUMPTION: Ms is a list of distinct elements.
+mset_invokes([],_).
+mset_invokes([M|Ms],Is) :-
+  I = invokes(_,_,_,_,_,_,_,M,_),
+  selectchk(I,Is,Is1),
+  mset_invokes(Ms,Is1).

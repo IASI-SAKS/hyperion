@@ -16,8 +16,11 @@ check(Src) :-
   write('* Checking eq_set_of_invoked_methods'), nl,
   check_eq_set_of_invoked_methods(TPs), nl, nl,
   %%
-  write('* Checking eq_set_maximalInvokeSequence'), nl,
-  check_eq_set_maximalInvokeSequence(TPs),
+  write('* Checking sub_set_of_maximalInvokeSequences'), nl,
+  check_sub_set_of_maximalInvokeSequences(TPs), nl, nl,
+  %%
+  write('* Checking eq_set_of_maximalInvokeSequences'), nl,
+  check_eq_set_of_maximalInvokeSequences(TPs),
   told.
 
 check_sub_set_of_invoked_methods(TPs) :-
@@ -30,11 +33,17 @@ check_eq_set_of_invoked_methods(TPs) :-
   apply_check(eq_set_of_invoked_methods(TP1,TP2)).
 check_eq_set_of_invoked_methods(_TPs).
 %
-check_eq_set_maximalInvokeSequence(TPs) :-
+check_sub_set_of_maximalInvokeSequences(TPs) :-
   select(TP1,TPs,RTPs), tp_callers(TP1,TP1Callers), member(Caller,TP1Callers),
   member(TP2,RTPs),     tp_callers(TP2,TP2Callers), member(Caller,TP2Callers),
-  apply_check(eq_set_maximalInvokeSequence(TP1,TP2,Caller)).
-check_eq_set_maximalInvokeSequence(_TPs).
+  apply_check(sub_set_of_maximalInvokeSequences(TP1,TP2,Caller)).
+check_sub_set_of_maximalInvokeSequences(_TPs).
+%
+check_eq_set_of_maximalInvokeSequences(TPs) :-
+  select(TP1,TPs,RTPs), tp_callers(TP1,TP1Callers), member(Caller,TP1Callers),
+  member(TP2,RTPs),     tp_callers(TP2,TP2Callers), member(Caller,TP2Callers),
+  apply_check(eq_set_of_maximalInvokeSequences(TP1,TP2,Caller)).
+check_eq_set_of_maximalInvokeSequences(_TPs).
 %
 apply_check(P) :-
   write('Checking '), write(P), write(': '), (P-> write(true);write(false)), nl, fail.
