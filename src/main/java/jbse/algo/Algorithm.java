@@ -4,6 +4,8 @@ import static jbse.algo.Util.failExecution;
 import static jbse.algo.Util.throwVerifyError;
 
 import java.util.Collection;
+import java.util.Collections;
+import java.util.List;
 import java.util.SortedSet;
 import java.util.function.Supplier;
 
@@ -16,10 +18,12 @@ import jbse.dec.exc.DecisionException;
 import jbse.jvm.exc.FailureException;
 import jbse.mem.State;
 import jbse.mem.exc.ContradictionException;
+import jbse.mem.exc.FastArrayAccessNotAllowedException;
 import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.InvalidProgramCounterException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.tree.DecisionAlternative;
+import jbse.val.ReferenceSymbolic;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidOperatorException;
 import jbse.val.exc.InvalidTypeException;
@@ -178,38 +182,26 @@ UP extends StrategyUpdate<R>> implements Action {
     }
 
     /** 
-     * Checks whether some reference was not 
-     * expanded by resolution during {@link #exec}.
+     * Checks whether some reference was partially
+     * resolved during {@link #exec}.
      * 
      * @return {@code true} if some reference was 
-     * resolved but not expanded, {@code false}
-     * otherwise (i.e., no reference was resolved
-     * or all the resolved references were expanded).
+     * partially resolved, {@code false}
+     * otherwise (i.e., all the references were 
+     * either not resolved or resolved fully).
      */
-    public boolean someReferenceNotExpanded() { 
-        return false; 
-    }
-
-    //TODO improve the two methods that follow (possibly return a java.util.List of the References)
-
-    /**
-     * Returns a list of the origins of the nonexpanded
-     * references origins.
-     * 
-     * @return a {@link String}.
-     */
-    public String nonExpandedReferencesOrigins() { 
-        return null; 
+    public boolean someReferencePartiallyResolved() { 
+        return false; //default implementation
     }
 
     /**
-     * Returns a list of the origins of the nonexpanded
-     * references types.
+     * Returns a {@link List} of the partially resolved 
+     * references.
      * 
-     * @return a {@link String}.
+     * @return a {@link List}{@code <}{@link ReferenceSymbolic}{@code >}.
      */
-    public String nonExpandedReferencesTypes() { 
-        return null; 
+    public List<ReferenceSymbolic> partiallyResolvedReferences() { 
+        return Collections.emptyList(); //default implementation
     }
 
     protected ExecutionContext ctx; //just caches across a call of exec (note that this makes Algorithms nonreentrant!)
@@ -242,17 +234,27 @@ UP extends StrategyUpdate<R>> implements Action {
         try {
             this.data.read(state, this.ctx.getCalculator(), this.numOperands);
             this.cooker.cook(state);
+        } catch (InterruptException e) {
+        	state.setStutters(true);
+        	throw e;
         } catch (InvalidTypeException | InvalidOperatorException | 
         		 InvalidOperandException | ThreadStackEmptyException | 
-        		 RenameUnsupportedException e) {
+        		 RenameUnsupportedException | InvalidProgramCounterException | 
+        		 FastArrayAccessNotAllowedException e) {
             //this should never happen
             failExecution(e);
         }
 
         //decides the satisfiability of the different alternatives
-        final SortedSet<R> decisionResults = this.ctx.mkDecisionResultSet(classDecisionAlternative());     
-        final Outcome outcome = this.decider.decide(state, decisionResults);
-
+        final SortedSet<R> decisionResults = this.ctx.mkDecisionResultSet(classDecisionAlternative());
+        final Outcome outcome;
+        try {
+        	outcome = this.decider.decide(state, decisionResults);
+        } catch (InterruptException e) {
+        	state.setStutters(true);
+        	throw e;
+        }
+        
         //checks if at least one alternative is satisfiable
         final int tot = decisionResults.size();
         if (tot == 0) {
@@ -266,26 +268,20 @@ UP extends StrategyUpdate<R>> implements Action {
         for (R result : decisionResults) {
             final State stateCurrent = (tot > 1 ? state.lazyClone() : state);
 
-            //pops the operands from the operand stack
-            try {
-                stateCurrent.popOperands(this.numOperands.get());
-            } catch (ThreadStackEmptyException | InvalidNumberOfOperandsException e) {
-                //this should never happen
-                failExecution(e);
-            }
-
             InterruptException interrupt = null;
             try {
                 //possibly refines the state
                 if (shouldRefine) {
                     this.refiner.refine(stateCurrent, result);
                 }
-                
+
+                //pops the operands from the operand stack
+            	stateCurrent.popOperands(this.numOperands.get());
+
             	//initializes lazily this.updated
                 if (this.updater == null) {
                     this.updater = updater();
                 }
-                
 
                 //completes the bytecode semantics
                 this.updater.update(stateCurrent, result);
@@ -293,7 +289,7 @@ UP extends StrategyUpdate<R>> implements Action {
                 interrupt = e;
             } catch (InvalidInputException | InvalidTypeException | 
                      InvalidOperatorException | InvalidOperandException | 
-                     ThreadStackEmptyException e) {
+                     ThreadStackEmptyException | InvalidNumberOfOperandsException e) {
                 //this should never happen
                 failExecution(e);
             }
@@ -301,16 +297,20 @@ UP extends StrategyUpdate<R>> implements Action {
             //updates the program counter
             try {
                 if (stateCurrent.isStuck() || stateCurrent.getStackSize() == 0) {
-                    //nothing to do
+                	stateCurrent.setStutters(false);
                 } else if (interrupt == null) {
                     if (this.isProgramCounterUpdateAnOffset.get()) {
                         stateCurrent.incProgramCounter(this.programCounterUpdate.get());
                     } else {
                         stateCurrent.setProgramCounter(this.programCounterUpdate.get());
                     }
+                    stateCurrent.setStutters(false);
                 } else if (interrupt.hasContinuation()) {
-                    throw interrupt;
-                } //else, nothing to do
+                    //this should never happen
+                    failExecution("Thrown an InterruptException with continuation from a refiner or an updater.");
+                } else {
+                	stateCurrent.setStutters(true);
+                }
             } catch (InvalidProgramCounterException e) {
                 throwVerifyError(stateCurrent, this.ctx.getCalculator());
             } catch (ThreadStackEmptyException e) {

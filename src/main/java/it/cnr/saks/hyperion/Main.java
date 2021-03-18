@@ -70,7 +70,43 @@ public class Main {
 
         long startTime = System.nanoTime();
 
+        String[] interestingTests = {
+//                "testCreateUserOk",
+//                "testChangeUserPassword",
+//                "newCommentTest",
+//                "replyCommentTest",
+//                "getCoursesFromUserTest",
+//                "getCourseByIdTest",
+//                "newCourseTest",
+//                "modifyCourseTest",
+//                "delteteCourseTest",
+//                "addAttenders2CourseTest",
+//                "deleteAttenderFromCourseTest",
+//                "newForumEntryControllerTest",
+//                "fileUploadTest",
+//                "fileDownloadTest",
+//                "pictureUploadTest",
+//                "testNewFileGroup",
+//                "testModifyFileGroup",
+//                "testEditFileOrder",
+//                "testModifyFile",
+//                "testDeleteFileGroup",
+//                "testDeleteFile",
+//                "toggleForumTest",
+//                "logInSecurityTest",
+//                "logOutSecurityTest",
+//                "newSessionTest",
+//                "modifySessionTest",
+//                "deleteSessionTest",
+                "controllerNewUserTest",
+//                "userChangePasswordTest",
+        };
+
         for(MethodDescriptor method: methodEnumerator) {
+
+            if(!Arrays.asList(interestingTests).contains(method.getMethodName()))
+                continue;
+
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
             log.info("Analysing: " + method.getMethodName() + ":" + method.getMethodDescriptor());
 
@@ -79,7 +115,7 @@ public class Main {
             try {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(runtimeClasspath)
-                        .withDepthScope(60);
+                        .withDepthScope(15);
 
                 a.setupStatic();
 
@@ -87,18 +123,19 @@ public class Main {
                 if(beforeMethods == null) {
                     a.withMethodSignature(testProgramSignature);
                 } else {
-                    log.info("Generating wrapper for @Before methods");
-                    testWrapper.generateWrapper(testProgramSignature, beforeMethods);
-
+                    continue;
+//                    log.info("Generating wrapper for @Before methods");
+//                    testWrapper.generateWrapper(testProgramSignature, beforeMethods);
+//
 //                    a.withMethodSignature(testWrapperSignature);
-                    a.withMethodSignature(testWrapperSignature)
-                     .withGuided(true, testProgramSignature);
+//                    a.withMethodSignature(testWrapperSignature)
+//                     .withGuided(true, testProgramSignature);
                 }
                 a.run();
 
             } catch (AnalyzerException e) {
                 e.printStackTrace();
-                return;
+//                return;
             }
 
             inspector.emitDatalog();
@@ -108,13 +145,13 @@ public class Main {
                 break;
         }
 
-        try {
-            PrologQuery.init();
-            PrologQuery.load(facts);
-        } catch (AnalyzerException e) {
-            System.err.println(e.getMessage());
-            System.exit(1);
-        }
+//        try {
+//            PrologQuery.init();
+//            PrologQuery.load(facts);
+//        } catch (AnalyzerException e) {
+//            System.err.println(e.getMessage());
+//            System.exit(1);
+//        }
 
         long endTime = System.nanoTime();
         double duration = (double)(endTime - startTime) / 1000000000;
