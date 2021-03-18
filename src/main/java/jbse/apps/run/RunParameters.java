@@ -366,8 +366,8 @@ public final class RunParameters implements Cloneable {
     /** Should show output on console? */
     private boolean showOnConsole = true;
 
-    /** The name of the output file. */
-    private String outFileName = null;
+    /** The path of the output file. */
+    private Path outFilePath = null;
 
     /** The text mode. */
     private TextMode textMode = TextMode.PLATFORM;
@@ -435,6 +435,9 @@ public final class RunParameters implements Cloneable {
 
     /** The signature of the driver method when guided == true. */
     private Signature driverSignature = null;
+    
+    /** The number of hits when guided == true. */
+    private int numberOfHits = 1;
 
     /**
      * Constructor.
@@ -1183,7 +1186,7 @@ public final class RunParameters implements Cloneable {
      *        the hash maps will be replaced by a model class that
      *        is more symbolic-execution-friendly than {@code java.util.HashMap}.
      */
-    public void setUseHashMapModel(boolean useHashMapModel) {
+    public void setUseHashMapModels(boolean useHashMapModel) {
     	this.runnerParameters.setUseHashMapModel(useHashMapModel);
     }
     
@@ -1959,7 +1962,7 @@ public final class RunParameters implements Cloneable {
      * Sets whether the output should be shown on 
      * console (stdout, stderr). Note that if the 
      * output is not shown on the console and no
-     * output file is specified (see {@link #setOutputFileName}
+     * output file is specified (see {@link #setOutputFilePath}
      * and {@link #setOutputFileNone}) no output
      * of the symbolic execution will be emitted.
      * 
@@ -1982,38 +1985,54 @@ public final class RunParameters implements Cloneable {
     }
 
     /**
-     * Sets the name of the output file.
+     * Sets the path of the output file.
      * 
-     * @param s A {@link String} representing the pathname of a 
-     *          file where the console output (stdout and stderr) will 
-     *          be copied.
-     * @throws NullPointerException if {@code s == null}.
+     * @param outFilePath the {@link Path} of a 
+     *          file where the console output 
+     *          (stdout and stderr) will be copied.
+     * @throws NullPointerException if {@code outFilePath == null}.
      */
-    public void setOutputFileName(String s) {
-        if (s == null) {
+    public void setOutputFilePath(Path outFilePath) {
+        if (outFilePath == null) {
             throw new NullPointerException();
         }
-        this.outFileName = s; 
+        this.outFilePath = outFilePath; 
+    }
+
+    /**
+     * Sets the path of the output file.
+     * 
+     * @param outFilePath A {@link String} representing the path of a 
+     *        file where the console output (stdout and stderr) will 
+     *        be copied.
+     * @throws NullPointerException if {@code outFilePath == null}.
+     */
+    public void setOutputFilePath(String outFilePath) {
+        if (outFilePath == null) {
+            throw new NullPointerException();
+        }
+        this.outFilePath = Paths.get(outFilePath); 
     }
 
     /**
      * Instructs not to copy the console output to file, cancelling
-     * any previous invocation of the {@link #setOutputFileName}
+     * any previous invocation of the {@link #setOutputFilePath}
      * method. This is the default behaviour. 
      */
     public void setOutputFileNone() { 
-        this.outFileName = null; 
+        this.outFilePath = null; 
     }
 
     /**
-     * Returns the name of the output file
+     * Returns the path of the output file.
      * 
-     * @return a {@link String} representing the pathname of a 
-     *          file where the console output (stdout and stderr) will 
-     *          be copied, or {@code null} if none was previously specified.
+     * @return the {@link Path} of the file where the 
+     *         console output (stdout and stderr) will 
+     *         be copied, or {@code null} if none was 
+     *         previously specified.
      */
-    public String getOutputFileName() {
-        return this.outFileName;
+    public Path getOutputFilePath() {
+        return this.outFilePath;
     }
 
     /**
@@ -2420,6 +2439,37 @@ public final class RunParameters implements Cloneable {
         }
         this.guided = true;
         this.driverSignature = new Signature(driverClass, "()V", driverName); 
+    }
+    
+    /**
+     * Sets the number of invocations of the method set 
+     * by {@link #setMethodSignature} from the driver
+     * method set by {@link #setGuided} after which
+     * concrete setup of inputs stops and symbolic execution 
+     * of the method set by {@link #setMethodSignature} starts.
+     * 
+     * @param numberOfHits an {@code int}. If {@code numberOfHits <= 0}
+     *        it is set to {@code 1}.
+     */
+    public void setGuidedNumberOfHits(int numberOfHits) {
+        if (numberOfHits <= 0) {
+            this.numberOfHits = 1;
+        } else {
+            this.numberOfHits = numberOfHits;
+        }
+    }
+    
+    /**
+     * Returns the number of invocations of the method set 
+     * by {@link #setMethodSignature} from the driver
+     * method set by {@link #setGuided} after which
+     * concrete setup of inputs stops and symbolic execution 
+     * of the method set by {@link #setMethodSignature} starts.
+     * 
+     * @return an {@code int} equal to or greater than one.
+     */
+    public int getGuidedNumberOfHits() {
+        return this.numberOfHits;
     }
 
     /**

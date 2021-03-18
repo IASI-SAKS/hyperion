@@ -74,10 +74,12 @@ public class InformationLogger {
         String pathId = "[" + branchId.replaceAll("\\.", ", ") + "], " + s.getSequenceNumber();
         String programPoint = caller.getClassName() + ":" + caller.getName() + ":" + caller.getDescriptor();
 
-        if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
-                && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
-            this.inspectHttpRequest(s, name, pathId);
-        }
+//        System.out.println(name);
+
+//        if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
+//                && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
+//            this.inspectHttpRequest(s, name, pathId);
+//        }
 
         this.inspectMethodCall(s, name, callee, classFile, pathId, programPoint, callerPC);
     }
