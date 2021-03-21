@@ -151,7 +151,7 @@ StrategyUpdate<DecisionAlternative_XASTORE>> {
                                             }
                                             try {
                                                 final Objekt srcElement = state.getObject(ref);
-                                                if (!state.getClassHierarchy().isAssignmentCompatible(srcElement.getType(), destTypeComponent)) {
+                                                if (srcElement == null || !state.getClassHierarchy().isAssignmentCompatible(srcElement.getType(), destTypeComponent)) {
                                                     throwNew(state, calc, ARRAY_STORE_EXCEPTION);
                                                     throw new ExitFromAlgorithmException();
                                                 }

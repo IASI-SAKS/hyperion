@@ -22,12 +22,14 @@ import static jbse.common.Type.VOID;
  */
 public final class Signatures {
     //classes and interfaces
+    public static final String JAVA_ABSTRACTPIPELINE         = "java/util/stream/AbstractPipeline";
     public static final String JAVA_ACCESSCONTROLCONTEXT     = "java/security/AccessControlContext";
     public static final String JAVA_ACCESSCONTROLLER         = "java/security/AccessController";
     public static final String JAVA_ACCESSIBLEOBJECT         = "java/lang/reflect/AccessibleObject";
     public static final String JAVA_ANNOTATEDELEMENT         = "java/lang/reflect/AnnotatedElement";
     public static final String JAVA_ARRAYDEQUE               = "java/util/ArrayDeque";
     public static final String JAVA_ARRAYLIST                = "java/util/ArrayList";
+    public static final String JAVA_ARRAYS_LEGACYMERGESORT   = "java/util/Arrays$LegacyMergeSort";
     public static final String JAVA_ATOMICLONG               = "java/util/concurrent/atomic/AtomicLong";
     public static final String JAVA_ATTRIBUTES_NAME          = "java/util/jar/Attributes$Name";
     public static final String JAVA_BITS                     = "java/nio/Bits";
@@ -36,9 +38,11 @@ public final class Signatures {
     public static final String JAVA_BOUNDMETHODHANDLE_FACTORY = "java/lang/invoke/BoundMethodHandle$Factory";
     public static final String JAVA_BOUNDMETHODHANDLE_SPECIESDATA = "java/lang/invoke/BoundMethodHandle$SpeciesData";
     public static final String JAVA_BOUNDMETHODHANDLE_SPECIES_L   = "java/lang/invoke/BoundMethodHandle$Species_L";
+    public static final String JAVA_BUFFEREDIMAGE            = "java/awt/image/BufferedImage";
     public static final String JAVA_BYTE                     = "java/lang/Byte";
     public static final String JAVA_BYTE_BYTECACHE           = "java/lang/Byte$ByteCache";
     public static final String JAVA_BYTEBUFFER               = "java/nio/ByteBuffer";
+    public static final String JAVA_CALLSITE                 = "java/lang/invoke/CallSite";
     public static final String JAVA_CHARACTER                = "java/lang/Character";
     public static final String JAVA_CHARACTER_CHARACTERCACHE = "java/lang/Character$CharacterCache";
     public static final String JAVA_CHARSEQUENCE             = "java/lang/CharSequence";
@@ -47,61 +51,102 @@ public final class Signatures {
     public static final String JAVA_CLASS                    = "java/lang/Class";
     public static final String JAVA_CLASSLOADER              = "java/lang/ClassLoader";
     public static final String JAVA_CLASSLOADER_NATIVELIBRARY   = "java/lang/ClassLoader$NativeLibrary";
+    public static final String JAVA_CLASSVALUE_CLASSVALUEMAP = "java/lang/ClassValue$ClassValueMap";
     public static final String JAVA_CLONEABLE                = "java/lang/Cloneable";
+    public static final String JAVA_COLLECTIONS_COPIESLIST   = "java/util/Collections$CopiesList";
+    public static final String JAVA_COLLECTORS               = "java/util/stream/Collectors";
+    public static final String JAVA_COLORMODEL               = "java/awt/image/ColorModel";
     public static final String JAVA_COMPARABLE               = "java/lang/Comparable";
+    public static final String JAVA_CONCURRENTHASHMAP        = "java/util/concurrent/ConcurrentHashMap";
     public static final String JAVA_CONSTRUCTOR              = "java/lang/reflect/Constructor";
     public static final String JAVA_CRC32                    = "java/util/zip/CRC32";
+    public static final String JAVA_DEFLATER                 = "java/util/zip/Deflater";
+    public static final String JAVA_DELEGATINGMETHODHANDLE   = "java/lang/invoke/DelegatingMethodHandle";
     public static final String JAVA_DIRECTBYTEBUFFER         = "java/nio/DirectByteBuffer";
     public static final String JAVA_DIRECTLONGBUFFERU        = "java/nio/DirectLongBufferU";
     public static final String JAVA_DIRECTMETHODHANDLE       = "java/lang/invoke/DirectMethodHandle";
+    public static final String JAVA_DIRECTMETHODHANDLE_CONSTRUCTOR = "java/lang/invoke/DirectMethodHandle$Constructor";
+    public static final String JAVA_DIRECTMETHODHANDLE_ENSUREINITIALIZED = "java/lang/invoke/DirectMethodHandle$EnsureInitialized";
+    public static final String JAVA_DIRECTMETHODHANDLE_INTERFACE = "java/lang/invoke/DirectMethodHandle$Interface";
     public static final String JAVA_DIRECTMETHODHANDLE_LAZY  = "java/lang/invoke/DirectMethodHandle$Lazy";
     public static final String JAVA_DOUBLE                   = "java/lang/Double";
     public static final String JAVA_ENUM                     = "java/lang/Enum";
+    public static final String JAVA_ENUMMAP                  = "java/util/EnumMap";
+    public static final String JAVA_ENUMSET                  = "java/util/EnumSet";
     public static final String JAVA_EXECUTABLE               = "java/lang/reflect/Executable";
     public static final String JAVA_FIELD                    = "java/lang/reflect/Field";
     public static final String JAVA_FILE                     = "java/io/File";
     public static final String JAVA_FILEDESCRIPTOR           = "java/io/FileDescriptor";
     public static final String JAVA_FILEINPUTSTREAM          = "java/io/FileInputStream";
     public static final String JAVA_FILEOUTPUTSTREAM         = "java/io/FileOutputStream";
+    public static final String JAVA_FILEPERMISSION           = "java/io/FilePermission";
     public static final String JAVA_FINALIZER                = "java/lang/ref/Finalizer";
     public static final String JAVA_FINALREFERENCE           = "java/lang/ref/FinalReference";
     public static final String JAVA_FLOAT                    = "java/lang/Float";
+    public static final String JAVA_FONT                     = "java/awt/Font";
     public static final String JAVA_GENERICDECLARATION       = "java/lang/reflect/GenericDeclaration";
     public static final String JAVA_HASHMAP                  = "java/util/HashMap";
+    public static final String JAVA_HASHSET                  = "java/util/HashSet";
     public static final String JAVA_IDENTITYHASHMAP          = "java/util/IdentityHashMap";
+    public static final String JAVA_INETADDRESS              = "java/net/InetAddress";
+    public static final String JAVA_INNERCLASSLAMBDAMETAFACTORY = "java/lang/invoke/InnerClassLambdaMetafactory";
     public static final String JAVA_INPUTSTREAM              = "java/io/InputStream";
     public static final String JAVA_INFLATER                 = "java/util/zip/Inflater";
+    public static final String JAVA_INFOFROMMEMBERNAME       = "java/lang/invoke/InfoFromMemberName";
     public static final String JAVA_INTEGER                  = "java/lang/Integer";
+    public static final String JAVA_INTEGER_INTEGERCACHE     = "java/lang/Integer$IntegerCache";
     public static final String JAVA_INVOKERBYTECODEGENERATOR = "java/lang/invoke/InvokerBytecodeGenerator";
     public static final String JAVA_INVOKERBYTECODEGENERATOR_2 = "java/lang/invoke/InvokerBytecodeGenerator$2";
+    public static final String JAVA_INVOKERS                 = "java/lang/invoke/Invokers";
     public static final String JAVA_JARFILE                  = "java/util/jar/JarFile";
     public static final String JAVA_JARVERIFIER              = "java/util/jar/JarVerifier";
     public static final String JAVA_LAMBDAFORM               = "java/lang/invoke/LambdaForm";
+    public static final String JAVA_LAMBDAFORMBUFFER         = "java/lang/invoke/LambdaFormBuffer";
+    public static final String JAVA_LAMBDAFORMEDITOR         = "java/lang/invoke/LambdaFormEditor";
+    public static final String JAVA_LAMBDAFORMEDITOR_TRANSFORM = "java/lang/invoke/LambdaFormEditor$Transform";
     public static final String JAVA_LAMBDAFORM_NAME          = "java/lang/invoke/LambdaForm$Name";
     public static final String JAVA_LAMBDAFORM_NAMEDFUNCTION = "java/lang/invoke/LambdaForm$NamedFunction";
+    public static final String JAVA_LAMBDAMETAFACTORY        = "java/lang/invoke/LambdaMetafactory";
+    public static final String JAVA_LINKEDHASHMAP            = "java/util/LinkedHashMap";
     public static final String JAVA_LINKEDLIST               = "java/util/LinkedList";
     public static final String JAVA_LINKEDLIST_ENTRY         = "java/util/LinkedList$Entry";
+    public static final String JAVA_LOCALE_1                 = "java/util/Locale$1";
     public static final String JAVA_LONG                     = "java/lang/Long";
+    public static final String JAVA_LONG_LONGCACHE           = "java/lang/Long$LongCache";
     public static final String JAVA_MAP                      = "java/util/Map";
     public static final String JAVA_MAPPEDBYTEBUFFER         = "java/nio/MappedByteBuffer";
     public static final String JAVA_MEMBER                   = "java/lang/reflect/Member";
     public static final String JAVA_MEMBERNAME               = "java/lang/invoke/MemberName";
     public static final String JAVA_METHOD                   = "java/lang/reflect/Method";
     public static final String JAVA_METHODHANDLE             = "java/lang/invoke/MethodHandle";
+    public static final String JAVA_METHODHANDLEIMPL_ARRAYACCESSOR = "java/lang/invoke/MethodHandleImpl$ArrayAccessor";
+    public static final String JAVA_METHODHANDLEIMPL_COUNTINGWRAPPER = "java/lang/invoke/MethodHandleImpl$CountingWrapper";
+    public static final String JAVA_METHODHANDLEIMPL_ASVARARGSCOLLECTOR = "java/lang/invoke/MethodHandleImpl$AsVarargsCollector";
+    public static final String JAVA_METHODHANDLEIMPL_LAZY    = "java/lang/invoke/MethodHandleImpl$Lazy";
     public static final String JAVA_METHODHANDLENATIVES      = "java/lang/invoke/MethodHandleNatives";
     public static final String JAVA_METHODHANDLES            = "java/lang/invoke/MethodHandles";
+    public static final String JAVA_METHODHANDLES_1          = "java/lang/invoke/MethodHandles$1";
     public static final String JAVA_METHODHANDLES_LOOKUP     = "java/lang/invoke/MethodHandles$Lookup";
     public static final String JAVA_METHODTYPE               = "java/lang/invoke/MethodType";
     public static final String JAVA_METHODTYPEFORM           = "java/lang/invoke/MethodTypeForm";
+    public static final String JAVA_NETWORKINTERFACE         = "java/net/NetworkInterface";
     public static final String JAVA_OBJECT                   = "java/lang/Object";
     public static final String JAVA_OPTIONAL                 = "java/util/Optional";
     public static final String JAVA_PACKAGE                  = "java/lang/Package";
+    public static final String JAVA_PARAMETER                = "java/lang/reflect/Parameter";
+    public static final String JAVA_PATTERN                  = "java/util/regex/Pattern";
+    public static final String JAVA_PLAINDATAGRAMSOCKETIMPL  = "java/net/PlainDatagramSocketImpl";
+    public static final String JAVA_PLAINSOCKETIMPL          = "java/net/PlainSocketImpl";
     public static final String JAVA_PRINTSTREAM              = "java/io/PrintStream";
     public static final String JAVA_PRIVILEGEDACTION         = "java/security/PrivilegedAction";
     public static final String JAVA_PRIVILEGEDEXCEPTIONACTION = "java/security/PrivilegedExceptionAction";
+    public static final String JAVA_PROCESSENVIRONMENT       = "java/lang/ProcessEnvironment";
     public static final String JAVA_PROPERTIES               = "java/util/Properties";
     public static final String JAVA_PROTECTIONDOMAIN         = "java/security/ProtectionDomain";
+    public static final String JAVA_RANDOMACCESSFILE         = "java/io/RandomAccessFile";
     public static final String JAVA_REFERENCE                = "java/lang/ref/Reference";
+    public static final String JAVA_REFERENCEPIPELINE_STATEFULOP  = "java/util/stream/ReferencePipeline$StatefulOp";
+    public static final String JAVA_REFERENCEPIPELINE_STATELESSOP = "java/util/stream/ReferencePipeline$StatelessOp";
     public static final String JAVA_REFLECT_ARRAY            = "java/lang/reflect/Array";
     public static final String JAVA_RUNNABLE                 = "java/lang/Runnable";
     public static final String JAVA_RUNTIME                  = "java/lang/Runtime";
@@ -121,9 +166,11 @@ public final class Signatures {
     public static final String JAVA_THREADGROUP              = "java/lang/ThreadGroup";
     public static final String JAVA_THROWABLE                = "java/lang/Throwable";
     public static final String JAVA_THROWABLE_SENTINELHOLDER = "java/lang/Throwable$SentinelHolder";
+    public static final String JAVA_TIMSORT                  = "java/util/TimSort";
     public static final String JAVA_TREESET                  = "java/util/TreeSet";
     public static final String JAVA_TYPE                     = "java/lang/reflect/Type";
     public static final String JAVA_UNIXFILESYSTEM           = "java/io/UnixFileSystem";
+    public static final String JAVA_URI                      = "java/net/URI";
     public static final String JAVA_URL                      = "java/net/URL";
     public static final String JAVA_VOID                     = "java/lang/Void";
     public static final String JAVA_WINNTFILESYSTEM          = "java/io/WinNTFileSystem";
@@ -132,23 +179,32 @@ public final class Signatures {
     public static final String JBSE_ANALYSIS                 = internalClassName(jbse.meta.Analysis.class.getName());
     public static final String JBSE_BASE                     = internalClassName(jbse.base.Base.class.getName());
     public static final String JBSE_JAVA_MAP                 = internalClassName(jbse.base.JAVA_MAP.class.getName());
+    public static final String JDK_FRAME                     = "jdk/internal/org/objectweb/asm/Frame";
     public static final String JDK_TYPE                      = "jdk/internal/org/objectweb/asm/Type";
     public static final String SUN_ASCIICASEINSENSITIVECOMPARATOR = "sun/misc/ASCIICaseInsensitiveComparator";
     public static final String SUN_CALLERSENSITIVE           = "sun/reflect/CallerSensitive";
     public static final String SUN_CONSTANTPOOL              = "sun/reflect/ConstantPool";
     public static final String SUN_EXTENSIONDEPENDENCY       = "sun/misc/ExtensionDependency";
     public static final String SUN_JARINDEX                  = "sun/misc/JarIndex";
+    public static final String SUN_LOCALEPROVIDERADAPTER     = "sun/util/locale/provider/LocaleProviderAdapter";
+    public static final String SUN_LOCALEPROVIDERADAPTER_1   = "sun/util/locale/provider/LocaleProviderAdapter$1";
     public static final String SUN_NATIVECONSTRUCTORACCESSORIMPL = "sun/reflect/NativeConstructorAccessorImpl";
     public static final String SUN_NATIVEMETHODACCESSORIMPL  = "sun/reflect/NativeMethodAccessorImpl";
     public static final String SUN_PERF                      = "sun/misc/Perf";
     public static final String SUN_PERFCOUNTER               = "sun/misc/PerfCounter";
     public static final String SUN_PERFCOUNTER_CORECOUNTERS  = "sun/misc/PerfCounter$CoreCounters";
     public static final String SUN_REFLECTION                = "sun/reflect/Reflection";
+    public static final String SUN_SECURITYCONSTANTS         = "sun/security/util/SecurityConstants";
     public static final String SUN_SIGNAL                    = "sun/misc/Signal";
     public static final String SUN_UNIXNATIVEDISPATCHER      = "sun/nio/fs/UnixNativeDispatcher";
+    public static final String SUN_UNIXPATH                  = "sun/nio/fs/UnixPath";
     public static final String SUN_UNSAFE                    = "sun/misc/Unsafe";
+    public static final String SUN_UNSAFEFIELDACCESSORIMPL   = "sun/reflect/UnsafeFieldAccessorImpl";
     public static final String SUN_URLCLASSPATH              = "sun/misc/URLClassPath";
     public static final String SUN_URLCLASSPATH_JARLOADER    = "sun/misc/URLClassPath$JarLoader";
+    public static final String SUN_UTIL                      = "sun/nio/fs/Util";
+    public static final String SUN_VALUECONVERSIONS          = "sun/invoke/util/ValueConversions";
+    public static final String SUN_VALUECONVERSIONS_1        = "sun/invoke/util/ValueConversions$1";
     public static final String SUN_VERIFYACCESS              = "sun/invoke/util/VerifyAccess";
     public static final String SUN_VERIFYTYPE                = "sun/invoke/util/VerifyType";
     public static final String SUN_VM                        = "sun/misc/VM";
@@ -219,6 +275,8 @@ public final class Signatures {
         new Signature(JAVA_ACCESSCONTROLLER, "()" + REFERENCE + JAVA_ACCESSCONTROLCONTEXT + TYPEEND, "getStackAccessControlContext");
     public static final Signature JAVA_ATOMICLONG_VMSUPPORTSCS8 =
         new Signature(JAVA_ATOMICLONG, "()" + BOOLEAN, "VMSupportsCS8");
+    public static final Signature JAVA_BUFFEREDIMAGE_INITIDS =
+    		new Signature(JAVA_BUFFEREDIMAGE, "()" + VOID, "initIDs");
     public static final Signature JAVA_CLASS_DESIREDASSERTIONSTATUS0 =
         new Signature(JAVA_CLASS, "(" + REFERENCE + JAVA_CLASS + TYPEEND + ")" + BOOLEAN, "desiredAssertionStatus0");
     public static final Signature JAVA_CLASS_FORNAME0 =
@@ -237,12 +295,18 @@ public final class Signatures {
         new Signature(JAVA_CLASS, "()" + REFERENCE + JAVA_CLASS + TYPEEND, "getDeclaringClass0");
     public static final Signature JAVA_CLASS_GETENCLOSINGMETHOD0 =
         new Signature(JAVA_CLASS, "()" + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND, "getEnclosingMethod0");
+    public static final Signature JAVA_CLASS_GETGENERICSIGNATURE0 =
+        new Signature(JAVA_CLASS, "()" + REFERENCE + JAVA_STRING + TYPEEND, "getGenericSignature0");
+    public static final Signature JAVA_CLASS_GETINTERFACES0 =
+        new Signature(JAVA_CLASS, "()" + ARRAYOF + REFERENCE + JAVA_CLASS + TYPEEND, "getInterfaces0");
     public static final Signature JAVA_CLASS_GETMODIFIERS =
         new Signature(JAVA_CLASS, "()" + INT, "getModifiers");
     public static final Signature JAVA_CLASS_GETNAME0 =
         new Signature(JAVA_CLASS, "()" + REFERENCE + JAVA_STRING + TYPEEND, "getName0");
     public static final Signature JAVA_CLASS_GETPRIMITIVECLASS =
         new Signature(JAVA_CLASS, "(" + REFERENCE + JAVA_STRING + TYPEEND + ")" + REFERENCE + JAVA_CLASS + TYPEEND, "getPrimitiveClass");
+    public static final Signature JAVA_CLASS_GETPROTECTIONDOMAIN0 =
+        new Signature(JAVA_CLASS, "()" + REFERENCE + JAVA_PROTECTIONDOMAIN + TYPEEND, "getProtectionDomain0");
     public static final Signature JAVA_CLASS_GETRAWANNOTATIONS =
         new Signature(JAVA_CLASS, "()" + ARRAYOF + BYTE, "getRawAnnotations");
     public static final Signature JAVA_CLASS_GETSIGNERS =
@@ -279,14 +343,22 @@ public final class Signatures {
         new Signature(JAVA_CLASSLOADER_NATIVELIBRARY, "(" + REFERENCE + JAVA_STRING + TYPEEND + BOOLEAN + ")" + VOID, "load");
     public static final Signature JAVA_CLASSLOADER_REGISTERNATIVES =
         new Signature(JAVA_CLASSLOADER, "()" + VOID, "registerNatives");
+    public static final Signature JAVA_COLORMODEL_INITIDS =
+    	new Signature(JAVA_COLORMODEL, "()" + VOID, "initIDs");
+    public static final Signature JAVA_CRC32_UPDATE =
+        new Signature(JAVA_CRC32, "(" + INT + INT + ")" + INT, "update");
     public static final Signature JAVA_CRC32_UPDATEBYTES =
         new Signature(JAVA_CRC32, "(" + INT + ARRAYOF + BYTE + INT + INT +")" + INT, "updateBytes");
+    public static final Signature JAVA_DEFLATER_INITIDS =
+        new Signature(JAVA_DEFLATER, "()" + VOID, "initIDs");
     public static final Signature JAVA_DIRECTBYTEBUFFER_INIT =
         new Signature(JAVA_DIRECTBYTEBUFFER, "(" + LONG + INT + ")" + VOID, "<init>");
     public static final Signature JAVA_DOUBLE_DOUBLETORAWLONGBITS =
         new Signature(JAVA_DOUBLE, "(" + DOUBLE + ")" + LONG, "doubleToRawLongBits");
     public static final Signature JAVA_DOUBLE_LONGBITSTODOUBLE =
         new Signature(JAVA_DOUBLE, "(" + LONG + ")" + DOUBLE, "longBitsToDouble");
+    public static final Signature JAVA_EXECUTABLE_GETPARAMETERS0 =
+        new Signature(JAVA_EXECUTABLE, "()" + ARRAYOF + REFERENCE + JAVA_PARAMETER + TYPEEND, "getParameters0");
     public static final Signature JAVA_FILEDESCRIPTOR_INITIDS =
         new Signature(JAVA_FILEDESCRIPTOR, "()" + VOID, "initIDs");
     public static final Signature JAVA_FILEDESCRIPTOR_SET =
@@ -303,10 +375,18 @@ public final class Signatures {
         new Signature(JAVA_FILEINPUTSTREAM, "(" + ARRAYOF + BYTE + INT + INT + ")" + INT, "readBytes");
     public static final Signature JAVA_FILEOUTPUTSTREAM_INITIDS =
         new Signature(JAVA_FILEOUTPUTSTREAM, "()" + VOID, "initIDs");
+    public static final Signature JAVA_FILEOUTPUTSTREAM_OPEN0 =
+    	new Signature(JAVA_FILEOUTPUTSTREAM, "(" + REFERENCE + JAVA_STRING + TYPEEND + BOOLEAN + ")" + VOID, "open0");
     public static final Signature JAVA_FILEOUTPUTSTREAM_WRITEBYTES =
         new Signature(JAVA_FILEOUTPUTSTREAM, "(" + ARRAYOF + BYTE + INT + INT + BOOLEAN + ")" + VOID, "writeBytes");
     public static final Signature JAVA_FLOAT_FLOATTORAWINTBITS =
         new Signature(JAVA_FLOAT, "(" + FLOAT + ")" + INT, "floatToRawIntBits");
+    public static final Signature JAVA_FLOAT_INTBITSTOFLOAT =
+    	new Signature(JAVA_FLOAT, "(" + INT + ")" + FLOAT, "intBitsToFloat");
+    public static final Signature JAVA_FONT_INITIDS =
+    	new Signature(JAVA_FONT, "()" + VOID, "initIDs");
+    public static final Signature JAVA_INETADDRESS_INIT=
+    	new Signature(JAVA_INETADDRESS, "()" + VOID, "init");
     public static final Signature JAVA_INFLATER_END =
         new Signature(JAVA_INFLATER, "(" + LONG + ")" + VOID, "end");
     public static final Signature JAVA_INFLATER_GETADLER =
@@ -323,8 +403,14 @@ public final class Signatures {
         new Signature(JAVA_INFLATER, "(" + LONG + ARRAYOF + BYTE + INT + INT + ")" + VOID, "setDictionary");
     public static final Signature JAVA_JARFILE_GETMETAINFENTRYNAMES =
         new Signature(JAVA_JARFILE, "()" + ARRAYOF + REFERENCE + JAVA_STRING + TYPEEND, "getMetaInfEntryNames");
+    public static final Signature JAVA_LINKEDHASHMAP_CONTAINSVALUE =
+		new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + BOOLEAN, "containsValue");
     public static final Signature JAVA_MAP_CONTAINSKEY =
-            new Signature(JAVA_MAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + BOOLEAN, "containsKey");
+        new Signature(JAVA_MAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + BOOLEAN, "containsKey");
+    public static final Signature JAVA_MAP_CONTAINSVALUE =
+    	new Signature(JAVA_MAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + BOOLEAN, "containsValue");
+    public static final Signature JAVA_MAP_GET =
+        new Signature(JAVA_MAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + REFERENCE + JAVA_OBJECT + TYPEEND, "get");
     public static final Signature JAVA_MEMBERNAME_GETTYPE =
         new Signature(JAVA_MEMBERNAME, "()" + REFERENCE + JAVA_OBJECT + TYPEEND, "getType");
     public static final Signature JAVA_METHOD_INVOKE =
@@ -337,15 +423,30 @@ public final class Signatures {
                       "findMethodHandleType");
     public static final Signature JAVA_METHODHANDLENATIVES_GETCONSTANT =
         new Signature(JAVA_METHODHANDLENATIVES, "(" + INT + ")" + INT, "getConstant");
+    public static final Signature JAVA_METHODHANDLENATIVES_GETMEMBERS =
+        new Signature(JAVA_METHODHANDLENATIVES, 
+        		      "(" + REFERENCE + JAVA_CLASS + TYPEEND + REFERENCE + JAVA_STRING + TYPEEND + 
+        		       REFERENCE + JAVA_STRING + TYPEEND + INT + REFERENCE + JAVA_CLASS + TYPEEND + 
+        		       INT + ARRAYOF +  REFERENCE + JAVA_MEMBERNAME + TYPEEND + ")" + INT, "getMembers");
     public static final Signature JAVA_METHODHANDLENATIVES_INIT =
         new Signature(JAVA_METHODHANDLENATIVES, 
                       "(" + REFERENCE + JAVA_MEMBERNAME + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, 
                       "init");
+    public static final Signature JAVA_METHODHANDLENATIVES_LINKCALLSITE =
+        new Signature(JAVA_METHODHANDLENATIVES, 
+                          "(" + REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + 
+                          REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + REFERENCE + JAVA_MEMBERNAME + TYPEEND,
+                          "linkCallSite");
     public static final Signature JAVA_METHODHANDLENATIVES_LINKMETHOD =
         new Signature(JAVA_METHODHANDLENATIVES, 
                       "(" + REFERENCE + JAVA_CLASS + TYPEEND + INT + REFERENCE + JAVA_CLASS + TYPEEND + REFERENCE + JAVA_STRING + TYPEEND + 
                       REFERENCE + JAVA_OBJECT + TYPEEND + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + REFERENCE + JAVA_MEMBERNAME + TYPEEND,
                       "linkMethod");
+    public static final Signature JAVA_METHODHANDLENATIVES_LINKMETHODHANDLECONSTANT =
+            new Signature(JAVA_METHODHANDLENATIVES, 
+                          "(" + REFERENCE + JAVA_CLASS + TYPEEND + INT + REFERENCE + JAVA_CLASS + TYPEEND + REFERENCE + JAVA_STRING + TYPEEND + 
+                          REFERENCE + JAVA_OBJECT + TYPEEND + ")" + REFERENCE + JAVA_METHODHANDLE + TYPEEND,
+                          "linkMethodHandleConstant");
     public static final Signature JAVA_METHODHANDLENATIVES_OBJECTFIELDOFFSET =
         new Signature(JAVA_METHODHANDLENATIVES, "(" + REFERENCE + JAVA_MEMBERNAME + TYPEEND + ")" + LONG, "objectFieldOffset");
     public static final Signature JAVA_METHODHANDLENATIVES_REGISTERNATIVES =
@@ -354,10 +455,16 @@ public final class Signatures {
         new Signature(JAVA_METHODHANDLENATIVES, 
                       "(" + REFERENCE + JAVA_MEMBERNAME + TYPEEND + REFERENCE + JAVA_CLASS + TYPEEND + ")" + REFERENCE + JAVA_MEMBERNAME + TYPEEND, 
                       "resolve");
+    public static final Signature JAVA_METHODHANDLENATIVES_SETCALLSITETARGETNORMAL =
+        new Signature(JAVA_METHODHANDLENATIVES, "(" + REFERENCE + JAVA_CALLSITE + TYPEEND + REFERENCE + JAVA_METHODHANDLE + TYPEEND + ")" + VOID, "setCallSiteTargetNormal");
+    public static final Signature JAVA_METHODHANDLENATIVES_SETCALLSITETARGETVOLATILE =
+        new Signature(JAVA_METHODHANDLENATIVES, "(" + REFERENCE + JAVA_CALLSITE + TYPEEND + REFERENCE + JAVA_METHODHANDLE + TYPEEND + ")" + VOID, "setCallSiteTargetVolatile");
     public static final Signature JAVA_METHODHANDLENATIVES_STATICFIELDOFFSET =
         new Signature(JAVA_METHODHANDLENATIVES, "(" + REFERENCE + JAVA_MEMBERNAME + TYPEEND + ")" + LONG, "staticFieldOffset");
     public static final Signature JAVA_METHODTYPE_TOMETHODDESCRIPTORSTRING =
         new Signature(JAVA_METHODTYPE, "()" + REFERENCE + JAVA_STRING + TYPEEND, "toMethodDescriptorString");
+    public static final Signature JAVA_NETWORKINTERFACE_INIT=
+    	new Signature(JAVA_NETWORKINTERFACE, "()" + VOID, "init");
     public static final Signature JAVA_OBJECT_CLONE =
         new Signature(JAVA_OBJECT, "()" + REFERENCE + JAVA_OBJECT + TYPEEND, "clone");
     public static final Signature JAVA_OBJECT_EQUALS =
@@ -366,12 +473,28 @@ public final class Signatures {
         new Signature(JAVA_OBJECT, "()" + REFERENCE + JAVA_CLASS + TYPEEND, "getClass");
     public static final Signature JAVA_OBJECT_HASHCODE =
         new Signature(JAVA_OBJECT, "()" + INT, "hashCode");
+    public static final Signature JAVA_OBJECT_NOTIFY =
+        new Signature(JAVA_OBJECT, "()" + VOID, "notify");
     public static final Signature JAVA_OBJECT_NOTIFYALL =
         new Signature(JAVA_OBJECT, "()" + VOID, "notifyAll");
     public static final Signature JAVA_OBJECT_REGISTERNATIVES =
         new Signature(JAVA_OBJECT, "()" + VOID, "registerNatives");
+    public static final Signature JAVA_OBJECT_WAIT =
+        new Signature(JAVA_OBJECT, "(" + LONG + ")" + VOID, "wait");
     public static final Signature JAVA_PACKAGE_GETSYSTEMPACKAGE0 =
         new Signature(JAVA_PACKAGE, "(" + REFERENCE + JAVA_STRING + TYPEEND + ")" + REFERENCE + JAVA_STRING + TYPEEND, "getSystemPackage0");
+    public static final Signature JAVA_PLAINDATAGRAMSOCKETIMPL_INIT =
+        new Signature(JAVA_PLAINDATAGRAMSOCKETIMPL, "()" + VOID, "init");
+    public static final Signature JAVA_PLAINSOCKETIMPL_INITPROTO =
+        new Signature(JAVA_PLAINSOCKETIMPL, "()" + VOID, "initProto");
+    public static final Signature JAVA_PROCESSENVIRONMENT_ENVIRON =
+        new Signature(JAVA_PROCESSENVIRONMENT, "()" + ARRAYOF + ARRAYOF + BYTE, "environ");
+    public static final Signature JAVA_RANDOMACCESSFILE_FD = 
+    	new Signature(JAVA_RANDOMACCESSFILE, "" + REFERENCE + JAVA_FILEDESCRIPTOR + TYPEEND, "fd");
+    public static final Signature JAVA_RANDOMACCESSFILE_INITIDS =
+        new Signature(JAVA_RANDOMACCESSFILE, "()" + VOID, "initIDs");
+    public static final Signature JAVA_RANDOMACCESSFILE_OPEN0 =
+    	new Signature(JAVA_RANDOMACCESSFILE, "(" + REFERENCE + JAVA_STRING + TYPEEND + INT + ")" + VOID, "open0");
     public static final Signature JAVA_REFLECT_ARRAY_NEWARRAY =
         new Signature(JAVA_REFLECT_ARRAY, "(" + REFERENCE + JAVA_CLASS + TYPEEND + INT + ")" + REFERENCE + JAVA_OBJECT + TYPEEND, "newArray");
     public static final Signature JAVA_RUNTIME_AVAILABLEPROCESSORS = 
@@ -558,6 +681,8 @@ public final class Signatures {
         new Signature(JAVA_ZIPFILE, "(" + LONG + ")" + LONG, "getEntrySize");
     public static final Signature JAVA_ZIPFILE_GETENTRYTIME = 
         new Signature(JAVA_ZIPFILE, "(" + LONG + ")" + LONG, "getEntryTime");
+    public static final Signature JAVA_ZIPFILE_GETNEXTENTRY = 
+        new Signature(JAVA_ZIPFILE, "(" + LONG + INT + ")" + LONG, "getNextEntry");
     public static final Signature JAVA_ZIPFILE_GETTOTAL = 
         new Signature(JAVA_ZIPFILE, "(" + LONG + ")" + INT, "getTotal");
     public static final Signature JAVA_ZIPFILE_INITIDS = 
@@ -640,6 +765,8 @@ public final class Signatures {
         new Signature(JBSE_BASE, "()" + REFERENCE + JAVA_OBJECT + TYPEEND, "boxInvocationTargetExceptionAndReturn_J");
     public static final Signature JBSE_BASE_BOXINVOCATIONTARGETEXCEPTIONANDRETURN_L = 
         new Signature(JBSE_BASE, "()" + REFERENCE + JAVA_OBJECT + TYPEEND, "boxInvocationTargetExceptionAndReturn_L");
+    public static final Signature JBSE_BASE_BOXINVOCATIONTARGETEXCEPTIONANDRETURN_NULL = 
+        new Signature(JBSE_BASE, "()" + REFERENCE + JAVA_OBJECT + TYPEEND, "boxInvocationTargetExceptionAndReturn_null");
     public static final Signature JBSE_BASE_BOXINVOCATIONTARGETEXCEPTIONANDRETURN_S = 
         new Signature(JBSE_BASE, "()" + REFERENCE + JAVA_OBJECT + TYPEEND, "boxInvocationTargetExceptionAndReturn_S");
     public static final Signature JBSE_BASE_BOXINVOCATIONTARGETEXCEPTIONANDRETURN_V = 
@@ -650,18 +777,100 @@ public final class Signatures {
         new Signature(JBSE_BASE, "(" + INT + REFERENCE + JAVA_STRING + TYPEEND +")" + VOID, "makeKlassSymbolic");
     public static final Signature JBSE_BASE_MAKEKLASSSYMBOLIC_DO = 
         new Signature(JBSE_BASE, "(" + INT + REFERENCE + JAVA_STRING + TYPEEND +")" + VOID, "makeKlassSymbolic_do");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_INITSYMBOLIC = 
+		new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_CONCURRENTHASHMAP + TYPEEND + ")" + VOID, "initSymbolic");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_MAKEINITIAL = 
+        new Signature(JAVA_CONCURRENTHASHMAP, "()" + VOID, "makeInitial");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_METATHROWUNEXPECTEDINTERNALEXCEPTION = 
+        new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_STRING + TYPEEND + ")" + VOID, "metaThrowUnexpectedInternalException");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_NOTIFYMETHODEXECUTION = 
+        new Signature(JAVA_CONCURRENTHASHMAP, "()" + VOID, "notifyMethodExecution");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_ONKEYRESOLUTION = 
+		new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "onKeyResolution");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_ONKEYRESOLUTION0 = 
+    	new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "onKeyResolution0");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_ONKEYRESOLUTIONCOMPLETE = 
+    	new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_CONCURRENTHASHMAP + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "onKeyResolutionComplete");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_REFINEIN = 
+        new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineIn");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_REFINEMAPCOMPLETE = 
+		new Signature(JAVA_CONCURRENTHASHMAP, "()" + VOID, "refineMapComplete");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_REFINEONFRESHENTRYANDBRANCH = 
+		new Signature(JAVA_CONCURRENTHASHMAP, "()" + VOID, "refineOnFreshEntryAndBranch");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_REFINEONKEYANDBRANCH = 
+        new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnKeyAndBranch");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_REFINEONKEYCOMBINATIONSANDBRANCH = 
+        new Signature(JAVA_CONCURRENTHASHMAP, "(" + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnKeyCombinationsAndBranch");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_REFINEONVALUEANDBRANCH = 
+		new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnValueAndBranch");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_REFINEOUTKEY = 
+        new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOutKey");
+    public static final Signature JBSE_JAVA_CONCURRENTMAP_REFINEOUTVALUE = 
+		new Signature(JAVA_CONCURRENTHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOutValue");
+    public static final Signature JBSE_JAVA_LINKEDMAP_INITSYMBOLIC = 
+		new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_LINKEDHASHMAP + TYPEEND + ")" + VOID, "initSymbolic");
+    public static final Signature JBSE_JAVA_LINKEDMAP_MAKEINITIAL = 
+    	new Signature(JAVA_LINKEDHASHMAP, "()" + VOID, "makeInitial");
+    public static final Signature JBSE_JAVA_LINKEDMAP_METATHROWUNEXPECTEDINTERNALEXCEPTION = 
+    	new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_STRING + TYPEEND + ")" + VOID, "metaThrowUnexpectedInternalException");
+    public static final Signature JBSE_JAVA_LINKEDMAP_NOTIFYMETHODEXECUTION = 
+    	new Signature(JAVA_LINKEDHASHMAP, "()" + VOID, "notifyMethodExecution");
+    public static final Signature JBSE_JAVA_LINKEDMAP_ONKEYRESOLUTION = 
+		new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "onKeyResolution");
+    public static final Signature JBSE_JAVA_LINKEDMAP_ONKEYRESOLUTION0 = 
+		new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "onKeyResolution0");
+    public static final Signature JBSE_JAVA_LINKEDMAP_ONKEYRESOLUTIONCOMPLETE = 
+		new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_LINKEDHASHMAP + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "onKeyResolutionComplete");
+    public static final Signature JBSE_JAVA_LINKEDMAP_REFINEIN = 
+    	new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineIn");
+    public static final Signature JBSE_JAVA_LINKEDMAP_REFINEMAPCOMPLETE = 
+    	new Signature(JAVA_LINKEDHASHMAP, "()" + VOID, "refineMapComplete");
+    public static final Signature JBSE_JAVA_LINKEDMAP_REFINEONFRESHENTRYANDBRANCH = 
+    	new Signature(JAVA_LINKEDHASHMAP, "()" + VOID, "refineOnFreshEntryAndBranch");
+    public static final Signature JBSE_JAVA_LINKEDMAP_REFINEONKEYANDBRANCH = 
+    	new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnKeyAndBranch");
+    public static final Signature JBSE_JAVA_LINKEDMAP_REFINEONKEYCOMBINATIONSANDBRANCH = 
+    	new Signature(JAVA_LINKEDHASHMAP, "(" + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnKeyCombinationsAndBranch");
+    public static final Signature JBSE_JAVA_LINKEDMAP_REFINEONVALUEANDBRANCH = 
+    	new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnValueAndBranch");
+    public static final Signature JBSE_JAVA_LINKEDMAP_REFINEOUTKEY = 
+    	new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOutKey");
+    public static final Signature JBSE_JAVA_LINKEDMAP_REFINEOUTVALUE = 
+    	new Signature(JAVA_LINKEDHASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOutValue");
+    public static final Signature JBSE_JAVA_MAP_INITSYMBOLIC = 
+    	new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_HASHMAP + TYPEEND + ")" + VOID, "initSymbolic");
     public static final Signature JBSE_JAVA_MAP_MAKEINITIAL = 
     	new Signature(JAVA_HASHMAP, "()" + VOID, "makeInitial");
     public static final Signature JBSE_JAVA_MAP_METATHROWUNEXPECTEDINTERNALEXCEPTION = 
     	new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_STRING + TYPEEND + ")" + VOID, "metaThrowUnexpectedInternalException");
+    public static final Signature JBSE_JAVA_MAP_NOTIFYMETHODEXECUTION = 
+		new Signature(JAVA_HASHMAP, "()" + VOID, "notifyMethodExecution");
+    public static final Signature JBSE_JAVA_MAP_ONKEYRESOLUTION = 
+		new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "onKeyResolution");
+    public static final Signature JBSE_JAVA_MAP_ONKEYRESOLUTION0 = 
+    	new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "onKeyResolution0");
+    public static final Signature JBSE_JAVA_MAP_ONKEYRESOLUTIONCOMPLETE = 
+		new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_HASHMAP + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "onKeyResolutionComplete");
     public static final Signature JBSE_JAVA_MAP_REFINEIN = 
     	new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineIn");
+    public static final Signature JBSE_JAVA_MAP_REFINEMAPCOMPLETE = 
+		new Signature(JAVA_HASHMAP, "()" + VOID, "refineMapComplete");
+    public static final Signature JBSE_JAVA_MAP_REFINEONFRESHENTRYANDBRANCH = 
+    	new Signature(JAVA_HASHMAP, "()" + VOID, "refineOnFreshEntryAndBranch");
     public static final Signature JBSE_JAVA_MAP_REFINEONKEYANDBRANCH = 
-    	new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnKeyAndBranch");
+        new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnKeyAndBranch");
     public static final Signature JBSE_JAVA_MAP_REFINEONKEYCOMBINATIONSANDBRANCH = 
     	new Signature(JAVA_HASHMAP, "(" + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnKeyCombinationsAndBranch");
+    public static final Signature JBSE_JAVA_MAP_REFINEONVALUEANDBRANCH = 
+    	new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOnValueAndBranch");
     public static final Signature JBSE_JAVA_MAP_REFINEOUTKEY = 
     	new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOutKey");
+    public static final Signature JBSE_JAVA_MAP_REFINEOUTVALUE = 
+		new Signature(JAVA_HASHMAP, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "refineOutValue");
+    public static final Signature SUN_CONSTANTPOOL_GETUTF8AT0 = 
+        new Signature(SUN_CONSTANTPOOL, 
+                      "(" + REFERENCE + JAVA_OBJECT + TYPEEND + INT + ")" + REFERENCE + JAVA_STRING + TYPEEND, 
+                      "getUTF8At0");
     public static final Signature SUN_NATIVECONSTRUCTORACCESSORIMPL_NEWINSTANCE0 = 
         new Signature(SUN_NATIVECONSTRUCTORACCESSORIMPL, 
                       "(" + REFERENCE + JAVA_CONSTRUCTOR + TYPEEND + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + REFERENCE + JAVA_OBJECT + TYPEEND, 
@@ -688,6 +897,8 @@ public final class Signatures {
         new Signature(SUN_UNIXNATIVEDISPATCHER, "()" + INT, "init");
     public static final Signature SUN_UNSAFE_ADDRESSSIZE = 
         new Signature(SUN_UNSAFE, "()" + INT, "addressSize");
+    public static final Signature SUN_UNSAFE_ALLOCATEINSTANCE = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_CLASS + TYPEEND + ")" + REFERENCE + JAVA_OBJECT + TYPEEND, "allocateInstance");
     public static final Signature SUN_UNSAFE_ALLOCATEMEMORY = 
         new Signature(SUN_UNSAFE, "(" + LONG + ")" + LONG, "allocateMemory");
     public static final Signature SUN_UNSAFE_ARRAYBASEOFFSET = 
@@ -706,42 +917,90 @@ public final class Signatures {
         new Signature(SUN_UNSAFE, 
                       "(" + REFERENCE + JAVA_CLASS + TYPEEND + ARRAYOF + BYTE + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + REFERENCE + JAVA_CLASS + TYPEEND, 
                       "defineAnonymousClass");
+    public static final Signature SUN_UNSAFE_DEFINECLASS = 
+        new Signature(SUN_UNSAFE, 
+                      "(" + REFERENCE + JAVA_STRING + TYPEEND + ARRAYOF + BYTE + INT + INT + REFERENCE + JAVA_CLASSLOADER + TYPEEND + REFERENCE + JAVA_PROTECTIONDOMAIN + TYPEEND + ")" + REFERENCE + JAVA_CLASS + TYPEEND, 
+                      "defineClass");
     public static final Signature SUN_UNSAFE_FREEMEMORY = 
         new Signature(SUN_UNSAFE, "(" + LONG + ")" + VOID, "freeMemory");
     public static final Signature SUN_UNSAFE_ENSURECLASSINITIALIZED = 
         new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_CLASS + TYPEEND + ")" + VOID, "ensureClassInitialized");
+    public static final Signature SUN_UNSAFE_FULLFENCE = 
+        new Signature(SUN_UNSAFE, "()" + VOID, "fullFence");
     public static final Signature SUN_UNSAFE_GETBYTE = 
         new Signature(SUN_UNSAFE, "(" + LONG + ")" + BYTE, "getByte");
+    public static final Signature SUN_UNSAFE_GETINT = 
+    	new Signature(SUN_UNSAFE, "(" + LONG + ")" + INT, "getInt");
+    public static final Signature SUN_UNSAFE_GETINT_O = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + ")" + INT, "getInt");
     public static final Signature SUN_UNSAFE_GETINTVOLATILE = 
         new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + ")" + INT, "getIntVolatile");
     public static final Signature SUN_UNSAFE_GETLONG = 
         new Signature(SUN_UNSAFE, "(" + LONG + ")" + LONG, "getLong");
+    public static final Signature SUN_UNSAFE_GETLONG_O =
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + ")" + LONG, "getLong");
+    public static final Signature SUN_UNSAFE_GETLONGVOLATILE =
+    	new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + ")" + LONG, "getLongVolatile");
+    public static final Signature SUN_UNSAFE_GETOBJECT = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + ")" + REFERENCE + JAVA_OBJECT + TYPEEND, "getObject");
+    public static final Signature SUN_UNSAFE_PUTINT = 
+        new Signature(SUN_UNSAFE, "(" + LONG + INT + ")" + VOID, "putInt");
     public static final Signature SUN_UNSAFE_GETOBJECTVOLATILE = 
         new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + ")" + REFERENCE + JAVA_OBJECT + TYPEEND, "getObjectVolatile");
     public static final Signature SUN_UNSAFE_OBJECTFIELDOFFSET = 
         new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_FIELD + TYPEEND + ")" + LONG, "objectFieldOffset");
+    public static final Signature SUN_UNSAFE_PAGESIZE = 
+        new Signature(SUN_UNSAFE, "()" + INT, "pageSize");
+    public static final Signature SUN_UNSAFE_PARK = 
+        new Signature(SUN_UNSAFE, "(" + BOOLEAN + LONG + ")" + VOID, "park");
+    public static final Signature SUN_UNSAFE_PUTINT_O = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + INT + ")" + VOID, "putInt");
+    public static final Signature SUN_UNSAFE_PUTINTVOLATILE = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + INT + ")" + VOID, "putIntVolatile");
     public static final Signature SUN_UNSAFE_PUTLONG = 
         new Signature(SUN_UNSAFE, "(" + LONG + LONG + ")" + VOID, "putLong");
+    public static final Signature SUN_UNSAFE_PUTLONG_O = 
+    	new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + LONG + ")" + VOID, "putLong");
+    public static final Signature SUN_UNSAFE_PUTLONGVOLATILE = 
+    	new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + LONG + ")" + VOID, "putLongVolatile");
+    public static final Signature SUN_UNSAFE_PUTOBJECT = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "putObject");
     public static final Signature SUN_UNSAFE_PUTOBJECTVOLATILE = 
         new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "putObjectVolatile");
+    public static final Signature SUN_UNSAFE_PUTORDEREDINT = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + INT + ")" + VOID, "putOrderedInt");
+    public static final Signature SUN_UNSAFE_PUTORDEREDOBJECT = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + LONG + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "putOrderedObject");
     public static final Signature SUN_UNSAFE_REGISTERNATIVES =
         new Signature(SUN_UNSAFE, "()" + VOID, "registerNatives");
     public static final Signature SUN_UNSAFE_SHOULDBEINITIALIZED =
         new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_CLASS + TYPEEND + ")" + BOOLEAN, "shouldBeInitialized");
+    public static final Signature SUN_UNSAFE_STATICFIELDBASE = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_FIELD + TYPEEND + ")" + REFERENCE + JAVA_OBJECT + TYPEEND, "staticFieldBase");
+    public static final Signature SUN_UNSAFE_STATICFIELDOFFSET = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_FIELD + TYPEEND + ")" + LONG, "staticFieldOffset");
+    public static final Signature SUN_UNSAFE_UNPARK = 
+        new Signature(SUN_UNSAFE, "(" + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "unpark");
     public static final Signature SUN_URLCLASSPATH_GETLOOKUPCACHEURLS =
         new Signature(SUN_URLCLASSPATH, "(" + REFERENCE + JAVA_CLASSLOADER + TYPEEND + ")" + ARRAYOF + REFERENCE + JAVA_URL + TYPEEND, "getLookupCacheURLs");
     public static final Signature SUN_VM_INITIALIZE = 
         new Signature(SUN_VM, "()" + VOID, "initialize");
     public static final Signature SUN_WIN32ERRORMODE_SETERRORMODE = 
-            new Signature(SUN_WIN32ERRORMODE, "(" + LONG + ")" + LONG, "setErrorMode");
+        new Signature(SUN_WIN32ERRORMODE, "(" + LONG + ")" + LONG, "setErrorMode");
     public static final Signature noclass_REGISTERLOADEDCLASS =
         new Signature(null, "(" + INT + REFERENCE + JAVA_CLASSLOADER + TYPEEND + ")" + VOID, "registerLoadedClass");
+    public static final Signature noclass_REGISTERMETHODHANDLE =
+        new Signature(null, "(" + REFERENCE + JAVA_METHODHANDLE + TYPEEND + INT + REFERENCE + JAVA_CLASS + TYPEEND + 
+            REFERENCE + JAVA_STRING + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "registerMethodHandle");
     public static final Signature noclass_REGISTERMETHODTYPE =
-        new Signature(null, "(" + REFERENCE + JAVA_STRING + TYPEEND + REFERENCE + JAVA_METHODTYPE + TYPEEND + ")" + VOID, "registerMethodType");
+        new Signature(null, "(" + REFERENCE + JAVA_METHODTYPE + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "registerMethodType");
     public static final Signature noclass_SETSTANDARDCLASSLOADERSREADY =
         new Signature(null, "()" + VOID, "setStandardClassLoadersReady");
-    public static final Signature noclass_STORELINKEDMETHODANDAPPENDIX =
-        new Signature(null, "(" + REFERENCE + JAVA_STRING + TYPEEND + REFERENCE + JAVA_METHODTYPE + TYPEEND + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_MEMBERNAME + TYPEEND + ")" + VOID, "storeLinkedMethodAndAppendix");
+    public static final Signature noclass_STORELINKEDCALLSITEADAPTERANDAPPENDIX =
+        new Signature(null, "(" + REFERENCE + JAVA_MEMBERNAME + TYPEEND + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_CLASS + TYPEEND + 
+        	REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_OBJECT + TYPEEND + ")" + VOID, "storeLinkedCallSiteAdapterAndAppendix");
+    public static final Signature noclass_STORELINKEDMETHODADAPTERANDAPPENDIX =
+        new Signature(null, "(" + REFERENCE + JAVA_STRING + TYPEEND + REFERENCE + JAVA_METHODTYPE + TYPEEND + ARRAYOF + REFERENCE + JAVA_OBJECT + TYPEEND + REFERENCE + JAVA_MEMBERNAME + TYPEEND + ")" + VOID, "storeLinkedMethodAdapterAndAppendix");
     
     //field names
     public static final String ASSERTIONDISABLED_NAME = "$assertionsDisabled";
@@ -749,10 +1008,20 @@ public final class Signatures {
     //fields
     public static final Signature JAVA_ACCESSIBLEOBJECT_OVERRIDE = 
         new Signature(JAVA_ACCESSIBLEOBJECT, "" + BOOLEAN, "override");
+    public static final Signature JAVA_BOOLEAN_FALSE = 
+        new Signature(JAVA_BOOLEAN, "" + REFERENCE + JAVA_BOOLEAN + TYPEEND, "FALSE");
+    public static final Signature JAVA_BOOLEAN_TRUE = 
+        new Signature(JAVA_BOOLEAN, "" + REFERENCE + JAVA_BOOLEAN + TYPEEND, "TRUE");
     public static final Signature JAVA_BOOLEAN_VALUE = 
         new Signature(JAVA_BOOLEAN, "" + BOOLEAN, "value");
+    public static final Signature JAVA_BYTE_BYTECACHE_CACHE = 
+            new Signature(JAVA_BYTE_BYTECACHE, "" + ARRAYOF + REFERENCE + JAVA_BYTE + TYPEEND, "cache");
     public static final Signature JAVA_BYTE_VALUE = 
         new Signature(JAVA_BYTE, "" + BYTE, "value");
+    public static final Signature JAVA_CALLSITE_TARGET = 
+        new Signature(JAVA_CALLSITE, "" + REFERENCE + JAVA_METHODHANDLE + TYPEEND, "target");
+    public static final Signature JAVA_CHARACTER_CHARACTERCACHE_CACHE = 
+        new Signature(JAVA_CHARACTER_CHARACTERCACHE, "" + ARRAYOF + REFERENCE + JAVA_CHARACTER + TYPEEND, "cache");
     public static final Signature JAVA_CHARACTER_VALUE = 
         new Signature(JAVA_CHARACTER, "" + CHAR, "value");
     public static final Signature JAVA_CLASS_CLASSLOADER = 
@@ -823,8 +1092,18 @@ public final class Signatures {
         new Signature(JAVA_INFLATER, "" + INT, "off");
     public static final Signature JAVA_INFLATER_ZSREF = 
         new Signature(JAVA_INFLATER, "" + REFERENCE + JAVA_ZSTREAMREF + TYPEEND, "zsRef");
+    public static final Signature JAVA_INTEGER_INTEGERCACHE_CACHE = 
+        new Signature(JAVA_INTEGER_INTEGERCACHE, "" + ARRAYOF + REFERENCE + JAVA_INTEGER + TYPEEND, "cache");
+    public static final Signature JAVA_INTEGER_INTEGERCACHE_HIGH = 
+        new Signature(JAVA_INTEGER_INTEGERCACHE, "" + INT, "high");
+    public static final Signature JAVA_INTEGER_INTEGERCACHE_LOW = 
+        new Signature(JAVA_INTEGER_INTEGERCACHE, "" + INT, "low");
     public static final Signature JAVA_INTEGER_VALUE = 
         new Signature(JAVA_INTEGER, "" + INT, "value");
+    public static final Signature JAVA_LAMBDAFORM_VMENTRY = 
+    	new Signature(JAVA_LAMBDAFORM, "" + REFERENCE + JAVA_MEMBERNAME + TYPEEND, "vmentry");
+    public static final Signature JAVA_LONG_LONGCACHE_CACHE = 
+        new Signature(JAVA_LONG_LONGCACHE, "" + ARRAYOF + REFERENCE + JAVA_LONG + TYPEEND, "cache");
     public static final Signature JAVA_LONG_VALUE = 
         new Signature(JAVA_LONG, "" + LONG, "value");
     public static final Signature JAVA_MEMBERNAME_CLAZZ = 
@@ -853,8 +1132,20 @@ public final class Signatures {
         new Signature(JAVA_METHOD, "" + REFERENCE + JAVA_STRING + TYPEEND, "signature");
     public static final Signature JAVA_METHOD_SLOT = 
         new Signature(JAVA_METHOD, "" + INT, "slot");
+    public static final Signature JAVA_METHODHANDLE_FORM = 
+        new Signature(JAVA_METHODHANDLE, "" + REFERENCE + JAVA_LAMBDAFORM + TYPEEND, "form");
     public static final Signature JAVA_METHODTYPE_METHODDESCRIPTOR = 
         new Signature(JAVA_METHODTYPE, "" + REFERENCE + JAVA_STRING + TYPEEND, "methodDescriptor");
+    public static final Signature JAVA_PARAMETER_EXECUTABLE =
+        new Signature(JAVA_PARAMETER, "" + REFERENCE + JAVA_EXECUTABLE + TYPEEND, "executable");
+    public static final Signature JAVA_PARAMETER_INDEX =
+        new Signature(JAVA_PARAMETER, "" + INT, "index");
+    public static final Signature JAVA_PARAMETER_MODIFIERS =
+        new Signature(JAVA_PARAMETER, "" + INT, "modifiers");
+    public static final Signature JAVA_PARAMETER_NAME =
+        new Signature(JAVA_PARAMETER, "" + REFERENCE + JAVA_STRING + TYPEEND, "name");
+    public static final Signature JAVA_SHORT_SHORTCACHE_CACHE = 
+        new Signature(JAVA_SHORT_SHORTCACHE, "" + ARRAYOF + REFERENCE + JAVA_SHORT + TYPEEND, "cache");
     public static final Signature JAVA_SHORT_VALUE = 
         new Signature(JAVA_SHORT, "" + SHORT, "value");
     public static final Signature JAVA_STACKTRACEELEMENT_DECLARINGCLASS = 
@@ -996,5 +1287,4 @@ public final class Signatures {
     private Signatures() {
         //intentionally empty
     }
-
 }
