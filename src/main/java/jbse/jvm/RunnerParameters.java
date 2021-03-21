@@ -722,14 +722,14 @@ public final class RunnerParameters implements Cloneable {
     /**
      * Sets the signature of the method which must be symbolically executed, 
      * and cancels the effect of any previous call to {@link #setStartingState(State)}.
-     *
+     * 
      * @param className the name of the class containing the method.
      * @param descriptor the descriptor of the method.
      * @param name the name of the method. 
      * @throws NullPointerException if any of the above parameters is {@code null}.
      */
-    public void setMethodSignature(String className, String descriptor, String name) {
-        this.engineParameters.setMethodSignature(className, descriptor, name);
+    public void setMethodSignature(String className, String descriptor, String name) { 
+        this.engineParameters.setMethodSignature(className, descriptor, name); 
     }
 
     /**

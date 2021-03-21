@@ -33,8 +33,8 @@ public final class ReferenceSymbolicMemberMapValue extends ReferenceSymbolicMemb
      * @param key a {@link Reference}, the key of the entry in the 
      *        container map this symbol originates from. It must not be {@code null}.
      * @param historyPoint the current {@link HistoryPoint}.
-     * @param id an {@link int}, the identifier of the symbol. Different
-     *        objects with same identifiers will be treated as equal.
+     * @param id an {@link int}, the identifier of the symbol. Used only
+     *        in the toString representation of the symbol.
      * @throws InvalidTypeException never.
      * @throws InvalidInputException if {@code key == null || historyPoint == null}.
      * @throws NullPointerException if {@code container == null}.
@@ -47,7 +47,7 @@ public final class ReferenceSymbolicMemberMapValue extends ReferenceSymbolicMemb
     	
     	this.key = key;
     	this.historyPoint = historyPoint;
-    	this.asOriginString = getContainer().asOriginString() + "::GET(" + (this.key.isSymbolic() ? ((Symbolic) this.key).asOriginString() : this.key.toString()) + "@" + historyPoint.toString() + ")";
+    	this.asOriginString = getContainer().asOriginString() + "::GET[" + (this.key.isSymbolic() ? ((Symbolic) this.key).asOriginString() : this.key.toString()) + "@" + historyPoint.toString() + "]";
 
     	//calculates hashCode
 		final int prime = 131071;

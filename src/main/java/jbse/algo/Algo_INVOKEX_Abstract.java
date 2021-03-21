@@ -10,8 +10,12 @@ import static jbse.algo.Util.throwNew;
 import static jbse.bc.ClassLoaders.CLASSLOADER_APP;
 import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
 import static jbse.bc.Signatures.INCOMPATIBLE_CLASS_CHANGE_ERROR;
+import static jbse.bc.Signatures.JAVA_OBJECT;
 import static jbse.bc.Signatures.NO_SUCH_METHOD_ERROR;
 import static jbse.bc.Signatures.NULL_POINTER_EXCEPTION;
+import static jbse.common.Type.REFERENCE;
+import static jbse.common.Type.TYPEEND;
+import static jbse.common.Type.isArray;
 import static jbse.common.Type.parametersNumber;
 
 import java.util.function.Supplier;
@@ -19,7 +23,6 @@ import java.util.function.Supplier;
 import jbse.algo.exc.BaseUnsupportedException;
 import jbse.algo.exc.CannotManageStateException;
 import jbse.algo.exc.MetaUnsupportedException;
-import jbse.algo.exc.NotYetImplementedException;
 import jbse.bc.ClassFile;
 import jbse.bc.ClassHierarchy;
 import jbse.bc.Signature;
@@ -38,6 +41,7 @@ import jbse.common.exc.ClasspathException;
 import jbse.common.exc.InvalidInputException;
 import jbse.mem.State;
 import jbse.mem.exc.FrozenStateException;
+import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.tree.DecisionAlternative_NONE;
 import jbse.val.Reference;
@@ -95,9 +99,12 @@ StrategyUpdate<DecisionAlternative_NONE>> {
             //signature with no class: skips resolution
             this.methodResolvedClass = null;
         } else {
-            this.methodResolvedClass = state.getClassHierarchy().resolveMethod(currentClass, this.data.signature(), this.isInterface, state.bypassStandardLoading());
+            this.methodResolvedClass = state.getClassHierarchy().resolveMethod(currentClass, this.data.signature(), this.data.interfaceMethodSignature(), state.bypassStandardLoading());
         }
     }
+    
+    private static final String JAVA_OBJECT_CLONE_DESCRIPTOR = "()" + REFERENCE + JAVA_OBJECT + TYPEEND;
+    private static final String JAVA_OBJECT_CLONE_NAME = "clone";
     
     protected final void check(State state) 
     throws InterruptException, CannotManageStateException, ClasspathException, ThreadStackEmptyException, FrozenStateException {
@@ -210,9 +217,14 @@ StrategyUpdate<DecisionAlternative_NONE>> {
                 }
                 
                 //second run-time exception (identical to second run-time exception of invokespecial case)
+                //here we must exclude the case of the java.lang.Object.clone() method when invoked on 
+                //an array class, in which case it must be considered as it were public
                 final ClassFile currentClass = state.getCurrentClass();
-                if (this.methodResolvedClass.isMethodProtected(this.data.signature()) &&
-                	currentClass.isSubclass(this.methodResolvedClass)) {
+                final boolean methodResolvedIsProtected = this.methodResolvedClass.isMethodProtected(this.data.signature());
+                final boolean methodSignatureClassIsArray = isArray(this.data.signature().getClassName());
+                final boolean methodSignatureIsClone = (JAVA_OBJECT_CLONE_DESCRIPTOR.equals(this.data.signature().getDescriptor()) && JAVA_OBJECT_CLONE_NAME.equals(this.data.signature().getName()));
+                final boolean methodSignatureIsArrayClone = methodSignatureClassIsArray && methodSignatureIsClone;
+                if (methodResolvedIsProtected && !methodSignatureIsArrayClone && currentClass.isSubclass(this.methodResolvedClass)) {
                     final boolean sameRuntimePackage = (currentClass.getDefiningClassLoader() == this.methodResolvedClass.getDefiningClassLoader() && currentClass.getPackageName().equals(this.methodResolvedClass.getPackageName()));
                     final ClassFile receiverClass = state.getObject(receiver).getType();                    
                     if (!sameRuntimePackage && !receiverClass.isSubclass(currentClass)) {
@@ -274,26 +286,29 @@ StrategyUpdate<DecisionAlternative_NONE>> {
     }
 
     protected final void findOverridingImpl(State state)
-    throws BaseUnsupportedException, MetaUnsupportedException, NotYetImplementedException, InterruptException, 
+    throws BaseUnsupportedException, MetaUnsupportedException, InterruptException, 
     ClasspathException, ThreadStackEmptyException, InvalidInputException {
         if (this.methodImplSignature == null || this.isMethodImplSignaturePolymorphic) {
             return; //no implementation to override, or method is signature polymorphic (cannot be overridden!)
         }
         
-        final Signature methodSignatureOverriding = lookupMethodImplOverriding(state, this.ctx, this.methodImplClass, this.methodImplSignature, this.isInterface, this.isSpecial, this.isStatic, this.isMethodImplNative);
-        if (methodSignatureOverriding == null) {
-            return;
-        }
-
         try {
+        	final Signature methodSignatureOverriding = lookupMethodImplOverriding(state, this.ctx, this.methodImplClass, this.methodImplSignature, this.isInterface, this.isSpecial, this.isStatic, this.isMethodImplNative, false);
+        	if (methodSignatureOverriding == null) {
+        		return;
+        	}
+
             final ClassHierarchy hier = state.getClassHierarchy();
-            final ClassFile classFileMethodOverriding = hier.getClassFileClassArray(CLASSLOADER_APP, methodSignatureOverriding.getClassName());
+            final ClassFile classFileMethodOverriding = hier.getClassFileClassArray(CLASSLOADER_APP, methodSignatureOverriding.getClassName()); //if lookup of overriding method succeeded, the class is surely loaded
             checkOverridingMethodFits(state, this.methodImplClass, this.methodImplSignature, classFileMethodOverriding, methodSignatureOverriding);
             this.methodImplClass = classFileMethodOverriding;
             this.methodImplSignature = methodSignatureOverriding;
             this.isMethodImplSignaturePolymorphic = this.methodImplClass.isMethodSignaturePolymorphic(this.methodImplSignature);
         } catch (MethodNotFoundException e) {
             throw new BaseUnsupportedException(e);
-        }
+        } catch (InvalidNumberOfOperandsException e) {
+			//this should never happen
+			failExecution(e);
+		}
     }
 }
