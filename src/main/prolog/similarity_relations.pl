@@ -209,3 +209,52 @@ mset_invokes([M|Ms],Is) :-
   I = invokes(_,_,_,_,_,_,_,M,_),
   selectchk(I,Is,Is1),
   mset_invokes(Ms,Is1).
+
+% MODE: filter(+Xs,+Filter,+XArgs,+YName, -Ys)
+% NOTATION: Given a list L, we denote by L[i] the i-th element of L.
+% SEMANTICS: filter(Xs,Filter,XArgs,YName, Ys) holds if
+% Xs is a list of atoms XName/XArity
+% Filter is a list of triples of the form (Pred,ArgP,Pars), where:
+%   Pred is a user defined predicate
+%   ArgP is an integer between 1 and XArity
+%   Pars is a list of parameters
+% XArgs is a list of integers between 1 and XArity
+% YName is a functor name
+% Ys is a list of atoms of the form YName(A1,...,An) s.t.
+% there exists an atom X in Xs satisfying the following conditions:
+%   - for all i in 1,...,n. Ai is the argument of X at position XArgs[i]
+%   - for all (Pred,ArgP,Pars) in Filter.
+%       Par is the argument of X at position ArgP and Pred(Par,Pars) holds
+filter([],_Filter,_XArgs,_YName, []).
+filter([X|Xs],Filter,XArgs,YName, [Y|Ys]) :-
+  satisfy(X,Filter),
+  !,
+  project(X,XArgs, YArgs),
+  Y =.. [YName|YArgs],
+  filter(Xs,Filter,XArgs,YName, Ys).
+filter([_|Xs],Filter,XArgs,YName, Ys) :-
+  filter(Xs,Filter,XArgs,YName, Ys).
+
+% MODE: satisfy(+X,+Ps)
+% SEMANTICS: satisfy(X,Ps) holds if for all (Pred,ArgP,Pars) in Ps.
+% Par is the argument of X at position ArgP and Pred(Par,Pars) holds
+satisfy(_,[]).
+satisfy(X,[P|Ps]) :-
+  P = (Pred,ArgP,Pars),
+  arg(ArgP,X,Par),
+  F =.. [Pred,Par|Pars],
+  call(F),
+  satisfy(X,Ps).
+
+% MODE: project(+X,+XArgs, -XVals)
+% SEMANTICS: project(X,XArgs, XVals) holds if
+% for all i. XVals[i] is the argument of X at position XArgs[i]
+project(_,[], []).
+project(X,[XArg|XArgs], [XVal|XVals]) :-
+  arg(XArg,X,XVal),
+  project(X,XArgs, XVals).
+
+% SEMANTICS: S is a subatom of A
+% (https://www.swi-prolog.org/pldoc/doc_for?object=sub_atom/5)
+sub_atom(A,S) :-
+  sub_atom(A,_,_,_,S).
