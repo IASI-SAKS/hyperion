@@ -210,10 +210,11 @@ mset_invokes([M|Ms],Is) :-
   selectchk(I,Is,Is1),
   mset_invokes(Ms,Is1).
 
-% MODE: filter(+Xs,+Filter,+XArgs,+YName, -Ys)
+% MODE: filter(+Xs,+XSchema,+Filter,+XArgs,+YName, -Ys)
 % NOTATION: Given a list L, we denote by L[i] the i-th element of L.
-% SEMANTICS: filter(Xs,Filter,XArgs,YName, Ys) holds if
+% SEMANTICS: filter(Xs,XSchema,Filter,XArgs,YName, Ys) holds if
 % Xs is a list of atoms XName/XArity
+% XSchema is a ground term with functor XName/XArity
 % Filter is a list of triples of the form (Pred,ArgP,Pars), where:
 %   Pred is a user defined predicate
 %   ArgP is an integer between 1 and XArity
@@ -225,36 +226,64 @@ mset_invokes([M|Ms],Is) :-
 %   - for all i in 1,...,n. Ai is the argument of X at position XArgs[i]
 %   - for all (Pred,ArgP,Pars) in Filter.
 %       Par is the argument of X at position ArgP and Pred(Par,Pars) holds
-filter([],_Filter,_XArgs,_YName, []).
-filter([X|Xs],Filter,XArgs,YName, [Y|Ys]) :-
-  satisfy(X,Filter),
+filter([],_XSchema,_Filter,_XArgs,_YName, []).
+filter([X|Xs],XSchema,Filter,XArgs,YName, [Y|Ys]) :-
+  satisfy(X,XSchema,Filter),
   !,
-  project(X,XArgs, YArgs),
+  eval_proj_func(XArgs,XSchema,X, YArgs),
   Y =.. [YName|YArgs],
-  filter(Xs,Filter,XArgs,YName, Ys).
-filter([_|Xs],Filter,XArgs,YName, Ys) :-
-  filter(Xs,Filter,XArgs,YName, Ys).
+  filter(Xs,XSchema,Filter,XArgs,YName, Ys).
+filter([_|Xs],XSchema,Filter,XArgs,YName, Ys) :-
+  filter(Xs,XSchema,Filter,XArgs,YName, Ys).
 
 % MODE: satisfy(+X,+Ps)
 % SEMANTICS: satisfy(X,Ps) holds if for all (Pred,ArgP,Pars) in Ps.
 % Par is the argument of X at position ArgP and Pred(Par,Pars) holds
-satisfy(_,[]).
-satisfy(X,[P|Ps]) :-
-  P = (Pred,ArgP,Pars),
-  arg(ArgP,X,Par),
-  F =.. [Pred,Par|Pars],
+satisfy(_X,_XSchema,[]).
+satisfy(X,XSchema,[P|Ps]) :-
+  P =.. [Pred,Name|Pars],
+  arg(I,XSchema,Name),
+  arg(I,X,XVal),
+  F =.. [Pred,XVal|Pars],
   call(F),
-  satisfy(X,Ps).
+  satisfy(X,XSchema,Ps).
 
-% MODE: project(+X,+XArgs, -XVals)
-% SEMANTICS: project(X,XArgs, XVals) holds if
-% for all i. XVals[i] is the argument of X at position XArgs[i]
-project(_,[], []).
-project(X,[XArg|XArgs], [XVal|XVals]) :-
-  arg(XArg,X,XVal),
-  project(X,XArgs, XVals).
+% MODE: eval_proj_func(+F,+XSchema,+X, -XVals)
+% SEMANTICS: XVals is the result of applying F to X.
+eval_proj_func(F,XSchema,X, XVal) :-
+  arg(I,XSchema,F),
+  !,
+  arg(I,X,XVal).
+eval_proj_func([],_XSchema,_X, []).
+eval_proj_func([F|Fs],XSchema,X, [XVal|XVals]) :-
+  eval_proj_func(F,XSchema,X, XVal),
+  eval_proj_func(Fs,XSchema,X, XVals).
+eval_proj_func(F,XSchema,X, XVal) :-
+  \+ is_list(F),
+  F =.. [P|As],
+  eval_proj_func(As,XSchema,X, Es),
+  G =.. [P|Es],
+  call(G,XVal).
 
-% SEMANTICS: S is a subatom of A
-% (https://www.swi-prolog.org/pldoc/doc_for?object=sub_atom/5)
-sub_atom(A,S) :-
+
+% user defined predicates to be used in filter/6
+subStr(A,S) :-
+  % (https://www.swi-prolog.org/pldoc/doc_for?object=sub_atom/5)
   sub_atom(A,_,_,_,S).
+
+nthSubStr(L,I,S) :-
+  nth1(I,L,E),
+  subStr(E,S).
+
+head([H|_],H).
+
+httpMethod(A,H) :-
+  member(H,['get','post','put','delete']),
+  atom_concat('MockMvcRequestBuilders:',H,M),
+  sub_atom(A,_,_,_,M).
+
+javaMethod(A,M) :-
+  atom_chars(A,C),
+  append(_,[:|L],C),
+  !,
+  atom_chars(M,L).
