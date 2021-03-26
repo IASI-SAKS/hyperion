@@ -41,7 +41,7 @@ java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path
 
 Format for the statement `invokes` in files like [this one](src/test/resources/inspection-2020-12-03T11:33Z.pl):
 ```
-invokes(test name, branch point, branch sequence number, caller, callerProgramCounter, frameEpoch, path condition, callee, parameters)
+invokes(testName, branchPoint, branchSequenceNumber, caller, callerProgramCounter, frameEpoch, pathCondition, callee, parameters)
 ```
 
 ## Playing with Prolog
@@ -55,7 +55,7 @@ consult('src/main/prolog/similarity_relations.pl').
 To get a maximal sequence of direct invocations `MSeq` performed by a caller `M` in the test program `TP`:
 
 ```prolog
-maximalInvokeSequence(TP,M,ISeq), callees(ISeq,MSeq).
+maximalInvokeSequence(TP,M,ISeq), invokes_callees(ISeq,MSeq).
 ```
 (`ISeq` is a list of `invokes`).
 

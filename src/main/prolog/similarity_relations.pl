@@ -1,47 +1,18 @@
 :- set_prolog_flag(character_escapes,false).
 
-%% Checking similarity of test programs
-check_sim(Src) :-
-  retractall(invokes(_,_,_,_,_,_,_,_,_)),
-  consult(Src),
-  % S is the set of Test Programs
-  setof(TP, [A,B,C,D,E,F,G,H]^invokes(TP,A,B,C,D,E,F,G,H), S),
-  member(Sim,[sub_set_of_invoked_methods,
-              eq_set_of_invoked_methods]),
-  % SelTP is the Test Program selected program from S and R is S \ {SelTP}
-  select(SelTP,S,R),
-  nl, write('Checking '), write(Sim), write(' between  '), write(SelTP), write('  and '), nl,
-  % checks Sim between SelTP and all test programs in R
-  check_sim_all(SelTP,Sim,R),
-  fail.
-check_sim(_Src) :-
-  nl, write('done!').
-
-check_sim_all(_,_,[]).
-check_sim_all(SelTP,Sim,[TP|TPs]) :-
-  write(' '), write(TP), write(' '),
-  ( call(Sim,SelTP,TP) -> write('PASS'); write('FAIL') ), nl,
-  check_sim_all(SelTP,Sim,TPs).
-
-% MODE: invoked_methods(+TP,?L)
-% SEMANTICS: L is the list of methods invoked by the test program TP
 % invokes/9 semantics
 % invokes(
-% 1 test name,
-% 2 branch point,
-% 3 branch sequence number,
+% 1 testName,
+% 2 branchPoint,
+% 3 branchSequenceNumber,
 % 4 caller,
 % 5 callerProgramCounter,
 % 6 frameEpoch,
-% 7 path condition,
+% 7 pathCondition,
 % 8 callee,
 % 9 parameters)
-invoked_methods(TP,L) :-
-  % L is the list of all the instances of M for which
-  % invoke(TP,_,_,_,_,_,_,M,_) succeeds
-  findall(M, invokes(TP,_,_,_,_,_,_,M,_), L).
 
-% SIMILARITY relations ---------------------------------------------------------
+%% SIMILARITY RELATION ---------------------------------------------------------
 % MODE: sub_set_of_invoked_methods(+TP1,+TP2)
 % SEMANTICS: sub_set_of_invoked_methods(+TP1,+TP2) holds if all methods invoked
 % by TP1 are invoked by TP2.
@@ -50,13 +21,6 @@ sub_set_of_invoked_methods(TP1,TP2) :-
   !,
   fail.
 sub_set_of_invoked_methods(_TP1,_TP2).
-
-% MODE: eq_set_of_invoked_methods(+TP1,+TP2)
-% SEMANTICS: eq_set_of_invoked_methods(+TP1,+TP2) holds if TP1 and TP2 invoke
-% the same set of methods.
-eq_set_of_invoked_methods(TP1,TP2) :-
-  sub_set_of_invoked_methods(TP1,TP2),
-  sub_set_of_invoked_methods(TP2,TP1).
 
 % MODE: exists_method_not_invoked(+TP1,+TP2)
 % SEMANTICS: there exists a method M invoked by TP1 that is not invoked by TP2
@@ -69,33 +33,64 @@ exists_method_not_invoked(TP1,TP2) :-
 tp_invokes_m(TP,M) :-
   invokes(TP,_,_,_,_,_,_,M,_).
 
-% MODE: eq_set_maximalInvokeSequence(+TP1,+TP2,+Caller)
-% SEMANTICS: eq_set_maximalInvokeSequence(TP1,TP2,Caller) holds if the set of
-% maximal sequences of direct invocations performed by Caller in TP1 is the same
-% as the set of maximal sequences of direct invocations performed by Caller in TP2
+%% SIMILARITY RELATION ---------------------------------------------------------
+% MODE: eq_set_of_invoked_methods(+TP1,+TP2)
+% SEMANTICS: eq_set_of_invoked_methods(+TP1,+TP2) holds if TP1 and TP2 invoke
+% the same set of methods.
+eq_set_of_invoked_methods(TP1,TP2) :-
+  sub_set_of_invoked_methods(TP1,TP2),
+  sub_set_of_invoked_methods(TP2,TP1).
+
+%% SIMILARITY RELATION ---------------------------------------------------------
+% MODE: sub_set_of_maximalInvokeSequences(+TP1,+TP2,+Caller)
+% SEMANTICS: sub_set_of_maximalInvokeSequences(TP1,TP2,Caller) holds if
+% the set of maximal sequences of direct invocations performed by Caller in TP1
+% is a subset of those performed by Caller in TP2
 % (library(ordsets): https://www.swi-prolog.org/pldoc/man?section=ordsets)
-eq_set_maximalInvokeSequence(TP1,TP2,Caller) :-
-  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), callees(ISeq,MSeq)), MSeq1Lst),
-  findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), callees(ISeq,MSeq)), MSeq2Lst),
+sub_set_of_maximalInvokeSequences(TP1,TP2,Caller) :-
+  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
   list_to_ord_set(MSeq1Lst,S1), % library(ordsets) predicate
+  ( ord_empty(S1) ->
+    true
+  ; (
+      findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
+      list_to_ord_set(MSeq2Lst,S2),
+      ord_subset(S1,S2)          % library(ordsets) predicate
+    )
+  ).
+
+% MODE: eq_set_of_maximalInvokeSequences(+TP1,+TP2,+Caller)
+% SEMANTICS: eq_set_of_maximalInvokeSequences(TP1,TP2,Caller) holds if
+% the set of maximal sequences of direct invocations performed by Caller in TP1 and
+% the set of maximal sequences of direct invocations performed by Caller in TP2
+% have the same elements
+eq_set_of_maximalInvokeSequences(TP1,TP2,Caller) :-
+  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
+  list_to_ord_set(MSeq1Lst,S1),
+  findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
   list_to_ord_set(MSeq2Lst,S2),
   ord_seteq(S1,S2).             % library(ordsets) predicate
 
-% ------------------------------------------------------------------------------
-% SEMANTICS: invokeSequence(TP,Caller,ISeq)
-% ISeq is a sequence of direct invocations performed by Caller in TP
-invokeSequence(TP,Caller,ISeq) :-
-  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  iseq(Invokes,ISeq).
-
 % SEMANTICS: maximalInvokeSequence(TP,Caller,ISeq)
 % ISeq is a maximal sequence of direct invocations performed by Caller in TP
-maximalInvokeSequence(TP,Caller,ISeq) :-
-  method_first_invokes(TP,Caller,FirstInvokes),
-  method_last_invokes(TP,Caller,LastInvokes),
-  FirstInvokes \= LastInvokes, % sequences with at least two method invocations
-  iseq(FirstInvokes,ISeq),
-  append([FirstInvokes|_],[LastInvokes],ISeq).
+maximalInvokeSequence(TP,Caller,[FirstInvokes|ISeqTail]) :-
+  first_invokes(TP,Caller,FirstInvokes),
+  last_invokes(TP,Caller,LastInvokes),
+  iseq(FirstInvokes,[FirstInvokes|ISeqTail]),
+  last(ISeqTail,LastInvokes).
+
+% Invokes is the first invocation performed by Caller in TP
+first_invokes(TP,Caller,Invokes) :-
+  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
+  \+ exists_preceeding_invokes(Invokes).
+% first_invokes utility predicate
+exists_preceeding_invokes(Invokes) :- next(_,Invokes).
+% Invokes is the last invocation performed by Caller in TP
+last_invokes(TP,Caller,Invokes) :-
+  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
+  \+ exists_succeeding_invokes(Invokes).
+% last_invokes utility predicate
+exists_succeeding_invokes(Invokes) :- next(Invokes,_).
 
 % SEMANTICS: iseq(I,ISeq)
 % ISeq is a sequence of invocations performed by Caller in TP starting from I
@@ -148,22 +143,189 @@ exists_intermediate_invokes(Invokes1,Invokes2) :-
     ( Infix = [], SN < SN2 ) % (b.2.2)
   ).
 
-% Invokes is the first invocation performed by Caller in TP
-method_first_invokes(TP,Caller,Invokes) :-
-  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  \+ exists_preceeding_invokes(Invokes).
-% method_first_invokes utility predicate
-exists_preceeding_invokes(Invokes) :- next(_,Invokes).
-% Invokes is the last invocation performed by Caller in TP
-method_last_invokes(TP,Caller,Invokes) :-
-  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  \+ exists_succeeding_invokes(Invokes).
-% method_last_invokes utility predicate
-exists_succeeding_invokes(Invokes) :- next(Invokes,_).
+% SEMANTICS: invokeSequence(TP,Caller,ISeq)
+% ISeq is a sequence of direct invocations performed by Caller in TP
+invokeSequence(TP,Caller,ISeq) :-
+  maximalInvokeSequence(TP,Caller,MSeq),
+  ISeq=[_,_|_], % subsequences with at least two methods
+  prefix(ISeq,MSeq).
 
-% SEMANTICS: callees(Is,Ms)
-% Ms is the list of calee occurring in the list of invokes Is
-callees([],[]).
-callees([I|Is],[M|Ms]) :-
+% Utility predicates -----------------------------------------------------------
+% MODE: testPrograms(-TPs)
+% SEMANTICS: TPs is the set of executed Test Programs
+testPrograms(TPs) :-
+  setof(TP, [B,C,D,E,F,G,H,I]^invokes(TP,B,C,D,E,F,G,H,I), TPs).
+
+% MODE: callers(-Cs)
+% SEMANTICS: Cs is the set of callers occurring in the symbolic execution
+callers(Cs) :-
+  setof(Caller, [A,B,C,E,F,G,H,I]^invokes(A,B,C,Caller,E,F,G,H,I), Cs).
+
+% MODE: tp_callers(+TP,-Cs)
+% SEMANTICS: Cs is the set of callers occurring in the symbolic execution of TP
+tp_callers(TP,Cs) :-
+  setof(Caller, [B,C,E,F,G,H,I]^invokes(TP,B,C,Caller,E,F,G,H,I), Cs).
+
+% MODE: invokes_callers(+Is,-Cs)
+% SEMANTICS: Cs is the list of callers occurring in the list of invokes Is
+invokes_callers([],[]).
+invokes_callers([I|Is],[C|Cs]) :-
+  I = invokes(_,_,_,C,_,_,_,_,_),
+  invokes_callers(Is,Cs).
+
+% MODE: callees(?Cs)
+% SEMANTICS: Cs is the set of callees occurring in the symbolic execution
+callees(Cs) :-
+  setof(Callee, [A,B,C,D,E,F,G,I]^invokes(A,B,C,D,E,F,G,Callee,I), Cs).
+
+% MODE: tp_callees(+TP,-Cs)
+% SEMANTICS: Cs is the set of callees occurring in the symbolic execution of TP
+tp_callees(TP,Cs) :-
+  setof(Callee, [B,C,D,E,F,G,I]^invokes(TP,B,C,D,E,F,G,Callee,I), Cs).
+
+% MODE: invokes_callees(+Is,-Cs)
+% SEMANTICS: Cs is the list of callees occurring in the list of invokes Is
+invokes_callees([],[]).
+invokes_callees([I|Is],[C|Cs]) :-
+  I = invokes(_,_,_,_,_,_,_,C,_),
+  invokes_callees(Is,Cs).
+
+% SEMANTICS: mseq_invokes(Ms,Is) holds if Ms is a list of the form [M1,...,Mk],
+% and I is a list of invokes of length k s.t. for i=1,...,k Mi is the callee
+% method of Ii, and I can be obtained by deleting zero or more invokes from Is.
+mseq_invokes([],_).
+mseq_invokes([M|Ms],[I|Is]) :-
   I = invokes(_,_,_,_,_,_,_,M,_),
-  callees(Is,Ms).
+  mseq_invokes(Ms,Is).
+mseq_invokes([M|Ms],[_|Is]) :-
+  mseq_invokes([M|Ms],Is).
+
+% SEMANTICS: mset_invokes(Ms,Is) holds if Ms is a list of the form [M1,...,Mk],
+% and I is a list of invokes of length k s.t. for i=1,...,k Mi is the callee
+% method of Ii and Ii is a member of Is.
+% ASSUMPTION: Ms is a list of distinct elements.
+mset_invokes([],_).
+mset_invokes([M|Ms],Is) :-
+  I = invokes(_,_,_,_,_,_,_,M,_),
+  selectchk(I,Is,Is1),
+  mset_invokes(Ms,Is1).
+
+% MODE: filter(+Xs,+XSchema,+Filter,+XArgs,+YName, -Ys)
+% NOTATION: Given a list L, we denote by L[i] the i-th element of L.
+% SEMANTICS: filter(Xs,XSchema,Filter,XArgs,YName, Ys) holds if
+% Xs is a list of atoms XName/XArity
+% XSchema is a ground term with functor XName/XArity
+% Filter is a list of triples of the form (Pred,ArgP,Pars), where:
+%   Pred is a user defined predicate
+%   ArgP is an integer between 1 and XArity
+%   Pars is a list of parameters
+% XArgs is a list of integers between 1 and XArity
+% YName is a functor name
+% Ys is a list of atoms of the form YName(A1,...,An) s.t.
+% there exists an atom X in Xs satisfying the following conditions:
+%   - for all i in 1,...,n. Ai is the argument of X at position XArgs[i]
+%   - for all (Pred,ArgP,Pars) in Filter.
+%       Par is the argument of X at position ArgP and Pred(Par,Pars) holds
+filter([],_XSchema,_Filter,_XArgs,_YName, []).
+filter([X|Xs],XSchema,Filter,XArgs,YName, [Y|Ys]) :-
+  satisfy(X,XSchema,Filter),
+  !,
+  eval_proj_func(XArgs,XSchema,X, YArgs),
+  Y =.. [YName|YArgs],
+  filter(Xs,XSchema,Filter,XArgs,YName, Ys).
+filter([_|Xs],XSchema,Filter,XArgs,YName, Ys) :-
+  filter(Xs,XSchema,Filter,XArgs,YName, Ys).
+
+% MODE: satisfy(+X,+Ps)
+% SEMANTICS: satisfy(X,Ps) holds if for all (Pred,ArgP,Pars) in Ps.
+% Par is the argument of X at position ArgP and Pred(Par,Pars) holds
+satisfy(_X,_XSchema,[]).
+satisfy(X,XSchema,[P|Ps]) :-
+  P =.. [Pred,Name|Pars],
+  arg(I,XSchema,Name),
+  arg(I,X,XVal),
+  F =.. [Pred,XVal|Pars],
+  call(F),
+  satisfy(X,XSchema,Ps).
+
+% MODE: eval_proj_func(+F,+XSchema,+X, -XVals)
+% SEMANTICS: XVals is the result of applying F to X.
+eval_proj_func(F,XSchema,X, XVal) :-
+  arg(I,XSchema,F),
+  !,
+  arg(I,X,XVal).
+eval_proj_func([],_XSchema,_X, []).
+eval_proj_func([F|Fs],XSchema,X, [XVal|XVals]) :-
+  eval_proj_func(F,XSchema,X, XVal),
+  eval_proj_func(Fs,XSchema,X, XVals).
+eval_proj_func(F,XSchema,X, XVal) :-
+  \+ is_list(F),
+  F =.. [P|As],
+  eval_proj_func(As,XSchema,X, Es),
+  G =.. [P|Es],
+  call(G,XVal).
+
+%%% user defined predicates to be used as 3rd argument of filter/6
+% MODE: isSubAtom(+A,+S)
+% SEMANTICS: S is a subatom of A.
+isSubAtom(A,S) :-
+  % (https://www.swi-prolog.org/pldoc/doc_for?object=sub_atom/5)
+  sub_atom(A,_,_,_,S).
+
+% MODE: isNthSubAtom(+L,+I,+S)
+% SEMANTICS: L at position I is an atom A and S is a subatom of A.
+isNthSubAtom(L,I,S) :-
+  nth1(I,L,A),
+  subStr(A,S).
+
+% MODE: isHttpMethod(+A)
+% SEMANTICS: A is an atom and MockMvcRequestBuilders:M,
+% with M in {get,post,put,delete}, is a sub-atom of A.
+isHttpMethod(A) :-
+  member(H,['get','post','put','delete']),
+  atom_concat('MockMvcRequestBuilders:',H,M),
+  sub_atom(A,_,_,_,M).
+
+%%% user defined predicates to be used as 4th argument of filter/6
+% MODE: head(+L,-H)
+% SEMANTICS:
+% if   L is a nonempty list,
+% then H is the head of L
+head(L,H) :-
+  nonvar(L),
+  L=[H|_],
+  !.
+% else H is bound to the atom domain_error/1
+head(L,domain_error(empty_list)) :-
+  nonvar(L),
+  L=[],
+  !.
+head(_,domain_error(not_a_list)).
+
+% MODE: httpMethod(+A,-H)
+% SEMANTICS:
+% if   A is bound to an atom and MockMvcRequestBuilders:M,
+%      with M in {get,post,put,delete}, is a sub-atom of A,
+% then H is bound to M
+httpMethod(A,H) :-
+  nonvar(A),
+  member(M,['get','post','put','delete']),
+  atom_concat('MockMvcRequestBuilders:',M,S),
+  isSubAtom(A,S),
+  !,
+  H=M.
+% else H is bound to the atom domain_error/1
+httpMethod(_,domain_error(not_a_http_method)).
+
+% MODE: method(+A,-M)
+% SEMANTICS:
+% if   A is bound to an atom of the form _:S:_,
+% then M is bound to S
+method(A,M) :-
+  nonvar(A),
+  atom_chars(A,C),
+  append(_,[:|L],C), append(S,[:|_],L),
+  atom_chars(M,S),
+  !.
+% else M is bound to the atom domain_error/1
+method(_,domain_error(not_a_method)).
