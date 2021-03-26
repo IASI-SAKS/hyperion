@@ -2,13 +2,13 @@
 
 % invokes/9 semantics
 % invokes(
-% 1 test name,
-% 2 branch point,
-% 3 branch sequence number,
+% 1 testName,
+% 2 branchPoint,
+% 3 branchSequenceNumber,
 % 4 caller,
 % 5 callerProgramCounter,
 % 6 frameEpoch,
-% 7 path condition,
+% 7 pathCondition,
 % 8 callee,
 % 9 parameters)
 
@@ -265,25 +265,67 @@ eval_proj_func(F,XSchema,X, XVal) :-
   G =.. [P|Es],
   call(G,XVal).
 
-
-% user defined predicates to be used in filter/6
-subStr(A,S) :-
+%%% user defined predicates to be used as 3rd argument of filter/6
+% MODE: isSubAtom(+A,+S)
+% SEMANTICS: S is a subatom of A.
+isSubAtom(A,S) :-
   % (https://www.swi-prolog.org/pldoc/doc_for?object=sub_atom/5)
   sub_atom(A,_,_,_,S).
 
-nthSubStr(L,I,S) :-
-  nth1(I,L,E),
-  subStr(E,S).
+% MODE: isNthSubAtom(+L,+I,+S)
+% SEMANTICS: L at position I is an atom A and S is a subatom of A.
+isNthSubAtom(L,I,S) :-
+  nth1(I,L,A),
+  subStr(A,S).
 
-head([H|_],H).
-
-httpMethod(A,H) :-
+% MODE: isHttpMethod(+A)
+% SEMANTICS: A is an atom and MockMvcRequestBuilders:M,
+% with M in {get,post,put,delete}, is a sub-atom of A.
+isHttpMethod(A) :-
   member(H,['get','post','put','delete']),
   atom_concat('MockMvcRequestBuilders:',H,M),
   sub_atom(A,_,_,_,M).
 
-javaMethod(A,M) :-
-  atom_chars(A,C),
-  append(_,[:|L],C),
+%%% user defined predicates to be used as 4th argument of filter/6
+% MODE: head(+L,-H)
+% SEMANTICS:
+% if   L is a nonempty list,
+% then H is the head of L
+head(L,H) :-
+  nonvar(L),
+  L=[H|_],
+  !.
+% else H is bound to the atom domain_error/1
+head(L,domain_error(empty_list)) :-
+  nonvar(L),
+  L=[],
+  !.
+head(_,domain_error(not_a_list)).
+
+% MODE: httpMethod(+A,-H)
+% SEMANTICS:
+% if   A is bound to an atom and MockMvcRequestBuilders:M,
+%      with M in {get,post,put,delete}, is a sub-atom of A,
+% then H is bound to M
+httpMethod(A,H) :-
+  nonvar(A),
+  member(M,['get','post','put','delete']),
+  atom_concat('MockMvcRequestBuilders:',M,S),
+  isSubAtom(A,S),
   !,
-  atom_chars(M,L).
+  H=M.
+% else H is bound to the atom domain_error/1
+httpMethod(_,domain_error(not_a_http_method)).
+
+% MODE: method(+A,-M)
+% SEMANTICS:
+% if   A is bound to an atom of the form _:S:_,
+% then M is bound to S
+method(A,M) :-
+  nonvar(A),
+  atom_chars(A,C),
+  append(_,[:|L],C), append(S,[:|_],L),
+  atom_chars(M,S),
+  !.
+% else M is bound to the atom domain_error/1
+method(_,domain_error(not_a_method)).

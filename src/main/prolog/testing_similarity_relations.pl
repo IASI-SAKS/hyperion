@@ -65,3 +65,27 @@ print_numbered_list(N,[L|Ls]) :-
   !,
   print_numbered_list(M,Ls).
 print_numbered_list(_,[]).
+
+% MODE: print_atom(+Ls)
+% SEMANTICS: print the atoms in L on separate lines
+print_atom_list([]).
+print_atom_list([L|Ls]) :-
+  print_atom(L), nl,
+  !,
+  print_atom_list(Ls).
+%
+print_atom(A) :-
+  A =.. [P|As],
+  write(P),
+  ( As == [] ->
+    write('.')
+  ;
+    ( write('('), nl, print_atom_args(As), nl, write(').') )
+  ).
+%
+print_atom_args([L]) :-
+  write(' '), write(L).
+print_atom_args([L|Ls]) :-
+  write(' '), write(L), nl,
+  !,
+  print_atom_args(Ls).
