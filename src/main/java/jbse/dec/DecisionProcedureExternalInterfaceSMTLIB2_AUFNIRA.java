@@ -49,6 +49,7 @@ final class DecisionProcedureExternalInterfaceSMTLIB2_AUFNIRA extends DecisionPr
         "(set-option :print-success true)\n" +
         "(set-option :interactive-mode true)\n" +
         "(set-option :produce-models true)\n" +
+        "(set-option :timeout 100)\n" +
         "(set-logic AUFNIRA)\n" +
         "(define-fun round_to_zero ((x Real)) Int (ite (>= x 0.0) (to_int x) (- (to_int (- x)))))\n";
     private static final String PUSH_1 = "(push 1)\n";
