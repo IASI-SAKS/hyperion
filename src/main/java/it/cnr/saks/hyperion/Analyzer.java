@@ -23,6 +23,7 @@ import jbse.rules.ClassInitRulesRepo;
 import jbse.rules.LICSRulesRepo;
 
 import java.util.ArrayList;
+import java.util.concurrent.TimeUnit;
 
 import static jbse.bc.Opcodes.*;
 
@@ -169,6 +170,7 @@ public final class Analyzer {
             runner.run();
             this.engine.close();
         } catch (ClasspathException | DecisionException | CannotManageStateException | EngineStuckException | CannotBacktrackException | NonexistingObservedVariablesException | ThreadStackEmptyException | ContradictionException | FailureException | UnexpectedInternalException | CannotBuildEngineException | InitializationException | InvalidClassFileFactoryClassException e) {
+            System.err.println(e.getStackTrace());
             throw new AnalyzerException(e.getMessage());
         }
     }
@@ -186,6 +188,11 @@ public final class Analyzer {
 
     public Analyzer withDepthScope(int depthScope) {
         this.runnerParameters.setDepthScope(depthScope);
+        return this;
+    }
+
+    public Analyzer withTimeout(long time) {
+        this.runnerParameters.setTimeout(time, TimeUnit.MINUTES);
         return this;
     }
 

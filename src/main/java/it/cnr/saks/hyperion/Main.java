@@ -71,11 +71,11 @@ public class Main {
         long startTime = System.nanoTime();
 
         String[] interestingTests = {
-//                "testCreateUserOk",
-//                "testChangeUserPassword",
+//                "testCreateUserOk", // HttpApiClient
+//                "testChangeUserPassword", // HttpApiClient
 //                "newCommentTest",
 //                "replyCommentTest",
-//                "getCoursesFromUserTest",
+//                "getCoursesFromUserTest",  // ritenta
 //                "getCourseByIdTest",
 //                "newCourseTest",
 //                "modifyCourseTest",
@@ -95,16 +95,38 @@ public class Main {
 //                "toggleForumTest",
 //                "logInSecurityTest",
 //                "logOutSecurityTest",
-//                "newSessionTest",
+//                "newSessionTest",  // hash table
 //                "modifySessionTest",
 //                "deleteSessionTest",
-                "controllerNewUserTest",
+//                "controllerNewUserTest",
 //                "userChangePasswordTest",
+//
+//                "setAndGetHashPasswordTest", // BCrypt, non si può rigirare
+
+                // Rigira questi qui sotto dopo averli sistemati
+
+                "setAndGetFileIdTest", // CAS
+                "setAndGetFileNameTest", // CAS
+                "setAndGetFileNameIdentTest", // CAS
+                "setAndGetFileLinkTest", // CAS
+                "setAndGetFileNameIdentTest", // CAS
+                "setAndGetFileLinkTest", // CAS
+                "testGetIndexOrder", // CAS
+                "testEqualsObject", // CAS
+                "getFileExtTest", // CAS
+                "newFileTest", // CAS
+                "equalCourseTest", // CAS
+                "setAndGetFilesTest", // CAS
+                "updateFileIndexOrderTest", // CAS
+                "newUserTest",
+                "setAndGetFileGroupsTest",
+
         };
 
         for(MethodDescriptor method: methodEnumerator) {
 
-            if(!Arrays.asList(interestingTests).contains(method.getMethodName()))
+            if(!Arrays.asList(interestingTests).contains(method.getMethodName())) // include
+//            if(Arrays.asList(interestingTests).contains(method.getMethodName())) // exclude
                 continue;
 
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
@@ -115,7 +137,9 @@ public class Main {
             try {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(runtimeClasspath)
-                        .withDepthScope(15);
+                        .withTimeout(2)
+                        .withDepthScope(500);
+//                        .withDepthScope(700);
 
                 a.setupStatic();
 
@@ -133,16 +157,18 @@ public class Main {
                 }
                 a.run();
 
-            } catch (AnalyzerException e) {
+            } catch (AnalyzerException | OutOfMemoryError | StackOverflowError e) {
                 e.printStackTrace();
-//                return;
+                inspector.emitDatalog();
+                System.gc();
+                continue;
             }
 
             inspector.emitDatalog();
             System.gc();
 
-            if(++count == 1) // TODO: remove after debugging
-                break;
+//            if(++count == 1) // TODO: remove after debugging
+//                break;
         }
 
 //        try {

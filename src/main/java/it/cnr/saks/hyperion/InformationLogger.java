@@ -60,6 +60,8 @@ public class InformationLogger {
         }
 
         String name = callee.getName();
+        if(name == null)
+            return;
 
         Signature caller = null;
         int callerPC = -1;
@@ -76,10 +78,10 @@ public class InformationLogger {
 
 //        System.out.println(name);
 
-//        if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
-//                && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
-//            this.inspectHttpRequest(s, name, pathId);
-//        }
+        if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
+                && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
+            this.inspectHttpRequest(s, name, pathId);
+        }
 
         this.inspectMethodCall(s, name, callee, classFile, pathId, programPoint, callerPC);
     }

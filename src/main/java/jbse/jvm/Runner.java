@@ -488,6 +488,8 @@ public class Runner {
 
     private boolean outOfScopeDepth() {
         final boolean retVal = (this.depthScope > 0 && this.engine.getCurrentState().getDepth() > this.depthScope);
+        if(retVal)
+            System.out.println("Stopping for small depth");
         return retVal;
     }
 
