@@ -39,9 +39,17 @@ java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path
 
 # Dev Notes
 
-Format for the statement `invokes` in files like [this one](src/test/resources/inspection-2020-12-03T11:33Z.pl):
+Format for the Prolog facts `invokes` in files like [this one](src/test/resources/inspection-2020-12-03T11:33Z.pl):
 ```
-invokes(testName, branchPoint, branchSequenceNumber, caller, callerProgramCounter, frameEpoch, pathCondition, callee, parameters)
+invokes(testProgram,
+        branchPoint,
+        branchSequenceNumber,
+        caller,
+        callerProgramCounter,
+        frameEpoch,
+        pathCondition,
+        callee,
+        parameters)
 ```
 
 ## Playing with Prolog
