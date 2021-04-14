@@ -321,56 +321,56 @@ mset_invokes([M|Ms],Is) :-
   selectchk(I,Is,Is1),
   mset_invokes(Ms,Is1).
 
-% MODE: filter(+Xs,+XSchema,+XSelectFuns,+XArgsSelect,+YName, -Ys)
+% MODE: filter(+Xs,+XSchema,+XSelFun,+XExtFun,+YName, -Ys)
 % NOTATION: Given a list L, we denote by L[i] the i-th element of L.
 % SEMANTICS: filter(Xs,XSchema,Filter,XArgs,YName, Ys) holds if
 % Xs is a list of atoms XName/XArity
 % XSchema is a ground term with functor XName/XArity
-% XSelectFuns is a list of (user defined) boolean functions
-% XArgsSelect is a list of (user defined) functions
+% XSelFun is a list of (user defined) boolean functions
+% XExtFun is a list of (user defined) functions
 % YName is a functor name
 % Ys is a list of atoms of the form YName(A1,...,An) s.t.
 % there exists an atom X in Xs satisfying the following conditions:
-%   - for all F in XSelectFuns. F(Name,Pars) holds
+%   - for all F in XSelFun. F(Name,Pars) holds
 %   - for all i in 1,...,n. Ai is the argument of X selected using
-%                           the user defined function XArgsSelect[i]
-filter([],_XSchema,_XSelectFuns,_XArgsSelect,_YName, []).
-filter([X|Xs],XSchema,XSelectFuns,XArgsSelect,YName, [Y|Ys]) :-
-  satisfy(X,XSchema,XSelectFuns),
+%                           the user defined function XExtFun[i]
+filter([],_XSchema,_XSelFun,_XExtFun,_YName, []).
+filter([X|Xs],XSchema,XSelFun,XExtFun,YName, [Y|Ys]) :-
+  eval_elem_sel_fun(X,XSchema,XSelFun),
   !,
-  eval_proj_func(XArgsSelect,XSchema,X, YArgs),
+  eval_args_ext_fun(X,XSchema,XExtFun, YArgs),
   Y =.. [YName|YArgs],
-  filter(Xs,XSchema,XSelectFuns,XArgsSelect,YName, Ys).
-filter([_|Xs],XSchema,XSelectFuns,XArgsSelect,YName, Ys) :-
-  filter(Xs,XSchema,XSelectFuns,XArgsSelect,YName, Ys).
+  filter(Xs,XSchema,XSelFun,XExtFun,YName, Ys).
+filter([_|Xs],XSchema,XSelFun,XExtFun,YName, Ys) :-
+  filter(Xs,XSchema,XSelFun,XExtFun,YName, Ys).
 
-% MODE: satisfy(+X,+XSchema,+XSelectFuns)
-% SEMANTICS: satisfy(X,XSchema,XSelectFuns) holds
-% if for all F(Name,Pars) in XSelectFuns.
+% MODE: eval_elem_sel_fun(+X,+XSchema,+XSelFun)
+% SEMANTICS: eval_elem_sel_fun(X,XSchema,XSelFun) holds
+% if for all F(Name,Pars) in XSelFun.
 %    XArg is the argument of X denoted by Name in XSchema and F(XArg,Pars) holds
-satisfy(_X,_XSchema,[]).
-satisfy(X,XSchema,[P|Ps]) :-
+eval_elem_sel_fun(_X,_XSchema,[]).
+eval_elem_sel_fun(X,XSchema,[P|Ps]) :-
   P =.. [Pred,Name|Pars],
   arg(I,XSchema,Name),
   arg(I,X,XVal),
   F =.. [Pred,XVal|Pars],
   call(F),
-  satisfy(X,XSchema,Ps).
+  eval_elem_sel_fun(X,XSchema,Ps).
 
-% MODE: eval_proj_func(+XArgsSelect,+XSchema,+X, -XVals)
-% SEMANTICS: XVals is the result of applying XArgsSelect to X.
-eval_proj_func(F,XSchema,X, XVal) :-
+% MODE: eval_args_ext_fun(+X,+XSchema,+XExtFun, -XVals)
+% SEMANTICS: XVals is the result of applying XExtFun to X.
+eval_args_ext_fun(X,XSchema,F, XVal) :-
   arg(I,XSchema,F),
   !,
   arg(I,X,XVal).
-eval_proj_func([],_XSchema,_X, []).
-eval_proj_func([F|Fs],XSchema,X, [XVal|XVals]) :-
-  eval_proj_func(F,XSchema,X, XVal),
-  eval_proj_func(Fs,XSchema,X, XVals).
-eval_proj_func(F,XSchema,X, XVal) :-
+eval_args_ext_fun(_X,_XSchema,[], []).
+eval_args_ext_fun(X,XSchema,[F|Fs], [XVal|XVals]) :-
+  eval_args_ext_fun(X,XSchema,F, XVal),
+  eval_args_ext_fun(X,XSchema,Fs, XVals).
+eval_args_ext_fun(X,XSchema,F, XVal) :-
   \+ is_list(F),
   F =.. [P|As],
-  eval_proj_func(As,XSchema,X, Es),
+  eval_args_ext_fun(X,XSchema,As, Es),
   G =.. [P|Es],
   call(G,XVal).
 
@@ -440,37 +440,32 @@ method(A,M) :-
 method(_,domain_error(not_a_method)).
 
 %% SIMILARITY RELATION ---------------------------------------------------------
-% MODE: similar_endpoints(+EndpointsSrc,+Criterion,-TP1,-TP2,-Es1,-Es2)
+% MODE: similarEndpoints(+EpSrc,+SimCr,-TP1,-TP2,-Es1,-Es2)
 % SEMANTICS: Es1 and Es2 are lists of endpoints of test programs TP1 and TP2,
 % respectively, generated from lists of invokes representing either a trace
-% (EndpointsSrc = trace) or a maximal invoke sequence (EndpointsSrc = miseq)
-% that satisfy the similarity criterion Criterion.
-similar_endpoints(EndpointsSrc,Criterion,TP1,TP2,Es1,Es2) :-
-  ( EndpointsSrc == trace ; EndpointsSrc == miseq ),
-  atom_concat(EndpointsSrc,'_endpoints',EndpointsFact),
+% (EpSrc = trace) or a maximal invoke sequence (EpSrc = miseq)
+% that satisfy the similarity criterion SimCr.
+similarEndpoints(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
+  ( EpSrc == trace ; EpSrc == miseq ),
+  atom_concat(EpSrc,'_endpoints',EndpointsFact),
   E1 =.. [EndpointsFact,(TP1,Es1)], E1, Es1\==[],
   E2 =.. [EndpointsFact,(TP2,Es2)], E2, TP1\==TP2,
-  similar_endpoints(Criterion,Es1,Es2).
-% similar_endpoints(eqset,Es1,Es2) holds if
-similar_endpoints(eqset,Es1,Es2) :-
+  similar_endpoints(SimCr,Es1,Es2).
+% similar_endpoints(nonemptyEqSet,Es1,Es2) holds if
+similar_endpoints(nonemptyEqSet,Es1,Es2) :-
   % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
-  matching_endpoints(Es1,Es2),
+  matching_endpoints_lst(Es1,Es2),
   % for all E2 in Es2, there exists a E1 in Es1 s.t E1 is similar to E2
-  matching_endpoints(Es2,Es1).
-% similar_endpoints(subset,Es1,Es2) holds if
-similar_endpoints(subset,Es1,Es2) :-
+  matching_endpoints_lst(Es2,Es1).
+% similar_endpoints(nonemptySubSet,Es1,Es2) holds if
+similar_endpoints(nonemptySubSet,Es1,Es2) :-
   % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
-  matching_endpoints(Es1,Es2).
-% similar_endpoints(nonempty_intersection,Es1,Es2) holds if
-% there exist E1 in Es1 and E2 in Es2 s.t. E1 is similar to E2
-similar_endpoints(nonempty_intersection,Es1,Es2) :-
-  member(E1,Es1),
-  matching_endpoint(E1,Es2),
-  !.
-similar_endpoints(nonempty_intersection,Es1,Es2) :-
-  member(E2,Es2),
-  matching_endpoint(E2,Es1),
-  !.
+  matching_endpoints_lst(Es1,Es2).
+% similar_endpoints(overlappingSet,Es1,Es2) holds if
+similar_endpoints(overlappingSet,Es1,Es2) :-
+  % there exist E1 in Es1, E2 in Es2 s.t. E1 is similar to E2
+  member(E1,Es1), member(E2,Es2),
+  matching_endpoints(E1,E2), !.
 
 % MODE: endpoints(+InvokesLst,-EndpointLst)
 % SEMANTICS: EndpointLst is the list of endpoint/4 atoms generated from the
@@ -478,7 +473,7 @@ similar_endpoints(nonempty_intersection,Es1,Es2) :-
 endpoints(InvokesLst,EndpointLst) :-
   filter(
     InvokesLst,
-    invokes(testName,
+    invokes(testProgram,
             branchPoint,
             branchSequenceNumber,
             caller,
@@ -488,37 +483,67 @@ endpoints(InvokesLst,EndpointLst) :-
             callee,
             parameters),
     [isHttpMethod(callee)],
-    [testName,method(caller),httpMethod(callee),head(parameters)],
+    [testProgram,method(caller),httpMethod(callee),head(parameters)],
     endpoint,
     EndpointLst
   ).
 
-% MODE: matching_endpoints(+S1,+S2)
-% SEMANTICS: S1 and S2 are lists of endpoints and for all E in S1
-% there exists an element in S2 that satisfies matching_endpoint.
-matching_endpoints([],_S2).
-matching_endpoints([E|S1],S2) :-
-  matching_endpoint(E,S2),
-  matching_endpoints(S1,S2).
+% MODE: matching_endpoints_lst(+Es1,+Es2)
+% SEMANTICS: Es1 and Es2 are lists of endpoints and for all E in Es1
+% there exists an element in Es2 that satisfies matching_endpoints.
+matching_endpoints_lst([],_Es2).
+matching_endpoints_lst([E1|Es1],Es2) :-
+  member(E2,Es2),
+  matching_endpoints(E1,E2),
+  matching_endpoints_lst(Es1,Es2).
 
-% MODE: matching_endpoint(+E1,+S)
+% MODE: matching_endpoints(+E1,+E2)
 % SEMANTICS: there exists in S an element E2 s.t.
 % (*1*) E1 and E2 perform the same HTTP request, and
 % (*2*) E1 and E2 match a regular expression REX representing a REST API
 %       (the set of regular expressions is defined by rest_api_regex/1 facts)
-matching_endpoint(E1,S) :-
+matching_endpoints(E1,E2) :-
   E1 = endpoint(_TP1,_Caller1,HTTPMethod,URI1), % E1 invokes HTTPMethod (*1*)
   atom_string(URI1,URI1Str),
-  rest_api_regex(REX),    % REX is a REST API regular expression
+  rest_api_regex(REX),   % REX is a user-provided REST API regular expression
   re_match(REX,URI1Str),  % the URI string URI1Str of E1 matches REX    (*2*)
-  E2 = endpoint(_TP2,_Caller2,HTTPMethod,URI2),
-  member(E2,S),           % E2 invokes the same HTTPMethod of E1        (*1*)
+  E2 = endpoint(_TP2,_Caller2,HTTPMethod,URI2), % E2 invokes HTTPMethod (*1*)
   atom_string(URI2,URI2Str),
   re_match(REX,URI2Str).  % the URI string URI2Str of E2 matches REX    (*2*)
+
+% MODE: select_matching_endpoints(+Es1,+Es2,-Es)
+% SEMANTICS: Es consists of all elements in Es1 for which there exists a
+% matching element in Es2.
+select_matching_endpoints([],_Es2,[]).
+select_matching_endpoints([E1|Es1],Es2,[E1|Es]) :-
+  member(E2,Es2),
+  matching_endpoints(E1,E2),
+  !,
+  select_matching_endpoints(Es1,Es2,Es).
+select_matching_endpoints([_|Es1],Es2,Es) :-
+  select_matching_endpoints(Es1,Es2,Es).
+
+% MODE: similarityScore(+SimCr,+Es1,+Es2,Score)
+% SEMANTICS: Score is
+% 1, if SimCris=nonemptyEqSet
+similarityScore(nonemptyEqSet,_Es1,_Es2,1).
+% |ES1|/|ES2|, if SimCris=nonemptySubSet
+similarityScore(nonemptySubSet,Es1,Es2,Score) :-
+  sort(Es1,S1), length(S1,N1),
+  sort(Es2,S2), length(S2,N2),
+  Score is N1/N2.
+% |intersect(ES1,ES2)| / min(|ES1|,|ES2|), if SimCris=overlappingSet
+similarityScore(overlappingSet,Es1,Es2,Score) :-
+  sort(Es1,S1), length(S1,N1),
+  sort(Es2,S2), length(S2,N2),
+  select_matching_endpoints(S1,S2,I), length(I,N),
+  M is min(N1,N2),
+  Score is N/M.
 
 % SEMANTICS: generate_and_assert_endpoints/1 generates the endpoints either
 % from all the traces of all test programs, or
 generate_and_assert_endpoints(trace) :-
+  retractall(trace_endpoints(_)),
   testPrograms(TPs),
   findall(
     (TP,ESeq),
@@ -528,6 +553,7 @@ generate_and_assert_endpoints(trace) :-
   assert_lst(trace_endpoints,Lst).
 % from all the maximal invoke sequences of all test programs entry points
 generate_and_assert_endpoints(miseq) :-
+  retractall(miseq_endpoints(_)),
   testPrograms(TPs),
   findall(
     (TP,ESeq),

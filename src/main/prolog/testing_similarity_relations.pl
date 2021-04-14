@@ -98,29 +98,57 @@ print_qatom_args([L|Ls]) :-
   !,
   print_qatom_args(Ls).
 
-% calls similar_endpoints/4 and prints its answer
-print_similar_endpoints_answer(EndpointsSrc,Criterion) :-
-  write('--------------------------------------------------------------------------------'), nl,
-  write('Querying similar_endpoints/6'), nl, nl,
-  write('* Endpoints source: '), write(EndpointsSrc), nl,
-  write('* Criterion:        '), write(Criterion), nl, nl,
-  similar_endpoints(EndpointsSrc,Criterion,TP1,TP2,Es1,Es2),
-  write('* Test Program 1:   '), write(TP1), nl, nl,
-  print_atom_list(Es1),                     nl,
-  write('* Test Program 2:   '), write(TP2), nl, nl,
-  print_atom_list(Es2), nl.
+% calls:
+% generate_and_assert_endpoints, similarEndpoints, similarityScore, and
+% prints the answers
+print_similar_endpoints(EpSrc) :-
+  generate_and_assert_endpoints(EpSrc),
+  atom_concat('similarEndpoints-',EpSrc,FileNamePrefix),
+  atom_concat(FileNamePrefix,'-report.txt',TXTFileName),
+  open(TXTFileName,write,Fd1,[alias(txt)]),
+  atom_concat(FileNamePrefix,'-report.csv',CSVFileName),
+  open(CSVFileName,write,Fd2,[alias(csv)]),
+  assert(ln(1)),
+  print_similar_endpoints_answers(EpSrc,nonemptyEqSet),
+  print_similar_endpoints_answers(EpSrc,nonemptySubSet),
+  print_similar_endpoints_answers(EpSrc,overlappingSet),
+  close(Fd1),
+  close(Fd2).
 %
-print_similar_endpoints(Criterion) :-
-  generate_and_assert_endpoints(Criterion),
-  atom_concat('similar_endpoints-',Criterion,FileNamePrefix),
-  atom_concat(FileNamePrefix,'-report.txt',FileName),
-  tell(FileName),
-  print_similar_endpoints_answers(Criterion,eqset),
-  print_similar_endpoints_answers(Criterion,subset),
-  print_similar_endpoints_answers(Criterion,nonempty_intersection),
-  told.
-%
-print_similar_endpoints_answers(EndpointsSrc,Criterion) :-
-  print_similar_endpoints_answer(EndpointsSrc,Criterion),
+print_similar_endpoints_answers(EpSrc,SimCr) :-
+  print_similar_endpoints_answer(EpSrc,SimCr),
   fail.
-print_similar_endpoints_answers(_EndpointsSrc,_Criterion).
+print_similar_endpoints_answers(_EpSrc,_SimCr).
+%
+print_similar_endpoints_answer(EpSrc,SimCr) :-
+  write(txt,'----------------------------------'),     nl(txt),
+  write(txt,'Querying similar_endpoints/6'),           nl(txt), nl(txt),
+  write(txt,'* Endpoints source: '), write(txt,EpSrc), nl(txt),
+  write(txt,'* Criterion:        '), write(txt,SimCr), nl(txt),
+  write(txt,'----------------------------------'),     nl(txt), nl(txt),
+  similarEndpoints(EpSrc,SimCr,TP1,TP2,Es1,Es2),
+  similarityScore(SimCr,Es1,Es2,Score),
+  retract(ln(N)),
+  write_txt(N,TP1,TP2,Es1,Es2,Score),
+  write_csv(N,SimCr,TP1,TP2,Score),
+  M is N+1,
+  assert(ln(M)).
+%
+write_txt(N,TP1,TP2,Es1,Es2,Score) :-
+  set_output(txt),
+  write('* ID: '),             write(N),       nl,
+  write('* Test Program 1: '), write(TP1),     nl, nl,
+  print_atom_list(Es1),                        nl,
+  write('* Test Program 2: '), write(TP2),     nl, nl,
+  print_atom_list(Es2),                        nl, nl,
+  !,
+  write('* Score: '),          write(Score),   nl, nl,
+  write('----------------------------------'), nl.
+%
+write_csv(N,SimCr,TP1,TP2,Score) :-
+  set_output(csv),
+  write(N), write(','),
+  write(SimCr), write(','),
+  write(TP1), write(','),
+  write(TP2), write(','),
+  write(Score), write(','), nl.
