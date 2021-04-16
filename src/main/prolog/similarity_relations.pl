@@ -440,12 +440,12 @@ method(A,M) :-
 method(_,domain_error(not_a_method)).
 
 %% SIMILARITY RELATION ---------------------------------------------------------
-% MODE: similarEndpoints(+EpSrc,+SimCr,-TP1,-TP2,-Es1,-Es2)
+% MODE: similarTestProgs(+EpSrc,+SimCr,-TP1,-TP2,-Es1,-Es2)
 % SEMANTICS: Es1 and Es2 are lists of endpoints of test programs TP1 and TP2,
 % respectively, generated from lists of invokes representing either a trace
 % (EpSrc = trace) or a maximal invoke sequence (EpSrc = miseq)
 % that satisfy the similarity criterion SimCr.
-similarEndpoints(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
+similarTestProgs(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
   ( EpSrc == trace ; EpSrc == miseq ),
   atom_concat(EpSrc,'_endpoints',EndpointsFact),
   E1 =.. [EndpointsFact,(TP1,Es1)], E1, Es1\==[],
@@ -504,11 +504,11 @@ matching_endpoints_lst([E1|Es1],Es2) :-
 %       (the set of regular expressions is defined by rest_api_regex/1 facts)
 matching_endpoints(E1,E2) :-
   E1 = endpoint(_TP1,_Caller1,HTTPMethod,URI1), % E1 invokes HTTPMethod (*1*)
+  E2 = endpoint(_TP2,_Caller2,HTTPMethod,URI2), % E2 invokes HTTPMethod (*1*)
   atom_string(URI1,URI1Str),
+  atom_string(URI2,URI2Str),
   rest_api_regex(REX),   % REX is a user-provided REST API regular expression
   re_match(REX,URI1Str),  % the URI string URI1Str of E1 matches REX    (*2*)
-  E2 = endpoint(_TP2,_Caller2,HTTPMethod,URI2), % E2 invokes HTTPMethod (*1*)
-  atom_string(URI2,URI2Str),
   re_match(REX,URI2Str).  % the URI string URI2Str of E2 matches REX    (*2*)
 
 % MODE: select_matching_endpoints(+Es1,+Es2,-Es)

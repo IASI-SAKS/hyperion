@@ -102,15 +102,17 @@ print_qatom_args([L|Ls]) :-
 % generate_and_assert_endpoints, similarEndpoints, similarityScore, and
 % prints the answers
 print_similar_endpoints(EpSrc) :-
+  write('Generating endpoints ... '), flush_output,
   generate_and_assert_endpoints(EpSrc),
+  write('done.'),
   atom_concat('similarEndpoints-',EpSrc,FileNamePrefix),
   atom_concat(FileNamePrefix,'-report.txt',TXTFileName),
   open(TXTFileName,write,Fd1,[alias(txt)]),
   atom_concat(FileNamePrefix,'-report.csv',CSVFileName),
   open(CSVFileName,write,Fd2,[alias(csv)]),
   assert(ln(1)),
-  print_similar_endpoints_answers(EpSrc,nonemptyEqSet),
-  print_similar_endpoints_answers(EpSrc,nonemptySubSet),
+  %print_similar_endpoints_answers(EpSrc,nonemptyEqSet),
+  %print_similar_endpoints_answers(EpSrc,nonemptySubSet),
   print_similar_endpoints_answers(EpSrc,overlappingSet),
   close(Fd1),
   close(Fd2).
@@ -122,11 +124,11 @@ print_similar_endpoints_answers(_EpSrc,_SimCr).
 %
 print_similar_endpoints_answer(EpSrc,SimCr) :-
   write(txt,'----------------------------------'),     nl(txt),
-  write(txt,'Querying similar_endpoints/6'),           nl(txt), nl(txt),
+  write(txt,'Querying similarTestProgs/6'),            nl(txt), nl(txt),
   write(txt,'* Endpoints source: '), write(txt,EpSrc), nl(txt),
   write(txt,'* Criterion:        '), write(txt,SimCr), nl(txt),
   write(txt,'----------------------------------'),     nl(txt), nl(txt),
-  similarEndpoints(EpSrc,SimCr,TP1,TP2,Es1,Es2),
+  similarTestProgs(EpSrc,SimCr,TP1,TP2,Es1,Es2),
   similarityScore(SimCr,Es1,Es2,Score),
   retract(ln(N)),
   write_txt(N,TP1,TP2,Es1,Es2,Score),
