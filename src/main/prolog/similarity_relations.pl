@@ -167,7 +167,7 @@ trace_invokes(I1,[I1]) :-
   \+ exists_trace_succeeding_invokes(I1).
 
 % trace utility predicates
-exists_trace_preceeding_invokes(Invokes) :- miseq_next(_,Invokes).
+exists_trace_preceeding_invokes(Invokes) :- trace_next(_,Invokes).
 exists_trace_succeeding_invokes(Invokes) :- trace_next(Invokes,_).
 
 % SEMANTICS: trace_next(Invokes1,Invokes2)
@@ -446,10 +446,8 @@ method(_,domain_error(not_a_method)).
 % (EpSrc = trace) or a maximal invoke sequence (EpSrc = miseq)
 % that satisfy the similarity criterion SimCr.
 similarTestProgs(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
-  ( EpSrc == trace ; EpSrc == miseq ),
-  atom_concat(EpSrc,'_endpoints',EndpointsFact),
-  E1 =.. [EndpointsFact,(TP1,Es1)], E1, Es1\==[],
-  E2 =.. [EndpointsFact,(TP2,Es2)], E2, TP1\==TP2,
+  endpoints(EpSrc,TP1,Es1), Es1\==[],
+  endpoints(EpSrc,TP2,Es2), TP1\==TP2,
   similar_endpoints(SimCr,Es1,Es2).
 % similar_endpoints(nonemptyEqSet,Es1,Es2) holds if
 similar_endpoints(nonemptyEqSet,Es1,Es2) :-
@@ -539,35 +537,3 @@ similarityScore(overlappingSet,Es1,Es2,Score) :-
   select_matching_endpoints(S1,S2,I), length(I,N),
   M is min(N1,N2),
   Score is N/M.
-
-% SEMANTICS: generate_and_assert_endpoints/1 generates the endpoints either
-% from all the traces of all test programs, or
-generate_and_assert_endpoints(trace) :-
-  retractall(trace_endpoints(_)),
-  testPrograms(TPs),
-  findall(
-    (TP,ESeq),
-    ( member(TP,TPs), trace(TP,Trace), endpoints(Trace,ESeq) ),
-    Lst
-  ),
-  assert_lst(trace_endpoints,Lst).
-% from all the maximal invoke sequences of all test programs entry points
-generate_and_assert_endpoints(miseq) :-
-  retractall(miseq_endpoints(_)),
-  testPrograms(TPs),
-  findall(
-    (TP,ESeq),
-    ( member(TP,TPs), testProgram_entry_point_caller(TP,Caller),
-      maximalInvokeSequence(TP,Caller,ISeq), endpoints(ISeq,ESeq) ),
-    Lst
-  ),
-  assert_lst(miseq_endpoints,Lst).
-
-% assert a list of terms as facts of the form Name/1
-assert_lst(_,[]).
-assert_lst(Name,[T|Ts]) :-
-  functor(Fact,Name,1),
-  arg(1,Fact,T),
-  assert(Fact),
-  !,
-  assert_lst(Name,Ts).
