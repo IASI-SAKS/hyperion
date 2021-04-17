@@ -101,21 +101,62 @@ print_qatom_args([L|Ls]) :-
 % calls:
 % generate_and_assert_endpoints, similarEndpoints, similarityScore, and
 % prints the answers
-print_similar_endpoints(EpSrc) :-
+print_similar_endpoints_file(File,EpSrc) :-
+  retractall(invokes(_,_,_,_,_,_,_,_,_)),
+  retractall(endpoints(_,_,_)),
+  consult(File),
   write('Generating endpoints ... '), flush_output,
   generate_and_assert_endpoints(EpSrc),
-  write('done.'),
+  write('done.'), flush_output,
+  print_similar_endpoints(EpSrc).
+print_similar_endpoints_dir(Dir,EpSrc) :-
+  retractall(endpoints(_,_,_)),
+  working_directory(_Old,Dir),
+  directory_files('.',Files),
+  memberchk(File,Files),
+  retractall(invokes(_,_,_,_,_,_,_,_,_)),
+  consult(File),
+  write('Generating endpoints from:'), nl, write(' '),
+  write(File), nl,  flush_output,
+  generate_and_assert_endpoints(EpSrc),
+  write('done.'), flush_output,
+  fail.
+print_similar_endpoints_dir(_Dir,EpSrc) :-
+  print_similar_endpoints(EpSrc).
+print_similar_endpoints(EpSrc) :-
   atom_concat('similarEndpoints-',EpSrc,FileNamePrefix),
   atom_concat(FileNamePrefix,'-report.txt',TXTFileName),
   open(TXTFileName,write,Fd1,[alias(txt)]),
   atom_concat(FileNamePrefix,'-report.csv',CSVFileName),
   open(CSVFileName,write,Fd2,[alias(csv)]),
   assert(ln(1)),
-  %print_similar_endpoints_answers(EpSrc,nonemptyEqSet),
-  %print_similar_endpoints_answers(EpSrc,nonemptySubSet),
+  print_similar_endpoints_answers(EpSrc,nonemptyEqSet),
+  print_similar_endpoints_answers(EpSrc,nonemptySubSet),
   print_similar_endpoints_answers(EpSrc,overlappingSet),
   close(Fd1),
   close(Fd2).
+
+% SEMANTICS: generate_and_assert_endpoints/1 generates the endpoints either
+% from all the traces of all test programs, or
+generate_and_assert_endpoints(trace) :-
+  testPrograms(TPs),
+  member(TP,TPs),
+  trace(TP,Trace),
+  endpoints(Trace,ESeq),
+  assert(endpoints(trace,TP,ESeq)),
+  fail.
+% from all the maximal invoke sequences of all test programs entry points
+generate_and_assert_endpoints(miseq) :-
+  testPrograms(TPs),
+  (TP,ESeq),
+  member(TP,TPs),
+  testProgram_entry_point_caller(TP,Caller),
+  maximalInvokeSequence(TP,Caller,ISeq),
+  endpoints(ISeq,ESeq),
+  assert(endpoints(miseq,TP,ESeq)),
+  fail.
+generate_and_assert_endpoints(_).
+
 %
 print_similar_endpoints_answers(EpSrc,SimCr) :-
   print_similar_endpoints_answer(EpSrc,SimCr),
@@ -154,3 +195,29 @@ write_csv(N,SimCr,TP1,TP2,Score) :-
   write(TP1), write(','),
   write(TP2), write(','),
   write(Score), write(','), nl.
+
+% SEMANTICS: for each test program TP,
+% generate a file invokes__TP.pl including the invokes facts of TP.
+partition_invokes(InvokesFile) :-
+  atom_concat(InvokesFile,'-partition',PartitionDir),
+  make_directory(PartitionDir),
+  retractall(invokes(_,_,_,_,_,_,_,_,_)),
+  consult(InvokesFile),
+  testPrograms(TPs),
+  member(TP,TPs),
+  atom_concat(PartitionDir,'/invokes__',Prefix1),
+  atom_concat(Prefix1,TP,Prefix2),
+  atom_concat(Prefix2,'.pl',FileName),
+  tell(FileName),
+  partition_invokes_testProgram(TP),
+  told,
+  fail.
+partition_invokes(_InvokesFile).
+
+% SEMANTICS: generate a file invokes__TP.pl including the invokes facts of TP.
+partition_invokes_testProgram(TP) :-
+  invokes_component(Invokes,testProgram,TP),
+  Invokes,
+  write_term(Invokes,[quoted(true)]), write('.'), nl,
+  fail.
+partition_invokes_testProgram(_TP).
