@@ -102,22 +102,21 @@ print_qatom_args([L|Ls]) :-
 % generate_and_assert_endpoints, similarEndpoints, similarityScore, and
 % prints the answers
 print_similar_endpoints_file(File,EpSrc) :-
-  retractall(invokes(_,_,_,_,_,_,_,_,_)),
   retractall(endpoints(_,_,_)),
+  retractall(invokes(_,_,_,_,_,_,_,_,_)),
   consult(File),
   write('Generating endpoints ... '), flush_output,
+  retractall(counter(_)), assert(counter(1)),
   generate_and_assert_endpoints(EpSrc),
   write('done.'), flush_output,
   print_similar_endpoints(EpSrc).
 print_similar_endpoints_dir(Dir,EpSrc) :-
   retractall(endpoints(_,_,_)),
-  working_directory(_Old,Dir),
-  directory_files('.',Files),
-  memberchk(File,Files),
+  working_directory(_Old,Dir), directory_files('.',Files), member(File,Files),
   retractall(invokes(_,_,_,_,_,_,_,_,_)),
   consult(File),
-  write('Generating endpoints from:'), nl, write(' '),
-  write(File), nl,  flush_output,
+  write('Generating endpoints from: '), write(File), nl, flush_output,
+  retractall(counter(_)), assert(counter(1)),
   generate_and_assert_endpoints(EpSrc),
   write('done.'), flush_output,
   fail.
@@ -142,6 +141,8 @@ generate_and_assert_endpoints(trace) :-
   testPrograms(TPs),
   member(TP,TPs),
   trace(TP,Trace),
+  retract(counter(N)), M is N+1, assert(counter(M)),
+  write(N), write(' '), flush_output,
   endpoints(Trace,ESeq),
   assert(endpoints(trace,TP,ESeq)),
   fail.
@@ -152,10 +153,13 @@ generate_and_assert_endpoints(miseq) :-
   member(TP,TPs),
   testProgram_entry_point_caller(TP,Caller),
   maximalInvokeSequence(TP,Caller,ISeq),
+  retract(counter(N)), M is N+1, assert(counter(M)),
+  write(N), write(' '), flush_output,
   endpoints(ISeq,ESeq),
   assert(endpoints(miseq,TP,ESeq)),
   fail.
-generate_and_assert_endpoints(_).
+generate_and_assert_endpoints(_) :-
+  retractall(counter(_)).
 
 %
 print_similar_endpoints_answers(EpSrc,SimCr) :-
@@ -221,3 +225,35 @@ partition_invokes_testProgram(TP) :-
   write_term(Invokes,[quoted(true)]), write('.'), nl,
   fail.
 partition_invokes_testProgram(_TP).
+
+% SEMANTICS: for each file InFile in Dir,
+% create a file endpoints__InFile including the endpoits facts generated from
+% the EpSrc source of invokes facts in InFile.
+generate_and_assert_endpoints_dir(Dir,EpSrc) :-
+  directory_files(Dir,Files),
+  delete(Files,'.',Files1),
+  delete(Files1,'..',InFiles),
+  member(InFileName,InFiles),
+  atom_concat(Dir,InFileName,InFile),
+  retractall(endpoints(_,_,_)),
+  retractall(invokes(_,_,_,_,_,_,_,_,_)),
+  consult(InFile),
+  write('Generating endpoints from: '), writeln(InFileName), flush_output,
+  retractall(counter(_)), assert(counter(1)),
+  generate_and_assert_endpoints(EpSrc),
+  writeln('done.'), flush_output,
+  atom_concat('endpoints__',InFileName,OutFileName),
+  atom_concat(Dir,OutFileName,OutFile),
+  tell(OutFile),
+  write_endpoints,
+  told,
+  fail.
+generate_and_assert_endpoints_dir(_Dir,_EpSrc).
+
+% SEMANTICS: write endpoints facts.
+write_endpoints :-
+  functor(Endpoints,endpoints,3),
+  Endpoints,
+  write_term(Endpoints,[quoted(true)]), write('.'), nl,
+  fail.
+write_endpoints.
