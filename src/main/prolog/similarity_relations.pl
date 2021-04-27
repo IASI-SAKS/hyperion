@@ -440,12 +440,12 @@ method(A,M) :-
 method(_,domain_error(not_a_method)).
 
 %% SIMILARITY RELATION ---------------------------------------------------------
-% MODE: similarTestProgs(+EpSrc,+SimCr,-TP1,-TP2,-Es1,-Es2)
+% MODE: similar_tp(+EpSrc,+SimCr,-TP1,-TP2,-Es1,-Es2)
 % SEMANTICS: Es1 and Es2 are lists of endpoints of test programs TP1 and TP2,
 % respectively, generated from lists of invokes representing either a trace
 % (EpSrc = trace) or a maximal invoke sequence (EpSrc = miseq)
 % that satisfy the similarity criterion SimCr.
-similarTestProgs(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
+similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
   endpoints(EpSrc,TP1,Es1), Es1\==[],
   endpoints(EpSrc,TP2,Es2), TP1\==TP2,
   similar_endpoints(SimCr,Es1,Es2).
@@ -459,8 +459,8 @@ similar_endpoints(nonemptyEqSet,Es1,Es2) :-
 similar_endpoints(nonemptySubSet,Es1,Es2) :-
   % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
   matching_endpoints_lst(Es1,Es2).
-% similar_endpoints(overlappingSet,Es1,Es2) holds if
-similar_endpoints(overlappingSet,Es1,Es2) :-
+% similar_endpoints(nonemptyIntersection,Es1,Es2) holds if
+similar_endpoints(nonemptyIntersection,Es1,Es2) :-
   % there exist E1 in Es1, E2 in Es2 s.t. E1 is similar to E2
   member(E1,Es1), member(E2,Es2),
   matching_endpoints(E1,E2), !.
@@ -521,17 +521,17 @@ select_matching_endpoints([E1|Es1],Es2,[E1|Es]) :-
 select_matching_endpoints([_|Es1],Es2,Es) :-
   select_matching_endpoints(Es1,Es2,Es).
 
-% MODE: similarityScore(+SimCr,+Es1,+Es2,Score)
+% MODE: similarity_score(+SimCr,+Es1,+Es2,Score)
 % SEMANTICS: Score is
 % 1, if SimCris=nonemptyEqSet
-similarityScore(nonemptyEqSet,_Es1,_Es2,1).
+similarity_score(nonemptyEqSet,_Es1,_Es2,1).
 % |ES1|/|ES2|, if SimCris=nonemptySubSet
-similarityScore(nonemptySubSet,Es1,Es2,Score) :-
+similarity_score(nonemptySubSet,Es1,Es2,Score) :-
   sort(Es1,S1), length(S1,N1),
   sort(Es2,S2), length(S2,N2),
   Score is N1/N2.
-% |intersect(ES1,ES2)| / min(|ES1|,|ES2|), if SimCris=overlappingSet
-similarityScore(overlappingSet,Es1,Es2,Score) :-
+% |intersect(ES1,ES2)| / min(|ES1|,|ES2|), if SimCris=nonemptyIntersection
+similarity_score(nonemptyIntersection,Es1,Es2,Score) :-
   sort(Es1,S1), length(S1,N1),
   sort(Es2,S2), length(S2,N2),
   select_matching_endpoints(S1,S2,I), length(I,N),

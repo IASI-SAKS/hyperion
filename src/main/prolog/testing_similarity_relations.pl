@@ -98,44 +98,58 @@ print_qatom_args([L|Ls]) :-
   !,
   print_qatom_args(Ls).
 
-% calls:
-% generate_and_assert_endpoints, similarEndpoints, similarityScore, and
-% prints the answers
-print_similar_endpoints_file(File,EpSrc) :-
+% :- dynamic endpoints/3.
+% :- multifile endpoints/3.
+% similarity_from_endpoints_dir(Dir,_EpSrc,SimCr) :-
+%   directory_files(Dir,Files),
+%   delete(Files,'.',Files1),
+%   delete(Files1,'..',InFiles),
+%   retractall(endpoints(_,_,_)),
+%   retractall(invokes(_,_,_,_,_,_,_,_,_)),
+%   write('Consulting endpoints/3 from:'), nl,
+%   member(InFileName,InFiles),
+%   write(InFileName), nl, flush_output,
+%   atom_concat(Dir,InFileName,InFile),
+%   consult(InFile),
+%   fail.
+% similarity_from_endpoints_dir(_Dir,EpSrc,SimCr) :-
+%   write('done.'), flush_output,
+%   print_similarity(EpSrc,SimCr).
+
+% SEMANTICS: generate and assert endpoints from the invokes in File,
+% run similarity predicates and prints the answers to csv and txt files
+similarity_from_invokes_file(File,EpSrc,SimCr) :-
   retractall(endpoints(_,_,_)),
   retractall(invokes(_,_,_,_,_,_,_,_,_)),
+  write('Consulting invokes/9.'), nl,
   consult(File),
-  write('Generating endpoints ... '), flush_output,
   retractall(counter(_)), assert(counter(1)),
+  write('Generating endpoints ... '), flush_output,
   generate_and_assert_endpoints(EpSrc),
   write('done.'), flush_output,
-  print_similar_endpoints(EpSrc).
-print_similar_endpoints_dir(Dir,EpSrc) :-
+  print_similarity(EpSrc,SimCr).
+
+% SEMANTICS: generate and assert endpoints from the invokes in the files of Dir,
+% run similarity predicates and prints the answers to csv and txt files
+similarity_from_invokes_dir(Dir,EpSrc,_SimCr) :-
   retractall(endpoints(_,_,_)),
-  working_directory(_Old,Dir), directory_files('.',Files), member(File,Files),
+  directory_files(Dir,Files),
+  delete(Files,'.',Files1),
+  delete(Files1,'..',InFiles),
+  member(InFileName,InFiles),
+  atom_concat(Dir,InFileName,InFile),
   retractall(invokes(_,_,_,_,_,_,_,_,_)),
-  consult(File),
-  write('Generating endpoints from: '), write(File), nl, flush_output,
+  write('Consulting invokes/9 from:'), write(InFileName), nl,
+  consult(InFile),
   retractall(counter(_)), assert(counter(1)),
+  write('Generating endpoints ... '), flush_output,
   generate_and_assert_endpoints(EpSrc),
   write('done.'), flush_output,
   fail.
-print_similar_endpoints_dir(_Dir,EpSrc) :-
-  print_similar_endpoints(EpSrc).
-print_similar_endpoints(EpSrc) :-
-  atom_concat('similarEndpoints-',EpSrc,FileNamePrefix),
-  atom_concat(FileNamePrefix,'-report.txt',TXTFileName),
-  open(TXTFileName,write,Fd1,[alias(txt)]),
-  atom_concat(FileNamePrefix,'-report.csv',CSVFileName),
-  open(CSVFileName,write,Fd2,[alias(csv)]),
-  assert(ln(1)),
-  print_similar_endpoints_answers(EpSrc,nonemptyEqSet),
-  print_similar_endpoints_answers(EpSrc,nonemptySubSet),
-  print_similar_endpoints_answers(EpSrc,overlappingSet),
-  close(Fd1),
-  close(Fd2).
+similarity_from_invokes_dir(_Dir,EpSrc,SimCr) :-
+  print_similarity(EpSrc,SimCr).
 
-% SEMANTICS: generate_and_assert_endpoints/1 generates the endpoints either
+% SEMANTICS: generates the endpoints either
 % from all the traces of all test programs, or
 generate_and_assert_endpoints(trace) :-
   testPrograms(TPs),
@@ -146,10 +160,9 @@ generate_and_assert_endpoints(trace) :-
   endpoints(Trace,ESeq),
   assert(endpoints(trace,TP,ESeq)),
   fail.
-% from all the maximal invoke sequences of all test programs entry points
+% from all the invoke sequences of all entry points
 generate_and_assert_endpoints(miseq) :-
   testPrograms(TPs),
-  (TP,ESeq),
   member(TP,TPs),
   testProgram_entry_point_caller(TP,Caller),
   maximalInvokeSequence(TP,Caller,ISeq),
@@ -161,26 +174,43 @@ generate_and_assert_endpoints(miseq) :-
 generate_and_assert_endpoints(_) :-
   retractall(counter(_)).
 
-%
-print_similar_endpoints_answers(EpSrc,SimCr) :-
-  print_similar_endpoints_answer(EpSrc,SimCr),
+% SEMANTICS: open the txt and csv files and run
+% printall_similarity_answers
+print_similarity(EpSrc,SimCr) :-
+  atom_concat('similarEndpoints-',EpSrc,FileNamePrefix),
+  atom_concat(FileNamePrefix,'-report.txt',TXTFileName),
+  open(TXTFileName,write,Fd1,[alias(txt)]),
+  atom_concat(FileNamePrefix,'-report.csv',CSVFileName),
+  open(CSVFileName,write,Fd2,[alias(csv)]),
+  assert(ln(1)),
+  printall_similarity_answers(EpSrc,SimCr),
+  close(Fd1),
+  close(Fd2).
+
+% SEMANTICS: gets all answers from similarity predicates and
+% write them to csv and txt files
+printall_similarity_answers(EpSrc,SimCr) :-
+  print_similarity_ans(EpSrc,SimCr),
   fail.
-print_similar_endpoints_answers(_EpSrc,_SimCr).
-%
-print_similar_endpoints_answer(EpSrc,SimCr) :-
+printall_similarity_answers(_EpSrc,_SimCr).
+
+% SEMANTICS: run similar_tp/6 and similarity_score/4
+% write the answer to txt and csv files
+print_similarity_ans(EpSrc,SimCr) :-
   write(txt,'----------------------------------'),     nl(txt),
-  write(txt,'Querying similarTestProgs/6'),            nl(txt), nl(txt),
+  write(txt,'Querying similar_tp/6'),                  nl(txt), nl(txt),
   write(txt,'* Endpoints source: '), write(txt,EpSrc), nl(txt),
   write(txt,'* Criterion:        '), write(txt,SimCr), nl(txt),
   write(txt,'----------------------------------'),     nl(txt), nl(txt),
-  similarTestProgs(EpSrc,SimCr,TP1,TP2,Es1,Es2),
-  similarityScore(SimCr,Es1,Es2,Score),
+  similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2),
+  similarity_score(SimCr,Es1,Es2,Score),
   retract(ln(N)),
   write_txt(N,TP1,TP2,Es1,Es2,Score),
   write_csv(N,SimCr,TP1,TP2,Score),
   M is N+1,
   assert(ln(M)).
-%
+
+% SEMANTICS: write answer to txt
 write_txt(N,TP1,TP2,Es1,Es2,Score) :-
   set_output(txt),
   write('* ID: '),             write(N),       nl,
@@ -191,14 +221,15 @@ write_txt(N,TP1,TP2,Es1,Es2,Score) :-
   !,
   write('* Score: '),          write(Score),   nl, nl,
   write('----------------------------------'), nl.
-%
+
+% SEMANTICS: write answer to csv
 write_csv(N,SimCr,TP1,TP2,Score) :-
   set_output(csv),
-  write(N), write(','),
+  write(N),     write(','),
   write(SimCr), write(','),
-  write(TP1), write(','),
-  write(TP2), write(','),
-  write(Score), write(','), nl.
+  write(TP1),   write(','),
+  write(TP2),   write(','),
+  write(Score), nl.
 
 % SEMANTICS: for each test program TP,
 % generate a file invokes__TP.pl including the invokes facts of TP.
@@ -229,7 +260,7 @@ partition_invokes_testProgram(_TP).
 % SEMANTICS: for each file InFile in Dir,
 % create a file endpoints__InFile including the endpoits facts generated from
 % the EpSrc source of invokes facts in InFile.
-generate_and_assert_endpoints_dir(Dir,EpSrc) :-
+generate_and_write_endpoints_dir(Dir,EpSrc) :-
   directory_files(Dir,Files),
   delete(Files,'.',Files1),
   delete(Files1,'..',InFiles),
@@ -248,7 +279,7 @@ generate_and_assert_endpoints_dir(Dir,EpSrc) :-
   write_endpoints,
   told,
   fail.
-generate_and_assert_endpoints_dir(_Dir,_EpSrc).
+generate_and_write_endpoints_dir(_Dir,_EpSrc).
 
 % SEMANTICS: write endpoints facts.
 write_endpoints :-
