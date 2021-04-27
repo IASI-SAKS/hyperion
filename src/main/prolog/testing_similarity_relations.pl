@@ -16,11 +16,11 @@ check(Src) :-
   write('* Checking eq_set_of_invoked_methods'), nl,
   check_eq_set_of_invoked_methods(TPs), nl, nl,
   %%
-  write('* Checking sub_set_of_maximalInvokeSequences'), nl,
-  check_sub_set_of_maximalInvokeSequences(TPs), nl, nl,
+  write('* Checking sub_set_of_invoke_sequences'), nl,
+  check_sub_set_of_invoke_sequences(TPs), nl, nl,
   %%
-  write('* Checking eq_set_of_maximalInvokeSequences'), nl,
-  check_eq_set_of_maximalInvokeSequences(TPs),
+  write('* Checking eq_set_of_invoke_sequences'), nl,
+  check_eq_set_of_invoke_sequences(TPs),
   told.
 
 check_sub_set_of_invoked_methods(TPs) :-
@@ -33,17 +33,17 @@ check_eq_set_of_invoked_methods(TPs) :-
   apply_check(eq_set_of_invoked_methods(TP1,TP2)).
 check_eq_set_of_invoked_methods(_TPs).
 %
-check_sub_set_of_maximalInvokeSequences(TPs) :-
+check_sub_set_of_invoke_sequences(TPs) :-
   select(TP1,TPs,RTPs), tp_callers(TP1,TP1Callers), member(Caller,TP1Callers),
   member(TP2,RTPs),     tp_callers(TP2,TP2Callers), member(Caller,TP2Callers),
-  apply_check(sub_set_of_maximalInvokeSequences(TP1,TP2,Caller)).
-check_sub_set_of_maximalInvokeSequences(_TPs).
+  apply_check(sub_set_of_invoke_sequences(TP1,TP2,Caller)).
+check_sub_set_of_invoke_sequences(_TPs).
 %
-check_eq_set_of_maximalInvokeSequences(TPs) :-
+check_eq_set_of_invoke_sequences(TPs) :-
   select(TP1,TPs,RTPs), tp_callers(TP1,TP1Callers), member(Caller,TP1Callers),
   member(TP2,RTPs),     tp_callers(TP2,TP2Callers), member(Caller,TP2Callers),
-  apply_check(eq_set_of_maximalInvokeSequences(TP1,TP2,Caller)).
-check_eq_set_of_maximalInvokeSequences(_TPs).
+  apply_check(eq_set_of_invoke_sequences(TP1,TP2,Caller)).
+check_eq_set_of_invoke_sequences(_TPs).
 %
 apply_check(P) :-
   write('Checking '), write(P), write(': '), (P-> write(true);write(false)), nl, fail.
@@ -161,15 +161,15 @@ generate_and_assert_endpoints(trace) :-
   assert(endpoints(trace,TP,ESeq)),
   fail.
 % from all the invoke sequences of all entry points
-generate_and_assert_endpoints(miseq) :-
+generate_and_assert_endpoints(iseq) :-
   testPrograms(TPs),
   member(TP,TPs),
   testProgram_entry_point_caller(TP,Caller),
-  maximalInvokeSequence(TP,Caller,ISeq),
+  invoke_sequence(TP,Caller,ISeq),
   retract(counter(N)), M is N+1, assert(counter(M)),
   write(N), write(' '), flush_output,
   endpoints(ISeq,ESeq),
-  assert(endpoints(miseq,TP,ESeq)),
+  assert(endpoints(iseq,TP,ESeq)),
   fail.
 generate_and_assert_endpoints(_) :-
   retractall(counter(_)).
