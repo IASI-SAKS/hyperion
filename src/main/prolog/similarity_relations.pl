@@ -2,15 +2,15 @@
 
 % invokes/9 semantics
 % invokes(
-% 1 testProgram,
-% 2 branchPoint,
-% 3 branchSequenceNumber,
-% 4 caller,
-% 5 callerProgramCounter,
-% 6 frameEpoch,
-% 7 pathCondition,
-% 8 callee,
-% 9 parameters)
+% 1 TestProgram,
+% 2 BranchingPointList,
+% 3 SeqNum,
+% 4 Caller,
+% 5 ProgramPoint,
+% 6 FrameEpoch,
+% 7 PathCondition,
+% 8 Callee,
+% 9 Parameters)
 
 %% SIMILARITY RELATION ---------------------------------------------------------
 % MODE: sub_set_of_invoked_methods(+TP1,+TP2)
@@ -42,86 +42,86 @@ eq_set_of_invoked_methods(TP1,TP2) :-
   sub_set_of_invoked_methods(TP2,TP1).
 
 %% SIMILARITY RELATION ---------------------------------------------------------
-% MODE: sub_set_of_maximalInvokeSequences(+TP1,+TP2,+Caller)
-% SEMANTICS: sub_set_of_maximalInvokeSequences(TP1,TP2,Caller) holds if
+% MODE: sub_set_of_invoke_sequences(+TP1,+TP2,+Caller)
+% SEMANTICS: sub_set_of_invoke_sequences(TP1,TP2,Caller) holds if
 % the set of maximal sequences of direct invocations performed by Caller in TP1
 % is a subset of those performed by Caller in TP2
 % (library(ordsets): https://www.swi-prolog.org/pldoc/man?section=ordsets)
-sub_set_of_maximalInvokeSequences(TP1,TP2,Caller) :-
-  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
+sub_set_of_invoke_sequences(TP1,TP2,Caller) :-
+  findall(MSeq, (invoke_sequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
   list_to_ord_set(MSeq1Lst,S1), % library(ordsets) predicate
   ( ord_empty(S1) ->
     true
   ; (
-      findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
+      findall(MSeq, (invoke_sequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
       list_to_ord_set(MSeq2Lst,S2),
       ord_subset(S1,S2)          % library(ordsets) predicate
     )
   ).
 
-% MODE: eq_set_of_maximalInvokeSequences(+TP1,+TP2,+Caller)
-% SEMANTICS: eq_set_of_maximalInvokeSequences(TP1,TP2,Caller) holds if
+% MODE: eq_set_of_invoke_sequences(+TP1,+TP2,+Caller)
+% SEMANTICS: eq_set_of_invoke_sequences(TP1,TP2,Caller) holds if
 % the set of maximal sequences of direct invocations performed by Caller in TP1 and
 % the set of maximal sequences of direct invocations performed by Caller in TP2
 % have the same elements
-eq_set_of_maximalInvokeSequences(TP1,TP2,Caller) :-
-  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
+eq_set_of_invoke_sequences(TP1,TP2,Caller) :-
+  findall(MSeq, (invoke_sequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
   list_to_ord_set(MSeq1Lst,S1),
-  findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
+  findall(MSeq, (invoke_sequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
   list_to_ord_set(MSeq2Lst,S2),
   ord_seteq(S1,S2).             % library(ordsets) predicate
 
-% SEMANTICS: maximalInvokeSequence(TP,Caller,ISeq)
+% SEMANTICS: invoke_sequence(TP,Caller,ISeq)
 % ISeq is a maximal sequence of direct invocations performed by Caller in TP
-maximalInvokeSequence(TP,Caller,[FirstInvokes|ISeqTail]) :-
-  first_miseq_invokes(TP,Caller,FirstInvokes),
-  last_miseq_invokes(TP,Caller,LastInvokes),
-  miseq_invokes(FirstInvokes,[FirstInvokes|ISeqTail]),
+invoke_sequence(TP,Caller,[FirstInvokes|ISeqTail]) :-
+  first_iseq_invokes(TP,Caller,FirstInvokes),
+  last_iseq_invokes(TP,Caller,LastInvokes),
+  iseq_invokes(FirstInvokes,[FirstInvokes|ISeqTail]),
   last(ISeqTail,LastInvokes).
 
 % Invokes is the first invocation performed by Caller in TP
-first_miseq_invokes(TP,Caller,Invokes) :-
+first_iseq_invokes(TP,Caller,Invokes) :-
   Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  \+ exists_miseq_preceeding_invokes(Invokes).
+  \+ exists_iseq_preceeding_invokes(Invokes).
 % first_invokes utility predicate
-exists_miseq_preceeding_invokes(Invokes) :- miseq_next(_,Invokes).
+exists_iseq_preceeding_invokes(Invokes) :- iseq_next(_,Invokes).
 % Invokes is the last invocation performed by Caller in TP
-last_miseq_invokes(TP,Caller,Invokes) :-
+last_iseq_invokes(TP,Caller,Invokes) :-
   Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  \+ exists_miseq_succeeding_invokes(Invokes).
+  \+ exists_iseq_succeeding_invokes(Invokes).
 % last_invokes utility predicate
-exists_miseq_succeeding_invokes(Invokes) :- miseq_next(Invokes,_).
+exists_iseq_succeeding_invokes(Invokes) :- iseq_next(Invokes,_).
 
-% SEMANTICS: miseq_invokes(I,ISeq)
+% SEMANTICS: iseq_invokes(I,ISeq)
 % ISeq is a sequence of invocations performed by Caller in TP starting from I
-miseq_invokes(I1,[I1|Is]) :-
+iseq_invokes(I1,[I1|Is]) :-
   I1 = invokes(TP,_,_,Caller,_,_,_,_,_),
   I2 = invokes(TP,_,_,Caller,_,_,_,_,_),
-  miseq_next(I1,I2),
-  miseq_invokes(I2,Is).
-miseq_invokes(I1,[I1]).
+  iseq_next(I1,I2),
+  iseq_invokes(I2,Is).
+iseq_invokes(I1,[I1]).
 
-% SEMANTICS: miseq_next(Invokes1,Invokes2)
+% SEMANTICS: iseq_next(Invokes1,Invokes2)
 % Invokes2 is a subsequent invocation performed by Caller in TP
-miseq_next(Invokes1,Invokes2) :-
+iseq_next(Invokes1,Invokes2) :-
   Invokes1 = invokes(TP,BP,SN1,Caller,_,_,_,_,_), Invokes1,
   Invokes2 = invokes(TP,BP,SN2,Caller,_,_,_,_,_), Invokes2,
   SN2 > SN1,
-  \+ exists_miseq_intermediate_invokes(Invokes1,Invokes2),
+  \+ exists_iseq_intermediate_invokes(Invokes1,Invokes2),
   !.
-miseq_next(Invokes1,Invokes2) :-
+iseq_next(Invokes1,Invokes2) :-
   Invokes1 = invokes(TP,BP1,_,Caller,_,_,_,_,_), Invokes1,
   Invokes2 = invokes(TP,BP2,_,Caller,_,_,_,_,_), Invokes2,
   append(BP1,[_|_],BP2),
-  \+ exists_miseq_intermediate_invokes(Invokes1,Invokes2).
+  \+ exists_iseq_intermediate_invokes(Invokes1,Invokes2).
 
-% SEMANTICS: exists_miseq_intermediate_invokes(Invokes1,Invokes2) holds if
+% SEMANTICS: exists_iseq_intermediate_invokes(Invokes1,Invokes2) holds if
 % there exists an invokes InvokesM having the same TP and Caller of
 % Invokes1 and Invokes2, and
 % either (a.1) it has the same branching point BP of Invokes1 and Invokes2, and
 % (a.2) its seq.no. SN is greater than the seq.no SN1 of Invokes1 and
 % less than the seq.no. SN2 of Invokes2
-exists_miseq_intermediate_invokes(Invokes1,Invokes2) :-
+exists_iseq_intermediate_invokes(Invokes1,Invokes2) :-
   Invokes1 = invokes(TP,BP,SN1,Caller,_,_,_,_,_),
   Invokes2 = invokes(TP,BP,SN2,Caller,_,_,_,_,_),
   InvokesM = invokes(TP,BP, SN,Caller,_,_,_,_,_), InvokesM, % (a.1)
@@ -131,7 +131,7 @@ exists_miseq_intermediate_invokes(Invokes1,Invokes2) :-
 % and (b.2) BP is a prefix of the branching point BP2 of Invokes2, and either
 % (b.2.1) BP2 extends BP, or
 % (b.2.2) BP2 = BP and a seq.no. SN less than the seq.no. SN2 of Invokes2
-exists_miseq_intermediate_invokes(Invokes1,Invokes2) :-
+exists_iseq_intermediate_invokes(Invokes1,Invokes2) :-
   Invokes1 = invokes(TP,BP1,  _,Caller,_,_,_,_,_),
   Invokes2 = invokes(TP,BP2,SN2,Caller,_,_,_,_,_),
   BP1 \= BP2,
@@ -142,13 +142,6 @@ exists_miseq_intermediate_invokes(Invokes1,Invokes2) :-
   ;
     ( Infix = [], SN < SN2 ) % (b.2.2)
   ).
-
-% SEMANTICS: invokeSequence(TP,Caller,ISeq)
-% ISeq is a sequence of direct invocations performed by Caller in TP
-invokeSequence(TP,Caller,ISeq) :-
-  maximalInvokeSequence(TP,Caller,MSeq),
-  ISeq=[_,_|_], % subsequences with at least two methods
-  prefix(ISeq,MSeq).
 
 % SEMANTICS: trace(TP,Trace)
 % Trace is a trace generated by the symbolic execution of TP
@@ -443,7 +436,7 @@ method(_,domain_error(not_a_method)).
 % MODE: similar_tp(+EpSrc,+SimCr,-TP1,-TP2,-Es1,-Es2)
 % SEMANTICS: Es1 and Es2 are lists of endpoints of test programs TP1 and TP2,
 % respectively, generated from lists of invokes representing either a trace
-% (EpSrc = trace) or a maximal invoke sequence (EpSrc = miseq)
+% (EpSrc = trace) or a maximal invoke sequence (EpSrc = iseq)
 % that satisfy the similarity criterion SimCr.
 similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
   endpoints(EpSrc,TP1,Es1), Es1\==[],
