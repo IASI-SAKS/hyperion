@@ -65,6 +65,14 @@ To load `similarity_relations.pl`:
 consult('src/main/prolog/similarity_relations.pl').
 ```
 
+To load `testing_similarity_relations.pl`:
+
+```prolog
+consult('src/main/prolog/testing_similarity_relations.pl').
+```
+
+which also loads `similarity_relations.pl`.
+
 To get an execution trace `Trace` of the method annotated as `@Test` in the test program `TP`:
 
 ```prolog
@@ -93,8 +101,7 @@ To get a pair of similar test programs `TP1` and `TP2`:
 ```prolog
 similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2).
 ```
-
-Where:
+where:
 * EpSrc specifies the source of the `endpoint` facts,
 * SimCr specifies the criterion to evaluate similarity between `TP1` and `TP2` (it can be substituted for any of these values: `nonemptyEqSet`, `nonemptySubSet`, `nonemptyIntersection`),
 * Es1 and Es2 are nonempty lists of `endpoint` facts generated from the `invokes` facts of `TP1` and `TP2`, respectively, that make the test programs similar.
@@ -104,6 +111,35 @@ To get the similarity score between two list of `endpoint` facts:
 ```prolog
 similarity_score(SimCr,Es1,Es2,Score).
 ```
+
+### Evaluating similarity of test programs
+
+* Step 1. Load `testing_similarity_relations.pl`:
+
+```prolog
+consult('src/main/prolog/testing_similarity_relations.pl').
+```
+
+* Step 2. Load `rest _api_regex` facts representing regular expressions used to match API URIs (4th component of `endpoint` facts) in evaluating the similarity of `endpoint` facts:
+
+```prolog
+consult('src/test/resources/report/endpoint-list.pl').
+```
+
+* Step 3. Run the following query to:
+  - generate the `endpoint` facts from the execution traces (by using `generate_and_assert_endpoints(EpSrc)`),
+  - evaluate similarity between test program using the `nonemptyIntersection` criterion (by using `similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2)`), and
+  - compute the similarity score (by using `similarity_score(SimCr,Es1,Es2,Score)`).
+
+```prolog
+similarity_from_invokes_file('src/test/resources/report/inspection-invokes.pl',trace,nonemptyIntersection).
+```
+
+where `inspection-endpoint-expeval.pl` is the dataset of `invokes` facts used to generate the `endpoint` facts. The above query generates two files:
+
+- [similarEndpoints-trace-report.csv](src/test/resources/report/similarEndpoints-trace-report.csv), including the pairs of similar programs (3rd and 4th column) together with the corresponding score (5th column);
+
+- [similarEndpoints-trace-report.txt](src/test/resources/report/similarEndpoints-trace-report.txt), including the pairs of similar programs together with the lists of `endpoint` facts `Es1` and `Es2` of `TP1` and `TP2`, respectively, that makes the two test programs similar.
 
 ## Wrapping @Before and @BeforeEach
 
