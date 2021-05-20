@@ -123,7 +123,7 @@ consult('src/main/prolog/testing_similarity_relations.pl').
 * Step 2. Load `rest _api_regex` facts representing regular expressions used to match API URIs (4th component of `endpoint` facts) in evaluating the similarity of `endpoint` facts:
 
 ```prolog
-consult('src/test/resources/report/endpoint-list.pl').
+consult('src/test/resources/report/URI-regex-list.pl').
 ```
 
 * Step 3. Run the following query to:
@@ -135,7 +135,7 @@ consult('src/test/resources/report/endpoint-list.pl').
 similarity_from_invokes_file('src/test/resources/report/inspection-invokes.pl',trace,nonemptyIntersection).
 ```
 
-where `inspection-endpoint-expeval.pl` is the dataset of `invokes` facts used to generate the `endpoint` facts. The above query generates two files:
+where `inspection-invokes.pl` is the dataset of `invokes` facts used to generate the `endpoint` facts. The above query generates two files:
 
 - [similarEndpoints-trace-report.csv](src/test/resources/report/similarEndpoints-trace-report.csv), including the pairs of similar programs (3rd and 4th column) together with the corresponding score (5th column);
 
