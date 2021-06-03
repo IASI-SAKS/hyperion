@@ -1,19 +1,22 @@
 # Hyperion
 
-> Of Hyperion we are told that he was the first to understand, by diligent attention and observation, the movement of both the sun and the moon and the other stars, and the seasons as well, in that they are caused by these bodies, and to make these facts known to others; and that for this reason he was called the father of these bodies, since he had begotten, so to speak, the speculation about them and their nature.    
+> Of Hyperion we are told that he was the first to understand, by diligent attention and observation, the movement of
+> both the sun and the moon and the other stars, and the seasons as well, in that they are caused by these bodies, and
+> to make these facts known to others; and that for this reason he was called the father of these bodies, since he had
+> begotten, so to speak, the speculation about them and their nature.    
 >  — Diodorus Siculus (5.67.1)
 
-Hyperion is a tool aiming at analysing Java test programs, to generate multiple similarity metrics. To this end, hyperion relies on [JBSE](https://github.com/pietrobraione/jbse) to carry out symbolic execution of JUnit test programs, generate prolog facts, and carry out multiple analyses on these facts.
+Hyperion is a tool aiming at analysing Java test programs, to generate multiple similarity metrics. To this end,
+hyperion relies on [JBSE](https://github.com/pietrobraione/jbse) to carry out symbolic execution of JUnit test programs,
+generate prolog facts, and carry out multiple analyses on these facts.
 
 ## Dependencies
 
 There are several dependencies to hyperion:
 
 * JBSE (currently bundled in the project)
-* z3
+* `z3`
 * SWI Prolog
-
-The source is organized as a maven project, so running `mvn build` should be enough to get everything up and running.
 
 `z3` is an external dependency, which should be available in the system path for the tool to correctly run. Similarly,
 SWI Prolog must be manually installed in the system.
@@ -31,10 +34,29 @@ OS, this configuration requires some care. You can refer the official deployment
 
 ## Running
 
-Hyperion can be run as:
+The source is organized as a maven project, so running `mvn build` should be enough to get everything up and running.
+
+Hyperion can be then run as:
 
 ```bash
-java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path to test classes> <path to SUT classes> [additional paths to add in classpath]
+java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path to JSON config file>
+```
+
+A sample JSON config file is located in `src/main/resources/config.json` in this repository. The structure of the JSON
+configuration file is:
+
+```json
+{
+  "sut": ["path to classes 1", "path to classes 2"],
+  "testPrograms": ["path to test classes 1", "path to test classes 1"],
+  "includeTest": ["list", "of", "@Test", "methods", "to", "analyze"],
+  "excludeTest": ["list", "of", "@Test", "methods", "to", "skip"],
+  "additionalClasspath": ["path", "to", "any", "other", "needed", "dependency"],
+  "excludeTracedPackages": [
+    "java/",
+    "sun/"
+  ]
+}
 ```
 
 # Dev Notes
@@ -137,9 +159,11 @@ similarity_from_invokes_file('src/test/resources/report/inspection-invokes.pl',t
 
 where `inspection-invokes.pl` is the dataset of `invokes` facts used to generate the `endpoint` facts. The above query generates two files:
 
-- [similarEndpoints-trace-report.csv](src/test/resources/report/similarEndpoints-trace-report.csv), including the pairs of similar programs (3rd and 4th column) together with the corresponding score (5th column);
+- [similarEndpoints-trace-report.csv](src/test/resources/report/similarEndpoints-trace-report.csv), including the pairs of
+  similar programs (3rd and 4th column) together with the corresponding score (5th column);
 
-- [similarEndpoints-trace-report.txt](src/test/resources/report/similarEndpoints-trace-report.txt), including the pairs of similar programs together with the lists of `endpoint` facts `Es1` and `Es2` of `TP1` and `TP2`, respectively, that makes the two test programs similar.
+- [similarEndpoints-trace-report.txt](src/test/resources/report/similarEndpoints-trace-report.txt), including the pairs of
+  similar programs together with the lists of `endpoint` facts `Es1` and `Es2` of `TP1` and `TP2`, respectively, that makes the two test programs similar.
 
 ## Wrapping @Before and @BeforeEach
 
