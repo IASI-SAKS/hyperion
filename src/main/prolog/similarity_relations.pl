@@ -2,15 +2,15 @@
 
 % invokes/9 semantics
 % invokes(
-% 1 testName,
-% 2 branchPoint,
-% 3 branchSequenceNumber,
-% 4 caller,
-% 5 callerProgramCounter,
-% 6 frameEpoch,
-% 7 pathCondition,
-% 8 callee,
-% 9 parameters)
+% 1 TestProgram,
+% 2 BranchingPointList,
+% 3 SeqNum,
+% 4 Caller,
+% 5 ProgramPoint,
+% 6 FrameEpoch,
+% 7 PathCondition,
+% 8 Callee,
+% 9 Parameters)
 
 %% SIMILARITY RELATION ---------------------------------------------------------
 % MODE: sub_set_of_invoked_methods(+TP1,+TP2)
@@ -42,86 +42,86 @@ eq_set_of_invoked_methods(TP1,TP2) :-
   sub_set_of_invoked_methods(TP2,TP1).
 
 %% SIMILARITY RELATION ---------------------------------------------------------
-% MODE: sub_set_of_maximalInvokeSequences(+TP1,+TP2,+Caller)
-% SEMANTICS: sub_set_of_maximalInvokeSequences(TP1,TP2,Caller) holds if
+% MODE: sub_set_of_invoke_sequences(+TP1,+TP2,+Caller)
+% SEMANTICS: sub_set_of_invoke_sequences(TP1,TP2,Caller) holds if
 % the set of maximal sequences of direct invocations performed by Caller in TP1
 % is a subset of those performed by Caller in TP2
 % (library(ordsets): https://www.swi-prolog.org/pldoc/man?section=ordsets)
-sub_set_of_maximalInvokeSequences(TP1,TP2,Caller) :-
-  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
+sub_set_of_invoke_sequences(TP1,TP2,Caller) :-
+  findall(MSeq, (invoke_sequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
   list_to_ord_set(MSeq1Lst,S1), % library(ordsets) predicate
   ( ord_empty(S1) ->
     true
   ; (
-      findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
+      findall(MSeq, (invoke_sequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
       list_to_ord_set(MSeq2Lst,S2),
       ord_subset(S1,S2)          % library(ordsets) predicate
     )
   ).
 
-% MODE: eq_set_of_maximalInvokeSequences(+TP1,+TP2,+Caller)
-% SEMANTICS: eq_set_of_maximalInvokeSequences(TP1,TP2,Caller) holds if
+% MODE: eq_set_of_invoke_sequences(+TP1,+TP2,+Caller)
+% SEMANTICS: eq_set_of_invoke_sequences(TP1,TP2,Caller) holds if
 % the set of maximal sequences of direct invocations performed by Caller in TP1 and
 % the set of maximal sequences of direct invocations performed by Caller in TP2
 % have the same elements
-eq_set_of_maximalInvokeSequences(TP1,TP2,Caller) :-
-  findall(MSeq, (maximalInvokeSequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
+eq_set_of_invoke_sequences(TP1,TP2,Caller) :-
+  findall(MSeq, (invoke_sequence(TP1,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq1Lst),
   list_to_ord_set(MSeq1Lst,S1),
-  findall(MSeq, (maximalInvokeSequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
+  findall(MSeq, (invoke_sequence(TP2,Caller,ISeq), invokes_callees(ISeq,MSeq)), MSeq2Lst),
   list_to_ord_set(MSeq2Lst,S2),
   ord_seteq(S1,S2).             % library(ordsets) predicate
 
-% SEMANTICS: maximalInvokeSequence(TP,Caller,ISeq)
+% SEMANTICS: invoke_sequence(TP,Caller,ISeq)
 % ISeq is a maximal sequence of direct invocations performed by Caller in TP
-maximalInvokeSequence(TP,Caller,[FirstInvokes|ISeqTail]) :-
-  first_invokes(TP,Caller,FirstInvokes),
-  last_invokes(TP,Caller,LastInvokes),
-  iseq(FirstInvokes,[FirstInvokes|ISeqTail]),
+invoke_sequence(TP,Caller,[FirstInvokes|ISeqTail]) :-
+  first_iseq_invokes(TP,Caller,FirstInvokes),
+  last_iseq_invokes(TP,Caller,LastInvokes),
+  iseq_invokes(FirstInvokes,[FirstInvokes|ISeqTail]),
   last(ISeqTail,LastInvokes).
 
 % Invokes is the first invocation performed by Caller in TP
-first_invokes(TP,Caller,Invokes) :-
+first_iseq_invokes(TP,Caller,Invokes) :-
   Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  \+ exists_preceeding_invokes(Invokes).
+  \+ exists_iseq_preceeding_invokes(Invokes).
 % first_invokes utility predicate
-exists_preceeding_invokes(Invokes) :- next(_,Invokes).
+exists_iseq_preceeding_invokes(Invokes) :- iseq_next(_,Invokes).
 % Invokes is the last invocation performed by Caller in TP
-last_invokes(TP,Caller,Invokes) :-
+last_iseq_invokes(TP,Caller,Invokes) :-
   Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes,
-  \+ exists_succeeding_invokes(Invokes).
+  \+ exists_iseq_succeeding_invokes(Invokes).
 % last_invokes utility predicate
-exists_succeeding_invokes(Invokes) :- next(Invokes,_).
+exists_iseq_succeeding_invokes(Invokes) :- iseq_next(Invokes,_).
 
-% SEMANTICS: iseq(I,ISeq)
+% SEMANTICS: iseq_invokes(I,ISeq)
 % ISeq is a sequence of invocations performed by Caller in TP starting from I
-iseq(I1,[I1|Is]) :-
+iseq_invokes(I1,[I1|Is]) :-
   I1 = invokes(TP,_,_,Caller,_,_,_,_,_),
   I2 = invokes(TP,_,_,Caller,_,_,_,_,_),
-  next(I1,I2),
-  iseq(I2,Is).
-iseq(I1,[I1]).
+  iseq_next(I1,I2),
+  iseq_invokes(I2,Is).
+iseq_invokes(I1,[I1]).
 
-% SEMANTICS: next(Invokes1,Invokes2)
+% SEMANTICS: iseq_next(Invokes1,Invokes2)
 % Invokes2 is a subsequent invocation performed by Caller in TP
-next(Invokes1,Invokes2) :-
+iseq_next(Invokes1,Invokes2) :-
   Invokes1 = invokes(TP,BP,SN1,Caller,_,_,_,_,_), Invokes1,
   Invokes2 = invokes(TP,BP,SN2,Caller,_,_,_,_,_), Invokes2,
   SN2 > SN1,
-  \+ exists_intermediate_invokes(Invokes1,Invokes2),
+  \+ exists_iseq_intermediate_invokes(Invokes1,Invokes2),
   !.
-next(Invokes1,Invokes2) :-
+iseq_next(Invokes1,Invokes2) :-
   Invokes1 = invokes(TP,BP1,_,Caller,_,_,_,_,_), Invokes1,
   Invokes2 = invokes(TP,BP2,_,Caller,_,_,_,_,_), Invokes2,
   append(BP1,[_|_],BP2),
-  \+ exists_intermediate_invokes(Invokes1,Invokes2).
+  \+ exists_iseq_intermediate_invokes(Invokes1,Invokes2).
 
-% SEMANTICS: exists_intermediate_invokes(Invokes1,Invokes2) holds if
+% SEMANTICS: exists_iseq_intermediate_invokes(Invokes1,Invokes2) holds if
 % there exists an invokes InvokesM having the same TP and Caller of
 % Invokes1 and Invokes2, and
 % either (a.1) it has the same branching point BP of Invokes1 and Invokes2, and
 % (a.2) its seq.no. SN is greater than the seq.no SN1 of Invokes1 and
 % less than the seq.no. SN2 of Invokes2
-exists_intermediate_invokes(Invokes1,Invokes2) :-
+exists_iseq_intermediate_invokes(Invokes1,Invokes2) :-
   Invokes1 = invokes(TP,BP,SN1,Caller,_,_,_,_,_),
   Invokes2 = invokes(TP,BP,SN2,Caller,_,_,_,_,_),
   InvokesM = invokes(TP,BP, SN,Caller,_,_,_,_,_), InvokesM, % (a.1)
@@ -131,7 +131,7 @@ exists_intermediate_invokes(Invokes1,Invokes2) :-
 % and (b.2) BP is a prefix of the branching point BP2 of Invokes2, and either
 % (b.2.1) BP2 extends BP, or
 % (b.2.2) BP2 = BP and a seq.no. SN less than the seq.no. SN2 of Invokes2
-exists_intermediate_invokes(Invokes1,Invokes2) :-
+exists_iseq_intermediate_invokes(Invokes1,Invokes2) :-
   Invokes1 = invokes(TP,BP1,  _,Caller,_,_,_,_,_),
   Invokes2 = invokes(TP,BP2,SN2,Caller,_,_,_,_,_),
   BP1 \= BP2,
@@ -143,14 +143,118 @@ exists_intermediate_invokes(Invokes1,Invokes2) :-
     ( Infix = [], SN < SN2 ) % (b.2.2)
   ).
 
-% SEMANTICS: invokeSequence(TP,Caller,ISeq)
-% ISeq is a sequence of direct invocations performed by Caller in TP
-invokeSequence(TP,Caller,ISeq) :-
-  maximalInvokeSequence(TP,Caller,MSeq),
-  ISeq=[_,_|_], % subsequences with at least two methods
-  prefix(ISeq,MSeq).
+% SEMANTICS: trace(TP,Trace)
+% Trace is a trace generated by the symbolic execution of TP
+trace(TP,Trace) :-
+  testProgram_entry_point_invokes(TP,Invokes),
+  trace_invokes(Invokes,Trace).
+
+% SEMANTICS: trace_invokes(I,IS)
+% IS is a sequence of invokes starting from I
+trace_invokes(I1,[I1|Is]) :-
+  invokes_component(I1,testProgram,TP),
+  invokes_component(I2,testProgram,TP),
+  trace_next(I1,I2),
+  trace_invokes(I2,Is).
+trace_invokes(I1,[I1]) :-
+  \+ exists_trace_succeeding_invokes(I1).
+
+% trace utility predicates
+exists_trace_preceeding_invokes(Invokes) :- trace_next(_,Invokes).
+exists_trace_succeeding_invokes(Invokes) :- trace_next(Invokes,_).
+
+% SEMANTICS: trace_next(Invokes1,Invokes2)
+% Invokes2 is a subsequent invocation performed in TP
+trace_next(Invokes1,Invokes2) :-
+  Invokes1 = invokes(TP,BP,SN1,_,_,_,_,_,_), Invokes1,
+  Invokes2 = invokes(TP,BP,SN2,_,_,_,_,_,_), Invokes2,
+  SN2 > SN1,
+  \+ exists_trace_intermediate_invokes(Invokes1,Invokes2),
+  !.
+trace_next(Invokes1,Invokes2) :-
+  Invokes1 = invokes(TP,BP1,_,_,_,_,_,_,_), Invokes1,
+  Invokes2 = invokes(TP,BP2,_,_,_,_,_,_,_), Invokes2,
+  append(BP1,[_|_],BP2),
+  \+ exists_trace_intermediate_invokes(Invokes1,Invokes2).
+
+% SEMANTICS: exists_trace_intermediate_invokes(Invokes1,Invokes2) holds if
+% there exists an invokes InvokesM having the same TP and Caller of
+% Invokes1 and Invokes2, and
+% either (a.1) it has the same branching point BP of Invokes1 and Invokes2, and
+% (a.2) its seq.no. SN is greater than the seq.no SN1 of Invokes1 and
+% less than the seq.no. SN2 of Invokes2
+exists_trace_intermediate_invokes(Invokes1,Invokes2) :-
+  Invokes1 = invokes(TP,BP,SN1,_,_,_,_,_,_),
+  Invokes2 = invokes(TP,BP,SN2,_,_,_,_,_,_),
+  InvokesM = invokes(TP,BP, SN,_,_,_,_,_,_), InvokesM, % (a.1)
+  SN1 < SN, SN < SN2,                                  % (a.2)
+  !.
+% or (b.1) its branching point BP extends the branching point BP1 of Invokes1,
+% and (b.2) BP is a prefix of the branching point BP2 of Invokes2, and either
+% (b.2.1) BP2 extends BP, or
+% (b.2.2) BP2 = BP and a seq.no. SN less than the seq.no. SN2 of Invokes2
+exists_trace_intermediate_invokes(Invokes1,Invokes2) :-
+  Invokes1 = invokes(TP,BP1,  _,_,_,_,_,_,_),
+  Invokes2 = invokes(TP,BP2,SN2,_,_,_,_,_,_),
+  BP1 \= BP2,
+  InvokesM = invokes(TP,BP,  SN,_,_,_,_,_,_), InvokesM,
+  append(BP1,[_|_],BP),      % (b.1)
+  append(BP,Infix,BP2),      % (b.2)
+  ( Infix = [_|_]            % (b.2.1)
+  ;
+    ( Infix = [], SN < SN2 ) % (b.2.2)
+  ).
+
+% MODE: testProgram_entry_point_invokes(+TP,-Invokes)
+% SEMANTICS: Invokes is the first invocation performed by TP
+testProgram_entry_point_invokes(TP,Invokes) :-
+  testProgram_entry_point_caller(TP,Caller),
+  Invokes = invokes(TP,_,_,Caller,_,_,_,_,_), Invokes, % required for \+
+  \+ exists_trace_preceeding_invokes(Invokes).
+% MODE: testProgram_entry_point_caller(+TP,-Caller)
+% SEMANTICS: Caller is the caller method occurring in the
+% first invocation performed by TP
+testProgram_entry_point_caller(TP,Caller) :-
+  atom_chars(TP,TPChars),
+  replace(TPChars,'.','/',CallerPrefixChars),
+  atom_chars(CallerPrefix,CallerPrefixChars),
+  atom_concat(CallerPrefix,':()V',Caller).
 
 % Utility predicates -----------------------------------------------------------
+
+% utility predicates to get the components of invokes
+invokes_component(I,testProgram,TestProgram) :-
+  I = invokes(TestProgram,_,_,_,_,_,_,_,_).
+invokes_component(I,branchPoint,BranchPoint) :-
+  I = invokes(_,BranchPoint,_,_,_,_,_,_,_).
+invokes_component(I,branchSequenceNumber,BranchSequenceNumber) :-
+  I = invokes(_,_,BranchSequenceNumber,_,_,_,_,_,_).
+invokes_component(I,caller,Caller) :-
+  I = invokes(_,_,_,Caller,_,_,_,_,_).
+invokes_component(I,callerProgramCounter,CallerProgramCounter) :-
+  I = invokes(_,_,_,_,CallerProgramCounter,_,_,_,_).
+invokes_component(I,frameEpoch,FrameEpoch) :-
+  I = invokes(_,_,_,_,_,FrameEpoch,_,_,_).
+invokes_component(I,pathCondition,PathCondition) :-
+  I = invokes(_,_,_,_,_,_,PathCondition,_,_).
+invokes_component(I,callee,Callee) :-
+  I = invokes(_,_,_,_,_,_,_,Callee,_).
+invokes_component(I,parameters,Parameters) :-
+  I = invokes(_,_,_,_,_,_,_,_,Parameters).
+
+% MODE: replace(+CharsIn,+X,+Y,-CharsOut)
+% SEMANTICS: CharsOut is obtained from CharsIn by replacing
+% all occurrences of X by Y
+replace([],_X,_Y,[]).
+replace([CharIn|CharsIn],X,Y,[CharOut|CharsOut]) :-
+  CharIn == X,
+  !,
+  CharOut = Y,
+  replace(CharsIn,X,Y,CharsOut).
+replace([CharIn|CharsIn],X,Y,[CharOut|CharsOut]) :-
+  CharIn = CharOut,
+  replace(CharsIn,X,Y,CharsOut).
+
 % MODE: testPrograms(-TPs)
 % SEMANTICS: TPs is the set of executed Test Programs
 testPrograms(TPs) :-
@@ -210,58 +314,56 @@ mset_invokes([M|Ms],Is) :-
   selectchk(I,Is,Is1),
   mset_invokes(Ms,Is1).
 
-% MODE: filter(+Xs,+XSchema,+Filter,+XArgs,+YName, -Ys)
+% MODE: filter(+Xs,+XSchema,+XSelFun,+XExtFun,+YName, -Ys)
 % NOTATION: Given a list L, we denote by L[i] the i-th element of L.
 % SEMANTICS: filter(Xs,XSchema,Filter,XArgs,YName, Ys) holds if
 % Xs is a list of atoms XName/XArity
 % XSchema is a ground term with functor XName/XArity
-% Filter is a list of triples of the form (Pred,ArgP,Pars), where:
-%   Pred is a user defined predicate
-%   ArgP is an integer between 1 and XArity
-%   Pars is a list of parameters
-% XArgs is a list of integers between 1 and XArity
+% XSelFun is a list of (user defined) boolean functions
+% XExtFun is a list of (user defined) functions
 % YName is a functor name
 % Ys is a list of atoms of the form YName(A1,...,An) s.t.
 % there exists an atom X in Xs satisfying the following conditions:
-%   - for all i in 1,...,n. Ai is the argument of X at position XArgs[i]
-%   - for all (Pred,ArgP,Pars) in Filter.
-%       Par is the argument of X at position ArgP and Pred(Par,Pars) holds
-filter([],_XSchema,_Filter,_XArgs,_YName, []).
-filter([X|Xs],XSchema,Filter,XArgs,YName, [Y|Ys]) :-
-  satisfy(X,XSchema,Filter),
+%   - for all F in XSelFun. F(Name,Pars) holds
+%   - for all i in 1,...,n. Ai is the argument of X selected using
+%                           the user defined function XExtFun[i]
+filter([],_XSchema,_XSelFun,_XExtFun,_YName, []).
+filter([X|Xs],XSchema,XSelFun,XExtFun,YName, [Y|Ys]) :-
+  eval_elem_sel_fun(X,XSchema,XSelFun),
   !,
-  eval_proj_func(XArgs,XSchema,X, YArgs),
+  eval_args_ext_fun(X,XSchema,XExtFun, YArgs),
   Y =.. [YName|YArgs],
-  filter(Xs,XSchema,Filter,XArgs,YName, Ys).
-filter([_|Xs],XSchema,Filter,XArgs,YName, Ys) :-
-  filter(Xs,XSchema,Filter,XArgs,YName, Ys).
+  filter(Xs,XSchema,XSelFun,XExtFun,YName, Ys).
+filter([_|Xs],XSchema,XSelFun,XExtFun,YName, Ys) :-
+  filter(Xs,XSchema,XSelFun,XExtFun,YName, Ys).
 
-% MODE: satisfy(+X,+Ps)
-% SEMANTICS: satisfy(X,Ps) holds if for all (Pred,ArgP,Pars) in Ps.
-% Par is the argument of X at position ArgP and Pred(Par,Pars) holds
-satisfy(_X,_XSchema,[]).
-satisfy(X,XSchema,[P|Ps]) :-
+% MODE: eval_elem_sel_fun(+X,+XSchema,+XSelFun)
+% SEMANTICS: eval_elem_sel_fun(X,XSchema,XSelFun) holds
+% if for all F(Name,Pars) in XSelFun.
+%    XArg is the argument of X denoted by Name in XSchema and F(XArg,Pars) holds
+eval_elem_sel_fun(_X,_XSchema,[]).
+eval_elem_sel_fun(X,XSchema,[P|Ps]) :-
   P =.. [Pred,Name|Pars],
   arg(I,XSchema,Name),
   arg(I,X,XVal),
   F =.. [Pred,XVal|Pars],
   call(F),
-  satisfy(X,XSchema,Ps).
+  eval_elem_sel_fun(X,XSchema,Ps).
 
-% MODE: eval_proj_func(+F,+XSchema,+X, -XVals)
-% SEMANTICS: XVals is the result of applying F to X.
-eval_proj_func(F,XSchema,X, XVal) :-
+% MODE: eval_args_ext_fun(+X,+XSchema,+XExtFun, -XVals)
+% SEMANTICS: XVals is the result of applying XExtFun to X.
+eval_args_ext_fun(X,XSchema,F, XVal) :-
   arg(I,XSchema,F),
   !,
   arg(I,X,XVal).
-eval_proj_func([],_XSchema,_X, []).
-eval_proj_func([F|Fs],XSchema,X, [XVal|XVals]) :-
-  eval_proj_func(F,XSchema,X, XVal),
-  eval_proj_func(Fs,XSchema,X, XVals).
-eval_proj_func(F,XSchema,X, XVal) :-
+eval_args_ext_fun(_X,_XSchema,[], []).
+eval_args_ext_fun(X,XSchema,[F|Fs], [XVal|XVals]) :-
+  eval_args_ext_fun(X,XSchema,F, XVal),
+  eval_args_ext_fun(X,XSchema,Fs, XVals).
+eval_args_ext_fun(X,XSchema,F, XVal) :-
   \+ is_list(F),
   F =.. [P|As],
-  eval_proj_func(As,XSchema,X, Es),
+  eval_args_ext_fun(X,XSchema,As, Es),
   G =.. [P|Es],
   call(G,XVal).
 
@@ -329,3 +431,102 @@ method(A,M) :-
   !.
 % else M is bound to the atom domain_error/1
 method(_,domain_error(not_a_method)).
+
+%% SIMILARITY RELATION ---------------------------------------------------------
+% MODE: similar_tp(+EpSrc,+SimCr,-TP1,-TP2,-Es1,-Es2)
+% SEMANTICS: Es1 and Es2 are lists of endpoints of test programs TP1 and TP2,
+% respectively, generated from lists of invokes representing either a trace
+% (EpSrc = trace) or a maximal invoke sequence (EpSrc = iseq)
+% that satisfy the similarity criterion SimCr.
+similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
+  endpoints(EpSrc,TP1,Es1), Es1\==[],
+  endpoints(EpSrc,TP2,Es2), TP1\==TP2,
+  similar_endpoints(SimCr,Es1,Es2).
+% similar_endpoints(nonemptyEqSet,Es1,Es2) holds if
+similar_endpoints(nonemptyEqSet,Es1,Es2) :-
+  % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
+  matching_endpoints_lst(Es1,Es2),
+  % for all E2 in Es2, there exists a E1 in Es1 s.t E1 is similar to E2
+  matching_endpoints_lst(Es2,Es1).
+% similar_endpoints(nonemptySubSet,Es1,Es2) holds if
+similar_endpoints(nonemptySubSet,Es1,Es2) :-
+  % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
+  matching_endpoints_lst(Es1,Es2).
+% similar_endpoints(nonemptyIntersection,Es1,Es2) holds if
+similar_endpoints(nonemptyIntersection,Es1,Es2) :-
+  % there exist E1 in Es1, E2 in Es2 s.t. E1 is similar to E2
+  member(E1,Es1), member(E2,Es2),
+  matching_endpoints(E1,E2), !.
+
+% MODE: endpoints(+InvokesLst,-EndpointLst)
+% SEMANTICS: EndpointLst is the list of endpoint/4 atoms generated from the
+% list of invokes InvokesLst
+endpoints(InvokesLst,EndpointLst) :-
+  filter(
+    InvokesLst,
+    invokes(testProgram,
+            branchPoint,
+            branchSequenceNumber,
+            caller,
+            callerProgramCounter,
+            frameEpoch,
+            pathCondition,
+            callee,
+            parameters),
+    [isHttpMethod(callee)],
+    [testProgram,method(caller),httpMethod(callee),head(parameters)],
+    endpoint,
+    EndpointLst
+  ).
+
+% MODE: matching_endpoints_lst(+Es1,+Es2)
+% SEMANTICS: Es1 and Es2 are lists of endpoints and for all E in Es1
+% there exists an element in Es2 that satisfies matching_endpoints.
+matching_endpoints_lst([],_Es2).
+matching_endpoints_lst([E1|Es1],Es2) :-
+  member(E2,Es2),
+  matching_endpoints(E1,E2),
+  matching_endpoints_lst(Es1,Es2).
+
+% MODE: matching_endpoints(+E1,+E2)
+% SEMANTICS: there exists in S an element E2 s.t.
+% (*1*) E1 and E2 perform the same HTTP request, and
+% (*2*) E1 and E2 match a regular expression REX representing a REST API
+%       (the set of regular expressions is defined by rest_api_regex/1 facts)
+matching_endpoints(E1,E2) :-
+  E1 = endpoint(_TP1,_Caller1,HTTPMethod,URI1), % E1 invokes HTTPMethod (*1*)
+  E2 = endpoint(_TP2,_Caller2,HTTPMethod,URI2), % E2 invokes HTTPMethod (*1*)
+  atom_string(URI1,URI1Str),
+  atom_string(URI2,URI2Str),
+  rest_api_regex(REX),   % REX is a user-provided REST API regular expression
+  re_match(REX,URI1Str),  % the URI string URI1Str of E1 matches REX    (*2*)
+  re_match(REX,URI2Str).  % the URI string URI2Str of E2 matches REX    (*2*)
+
+% MODE: select_matching_endpoints(+Es1,+Es2,-Es)
+% SEMANTICS: Es consists of all elements in Es1 for which there exists a
+% matching element in Es2.
+select_matching_endpoints([],_Es2,[]).
+select_matching_endpoints([E1|Es1],Es2,[E1|Es]) :-
+  member(E2,Es2),
+  matching_endpoints(E1,E2),
+  !,
+  select_matching_endpoints(Es1,Es2,Es).
+select_matching_endpoints([_|Es1],Es2,Es) :-
+  select_matching_endpoints(Es1,Es2,Es).
+
+% MODE: similarity_score(+SimCr,+Es1,+Es2,Score)
+% SEMANTICS: Score is
+% 1, if SimCris=nonemptyEqSet
+similarity_score(nonemptyEqSet,_Es1,_Es2,1).
+% |ES1|/|ES2|, if SimCris=nonemptySubSet
+similarity_score(nonemptySubSet,Es1,Es2,Score) :-
+  sort(Es1,S1), length(S1,N1),
+  sort(Es2,S2), length(S2,N2),
+  Score is N1/N2.
+% |intersect(ES1,ES2)| / min(|ES1|,|ES2|), if SimCris=nonemptyIntersection
+similarity_score(nonemptyIntersection,Es1,Es2,Score) :-
+  sort(Es1,S1), length(S1,N1),
+  sort(Es2,S2), length(S2,N2),
+  select_matching_endpoints(S1,S2,I), length(I,N),
+  M is min(N1,N2),
+  Score is N/M.
