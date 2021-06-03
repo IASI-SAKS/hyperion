@@ -23,7 +23,7 @@ public class PrologQuery {
                                     String.format("-x %s", System.getenv("SWIPL_BOOT_FILE")),
                             System.getenv("SWI_HOME_DIR") == null ? "" :
                                     String.format("--home=%s", System.getenv("SWI_HOME_DIR")));
-            log.info("\nSWIPL initialized with: %s%n", init_swi_config);
+            log.info("\nSWIPL initialized with: " + init_swi_config);
 
             JPL.setDefaultInitArgs(init_swi_config.split("\\s+"));
         } else

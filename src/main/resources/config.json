@@ -1,0 +1,22 @@
+{
+  "sut": ["../full-teaching/target/classes/"],
+  "testPrograms": ["../full-teaching/target/test-classes/"],
+  "includeTest": [
+    "newUserTest",
+    "symbolicInt",
+    "symbolicLoopStart",
+    "symbolicLoopUpper",
+    "symbolicString",
+    "symbolicStringWithPrefix",
+    "sum"
+  ],
+  "excludeTest": [
+
+  ],
+  "additionalClasspath": [],
+  "excludeTracedPackages": [
+    "java/",
+    "sun/",
+    "com/google/gson"
+  ]
+}

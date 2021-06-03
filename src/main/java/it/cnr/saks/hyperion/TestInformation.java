@@ -8,12 +8,13 @@ public class TestInformation {
     private final ArrayList<String> exceptions = new ArrayList<>();
 
     protected MethodCall addMethodCall(String methodName, int callerEpoch, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
-        for(MethodCall md : this.methodCalls) {
-            if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getProgramPoint().equals(programPoint)) {
-                System.out.println("Invoked " + className + ":" + methodName + ":" + methodDescriptor);
-                return md;
-            }
-        }
+        // Filtro ripetizioni
+//        for(MethodCall md : this.methodCalls) {
+//            if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getProgramPoint().equals(programPoint)) {
+//                System.out.println("Invoked " + className + ":" + methodName + ":" + methodDescriptor);
+//                return md;
+//            }
+//        }
 
         MethodCall md = new MethodCall(methodName, callerEpoch, methodDescriptor, className, pathId, programPoint, callerPC, pathCondition);
         this.methodCalls.add(md);

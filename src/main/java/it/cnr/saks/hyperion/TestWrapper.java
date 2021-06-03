@@ -6,6 +6,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URL;
 import java.util.List;
 
 public class TestWrapper {
@@ -13,10 +14,10 @@ public class TestWrapper {
     final ClassPool cp;
     final CtClass selfKlass;
 
-    public TestWrapper(String[] runtimeClasspath) throws NotFoundException {
+    public TestWrapper(URL[] runtimeClasspath) throws NotFoundException {
         this.cp = ClassPool.getDefault();
-        for(String path: runtimeClasspath) {
-            cp.insertClassPath(path);
+        for(URL path: runtimeClasspath) {
+            cp.insertClassPath(path.getPath());
         }
         this.selfKlass = this.cp.get(this.getClass().getName());
         selfKlass.stopPruning(true);
