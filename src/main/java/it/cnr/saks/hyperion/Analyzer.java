@@ -21,9 +21,13 @@ import jbse.rewr.CalculatorRewriting;
 import jbse.rewr.RewriterOperationOnSimplex;
 import jbse.rules.ClassInitRulesRepo;
 import jbse.rules.LICSRulesRepo;
+import jbse.tree.StateTree;
 
+import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import static jbse.bc.Opcodes.*;
 
@@ -43,6 +47,7 @@ public final class Analyzer {
         this.runnerParameters.setActions(new ActionsRun());
 
         this.informationLogger = informationLogger;
+        this.informationLogger.resetCounters();
     }
 
     public void setupStatic() {
@@ -132,6 +137,58 @@ public final class Analyzer {
         }
 
         @Override
+        public boolean atBranch(StateTree.BranchPoint bp) {
+            if(Analyzer.this.trackMethods) {
+                final State currentState = Analyzer.this.engine.getCurrentState();
+            }
+
+            return super.atBranch(bp);
+        }
+
+        @Override
+        public boolean atPathEnd() {
+            if(Analyzer.this.trackMethods) {
+                final State currentState = Analyzer.this.engine.getCurrentState();
+            }
+            return super.atPathEnd();
+        }
+
+        @Override
+        public boolean atBacktrackPre() {
+            if(Analyzer.this.trackMethods) {
+                final State currentState = Analyzer.this.engine.getCurrentState();
+            }
+
+            return super.atBacktrackPre();
+        }
+
+        @Override
+        public boolean atBacktrackPost(StateTree.BranchPoint bp) {
+            if(Analyzer.this.trackMethods) {
+                final State currentState = Analyzer.this.engine.getCurrentState();
+            }
+
+            return super.atBacktrackPost(bp);
+        }
+
+        // If backtrack is successful, called after atBacktrackPost
+        @Override
+        public boolean atBacktrackFinally() {
+            if(Analyzer.this.trackMethods) {
+                final State currentState = Analyzer.this.engine.getCurrentState();
+            }
+
+            return super.atBacktrackFinally();
+        }
+
+        @Override
+        public void atEnd() {
+            if(Analyzer.this.trackMethods) {
+                final State currentState = Analyzer.this.engine.getCurrentState();
+            }
+        }
+
+        @Override
         public boolean atMethodPre() {
             if(Analyzer.this.trackMethods) {
                 final State currentState = Analyzer.this.engine.getCurrentState();
@@ -176,8 +233,14 @@ public final class Analyzer {
     }
 
 
-    public Analyzer withUserClasspath(String... paths) {
-        this.runnerParameters.addUserClasspath(paths);
+    public Analyzer withUserClasspath(URL[] urlPaths) {
+        ArrayList<String> paths = new ArrayList<>();
+        for (URL urlPath : urlPaths) {
+            paths.add(urlPath.getPath());
+        }
+        String[] pathsArray = new String[paths.size()];
+        pathsArray = paths.toArray(pathsArray);
+        this.runnerParameters.addUserClasspath(pathsArray);
         return this;
     }
 
@@ -204,7 +267,7 @@ public final class Analyzer {
 
 
     private DecisionProcedureAlgorithms createDecisionProcedure(CalculatorRewriting calc) throws AnalyzerException {
-        // initializes cores
+        // initializes core
         DecisionProcedure core = new DecisionProcedureAlwSat(calc);
 
         // wraps cores with external numeric decision procedure

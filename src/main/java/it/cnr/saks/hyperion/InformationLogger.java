@@ -5,32 +5,36 @@ import jbse.bc.Signature;
 import jbse.common.Type;
 import jbse.mem.*;
 import jbse.mem.exc.FrozenStateException;
-import jbse.mem.exc.InvalidSlotException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.val.*;
 
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.PrintStream;
-import java.lang.reflect.Field;
 import java.util.*;
 
 import static jbse.algo.Util.valueString;
 import static jbse.common.Type.splitParametersDescriptors;
 
 public class InformationLogger {
-    private final MethodEnumerator methodEnumerator;
     private PrintStream datalogOut = null;
     private final Stack<Integer> callerFrame = new Stack<>();
     private Integer invocationEpoch = 0;
+    private final List<String> excludePackages;
 
     // Class -> Method -> Information Data
     private HashMap<String, HashMap<String, TestInformation>> loggedInformation = new HashMap<>();
     private String currClass;
     private String currMethod;
 
-    public InformationLogger(MethodEnumerator methodEnumerator) {
-        this.methodEnumerator = methodEnumerator;
+    public InformationLogger(Configuration configuration) {
+        this.callerFrame.push(this.invocationEpoch++);
+        this.excludePackages = configuration.getExcludeTracedPackages();
+    }
+
+    public void resetCounters() {
+        this.callerFrame.empty();
+        this.invocationEpoch = 0;
         this.callerFrame.push(this.invocationEpoch++);
     }
 
@@ -63,6 +67,11 @@ public class InformationLogger {
         if(name == null)
             return;
 
+        for(String exclude: this.excludePackages) {
+            if(callee.getClassName().startsWith(exclude))
+                return;
+        }
+
         Signature caller = null;
         int callerPC = -1;
         try {
@@ -78,10 +87,10 @@ public class InformationLogger {
 
 //        System.out.println(name);
 
-        if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
-                && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
-            this.inspectHttpRequest(s, name, pathId);
-        }
+//        if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
+//                && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
+//            this.inspectHttpRequest(s, name, pathId);
+//        }
 
         this.inspectMethodCall(s, name, callee, classFile, pathId, programPoint, callerPC);
     }
@@ -136,41 +145,13 @@ public class InformationLogger {
                             .append(methodCall.getParameterSet().getParameters())
                             .append(").");
 
-                    this.datalogOut.println(invokes.toString());
+                    this.datalogOut.println(invokes);
                 }
             });
         });
 
         // Get rid of dumped data from memory
         this.loggedInformation = new HashMap<>();
-    }
-
-    private void inspectHttpRequest(State s, String name, String pathId) {
-        try {
-            HeapObjekt parameter = s.getObject((Reference) s.getCurrentFrame().getLocalVariableValue(0));
-
-            if(parameter != null) {
-                String value;
-
-                if (parameter.isSymbolic()) {
-                    String className = ((ReferenceSymbolicMemberField)parameter.getOrigin()).getFieldClass().replace('/', '.');
-                    String fieldName = ((ReferenceSymbolicMemberField)parameter.getOrigin()).getFieldName();
-                    Class<?> clazz = this.methodEnumerator.findClass(className);
-                    Field f = clazz.getDeclaredField(fieldName);
-                    boolean accessible = f.isAccessible();
-                    if(!accessible)
-                        f.setAccessible(true);
-                    value = (String)f.get(null);
-                    if(!accessible)
-                        f.setAccessible(false);
-                } else {
-                    value = valueString(s, (Reference) s.getCurrentFrame().getLocalVariableValue(0)); // OK!
-                }
-                this.loggedInformation.get(this.currClass).get(this.currMethod).addEndPoint(name, value, pathId);
-            }
-        } catch (FrozenStateException | ThreadStackEmptyException | InvalidSlotException | ClassNotFoundException | NoSuchFieldException | IllegalAccessException e) {
-            e.printStackTrace();
-        }
     }
 
     private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint, int callerPC) {
@@ -201,10 +182,27 @@ public class InformationLogger {
 
             sb = new StringBuilder();
 
+            if(op instanceof ReferenceSymbolicMemberField) {
+                ReferenceSymbolicMemberField rsmf = (ReferenceSymbolicMemberField)op;
+                final String value = rsmf.getValue();
+
+                Set<Map.Entry<ClassFile, Klass>> entries = null;
+                try {
+                    final Map<ClassFile, Klass> a = s.getStaticMethodArea();
+                    entries = a.entrySet();
+                } catch (FrozenStateException e) {
+                    e.printStackTrace();
+                }
+            }
+
             if (op instanceof Simplex) {
                 String representation = op.toString();
+                if(v.getValue().getType().equals("B"))
+                    representation = representation.replaceAll("\\(byte\\) ", "");
                 if(v.getValue().getType().equals("J"))
                     representation = representation.replaceAll("L", "");
+                if(v.getValue().getType().equals("F"))
+                    representation = representation.replaceAll("f", "");
                 sb.append(representation);
             } else if(op.isSymbolic()) {
                 sb.append("'");
@@ -233,7 +231,8 @@ public class InformationLogger {
                 sb.append(op.getClass().toString());
             }
 
-            pSet.addParameter(sb.toString());
+            String parm = sb.toString();
+            pSet.addParameter(parm);
         }
 
         md.setParameterSet(pSet);
@@ -396,7 +395,7 @@ public class InformationLogger {
             if(val instanceof Expression)
                 sb.append(((Expression)val).asOriginString());
             else
-                sb.append(val.toString());
+                sb.append(val);
         }
 
         // TODO: recheck this part
@@ -411,6 +410,182 @@ public class InformationLogger {
                     sb.append("]");
                 }
             }
+        }
+    }
+
+    private static class ValueClassMentionDetector implements ValueVisitor {
+        private Map.Entry<ClassFile, Klass> e;
+        private boolean mentionsClass;
+
+        ValueClassMentionDetector(Map.Entry<ClassFile, Klass> e) {
+            this.e = e;
+        }
+
+        boolean mentionsClass() {
+            return this.mentionsClass;
+        }
+
+        @Override
+        public void visitAny(Any x) {
+            this.mentionsClass = false;
+        }
+
+        @Override
+        public void visitExpression(Expression e) {
+            try {
+                if (e.isUnary()) {
+                    e.getOperand().accept(this);
+                } else {
+                    e.getFirstOperand().accept(this);
+                    if (!this.mentionsClass) {
+                        e.getSecondOperand().accept(this);
+                    }
+                }
+            } catch (RuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                //cannot happen;
+            }
+        }
+
+        @Override
+        public void visitPrimitiveSymbolicApply(PrimitiveSymbolicApply x) {
+            try {
+                for (Value v : x.getArgs()) {
+                    v.accept(this);
+                    if (this.mentionsClass) {
+                        return;
+                    }
+                }
+            } catch (RuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                //cannot happen;
+            }
+        }
+
+        @Override
+        public void visitPrimitiveSymbolicAtomic(PrimitiveSymbolicAtomic s) {
+            this.mentionsClass = false;
+        }
+
+        @Override
+        public void visitSimplex(Simplex x) {
+            this.mentionsClass = false;
+        }
+
+        @Override
+        public void visitTerm(Term x) throws Exception {
+            this.mentionsClass = false;
+        }
+
+        @Override
+        public void visitNarrowingConversion(NarrowingConversion x) {
+            try {
+                x.getArg().accept(this);
+            } catch (RuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                //cannot happen;
+            }
+        }
+
+        @Override
+        public void visitWideningConversion(WideningConversion x) {
+            try {
+                x.getArg().accept(this);
+            } catch (RuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                //cannot happen;
+            }
+        }
+
+        @Override
+        public void visitReferenceArrayImmaterial(ReferenceArrayImmaterial x) {
+            //the class of the immaterial reference is not displayed, but we
+            //save it nevertheless
+            this.mentionsClass = (x.getArrayType().equals(this.e.getKey()));
+        }
+
+        @Override
+        public void visitReferenceConcrete(ReferenceConcrete x) {
+            this.mentionsClass = false;
+        }
+
+        @Override
+        public void visitKlassPseudoReference(KlassPseudoReference x) {
+            this.mentionsClass = (x.getClassFile().equals(this.e.getKey()));
+        }
+
+        @Override
+        public void visitReferenceSymbolicApply(ReferenceSymbolicApply x) {
+            try {
+                for (Value v : x.getArgs()) {
+                    v.accept(this);
+                    if (this.mentionsClass) {
+                        return;
+                    }
+                }
+            } catch (RuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                //cannot happen;
+            }
+        }
+
+        @Override
+        public void visitReferenceSymbolicLocalVariable(ReferenceSymbolicLocalVariable x) {
+            this.mentionsClass = false;
+        }
+
+        @Override
+        public void visitReferenceSymbolicMemberArray(ReferenceSymbolicMemberArray x) {
+            try {
+                x.getContainer().accept(this);
+            } catch (RuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                //cannot happen;
+            }
+        }
+
+        @Override
+        public void visitReferenceSymbolicMemberField(ReferenceSymbolicMemberField x) {
+            try {
+                x.getContainer().accept(this);
+            } catch (RuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                //cannot happen;
+            }
+        }
+
+        @Override
+        public void visitReferenceSymbolicMemberMapKey(ReferenceSymbolicMemberMapKey x) {
+            try {
+                x.getContainer().accept(this);
+            } catch (RuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                //cannot happen;
+            }
+        }
+
+        @Override
+        public void visitReferenceSymbolicMemberMapValue(ReferenceSymbolicMemberMapValue x) {
+            try {
+                x.getContainer().accept(this);
+            } catch (RuntimeException exc) {
+                throw exc;
+            } catch (Exception exc) {
+                //cannot happen;
+            }
+        }
+
+        @Override
+        public void visitDefaultValue(DefaultValue x) {
+            this.mentionsClass = false;
         }
     }
 }
