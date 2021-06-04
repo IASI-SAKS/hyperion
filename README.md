@@ -128,7 +128,7 @@ consult('src/test/resources/report/URI-regex-list.pl').
 
 * Step 3. Run the following query to:
   - generate the `endpoint` facts from the execution traces (by using `generate_and_assert_endpoints(EpSrc)`),
-  - evaluate similarity between test program using the `nonemptyIntersection` criterion (by using `similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2)`), and
+  - evaluate similarity between test programs using the `nonemptyIntersection` criterion (by using `similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2)`), and
   - compute the similarity score (by using `similarity_score(SimCr,Es1,Es2,Score)`).
 
 ```prolog
