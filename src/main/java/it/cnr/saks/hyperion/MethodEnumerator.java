@@ -6,10 +6,8 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -53,6 +51,9 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                     }
                     if(ann.toString().contains("@org.junit.Test")) {
                         isTest = true;
+                    }
+                    if(ann.toString().contains("@org.junit.Ignore")) {
+                        isTest = false;
                         break;
                     }
                 }

@@ -77,6 +77,4 @@ public class PrologQuery {
         Query q = new Query(function, terms);
         return q.allSolutions();
     }
-
-
 }

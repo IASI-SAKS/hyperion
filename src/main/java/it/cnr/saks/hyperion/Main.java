@@ -1,6 +1,5 @@
 package it.cnr.saks.hyperion;
 
-import javassist.NotFoundException;
 import jbse.bc.Signature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -11,14 +10,13 @@ import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
-import java.util.List;
 import java.util.TimeZone;
 
 public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
     private static MethodEnumerator methodEnumerator;
-    private static TestWrapper testWrapper;
     private static Configuration configuration;
+    private static final Signature hyperionLauncherEntryPoint = new Signature("it/cnr/saks/hyperion/HyperionTestLauncher", "([Ljava/lang/String;)V", "main");
 
     public static void main(String[] args) {
         if(args.length < 1) {
@@ -40,14 +38,6 @@ public class Main {
             System.exit(70); // EX_SOFTWARE
         }
 
-        Signature testWrapperSignature = new Signature("it/cnr/saks/hyperion/TestWrapper", "()V", "wrapperEntryPoint");
-        try {
-            testWrapper = new TestWrapper(configuration.getClassPath());
-        } catch (NotFoundException e) {
-            e.printStackTrace();
-            System.exit(70); // EX_SOFTWARE
-        }
-
         TimeZone tz = TimeZone.getTimeZone("UTC");
         DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
         df.setTimeZone(tz);
@@ -59,13 +49,9 @@ public class Main {
 
         long startTime = System.nanoTime();
 
-        /*
-         * java -cp .:../../main/java/:/home/pellegrini/.m2/repository/junit/junit/4.12/junit-4.12.jar:/home/pellegrini/.m2/repository/org/hamcrest/hamcrest-core/1.3/hamcrest-core-1.3.jar org.junit.runner.JUnitCore Course com/fullteaching/backend/unitary/course/CourseUnitaryTest
-         */
-
         for(MethodDescriptor method: methodEnumerator) {
 
-            if(!configuration.getIncludeTest().contains(method.getMethodName()))
+            if(configuration.getIncludeTest().size() > 0 && !configuration.getIncludeTest().contains(method.getMethodName()))
                 continue;
             if(configuration.getExcludeTest().contains(method.getMethodName()))
                 continue;
@@ -79,22 +65,24 @@ public class Main {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(configuration.getClassPath())
                         .withTimeout(2)
-                        .withDepthScope(500);
+                        .withDepthScope(500)
+                        .withJbseEntryPoint(hyperionLauncherEntryPoint)
+                        .withTestProgram(testProgramSignature);
 
                 a.setupStatic();
 
-                final List<MethodDescriptor> beforeMethods = methodEnumerator.getBeforeMethods(method.getClassName());
-                if(beforeMethods == null) {
-                    a.withMethodSignature(testProgramSignature);
-                } else {
-                    continue;
+//                final List<MethodDescriptor> beforeMethods = methodEnumerator.getBeforeMethods(method.getClassName());
+//                if(beforeMethods == null) {
+
+//                } else {
+//                    continue;
 //                    log.info("Generating wrapper for @Before methods");
 //                    testWrapper.generateWrapper(testProgramSignature, beforeMethods);
 //
 //                    a.withMethodSignature(testWrapperSignature);
 //                    a.withMethodSignature(testWrapperSignature)
 //                     .withGuided(true, testProgramSignature);
-                }
+//                }
                 a.run();
 
             } catch (AnalyzerException | OutOfMemoryError | StackOverflowError e) {

@@ -8,15 +8,12 @@ import com.sun.jdi.connect.LaunchingConnector;
 import com.sun.jdi.connect.VMStartException;
 import com.sun.jdi.event.*;
 import com.sun.jdi.request.*;
-import jbse.apps.run.DecisionProcedureGuidanceJDILauncher;
 import jbse.apps.run.GuidanceException;
 import jbse.bc.Offsets;
 import jbse.bc.Signature;
 import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
 import jbse.dec.DecisionProcedure;
-import jbse.jvm.Runner;
-import jbse.jvm.RunnerParameters;
 import jbse.mem.State;
 import jbse.val.*;
 import org.slf4j.Logger;
@@ -41,20 +38,13 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 	 *
 	 * @param component the component {@link DecisionProcedure} it decorates.
 	 * @param calc a {@link Calculator}.
-	 * @param runnerParameters the {@link RunnerParameters} of the symbolic execution.
-	 *        The constructor modifies this object by adding the {@link Runner.Actions}s
-	 *        necessary to the execution.
-	 * @param stopSignature the {@link Signature} of a method. The guiding concrete execution 
-	 *        will stop at the entry of the {@code numberOfHits}-th invocation of the 
-	 *        method whose signature is {@code stopSignature}, and the reached state will be 
-	 *        used as the initial one.
 	 * @throws GuidanceException if something fails during creation (and the caller
 	 *         is to blame).
 	 * @throws InvalidInputException if {@code component == null}.
 	 */
-	public DecisionProcedureGuidanceJDI(DecisionProcedure component, Calculator calc, RunnerParameters runnerParameters, Signature stopSignature)
+	public DecisionProcedureGuidanceJDI(DecisionProcedure component, Calculator calc, HyperionParameters hyperionParameters)
 			throws GuidanceException, InvalidInputException {
-		super(component, new JVMJDI(calc, runnerParameters, stopSignature));
+		super(component, new JVMJDI(calc, hyperionParameters));
 	}
 
 	private static class JVMJDI extends JVM {
@@ -70,20 +60,17 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		protected Event currentExecutionPointEvent;        
 		private final Map<String, ReferenceType> alreadyLoadedClasses = new HashMap<>();
 
-		private final RunnerParameters runnerParameters;
-		private final Signature stopSignature;
+		private final HyperionParameters hyperionParameters;
 
 		// Handling of uninterpreted functions
 		private final Map<SymbolicApply, SymbolicApplyJVMJDI> symbolicApplyCache = new HashMap<>();
 		private final Map<String, Integer> symbolicApplyOperatorOccurrences = new HashMap<>();
 		
-		public JVMJDI(Calculator calc, RunnerParameters runnerParameters, Signature stopSignature)
-		throws GuidanceException {
+		public JVMJDI(Calculator calc, HyperionParameters hyperionParameters) throws GuidanceException {
 			super(calc);
-			this.runnerParameters = runnerParameters;
-			this.stopSignature = stopSignature;
+			this.hyperionParameters = hyperionParameters;
 			this.vm = createVM();
-			this.goToBreakpoint(stopSignature);
+			this.goToBreakpoint(this.hyperionParameters.getTestProgramSignature());
 			try 	{
 				this.numOfFramesAtMethodEntry = getCurrentThread().frameCount();
 			} catch (IncompatibleThreadStateException e) {
@@ -156,14 +143,14 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		private VirtualMachine createVM() 
 				throws GuidanceException {
 			try {
-				final Iterable<Path> classPath = this.runnerParameters.getClasspath().classPath();
+				final Iterable<Path> classPath = this.hyperionParameters.getRunnerParameters().getClasspath().classPath();
 				final ArrayList<String> listClassPath = new ArrayList<>();
 				classPath.forEach(p -> listClassPath.add(p.toString()));
 				final String stringClassPath = String.join(File.pathSeparator, listClassPath.toArray(new String[0]));
-				final String mainClass = DecisionProcedureGuidanceJDILauncher.class.getName();
-				final String targetClass = binaryClassName(this.runnerParameters.getMethodSignature().getClassName());
-				final String startMethodName = this.runnerParameters.getMethodSignature().getName();
-				return launchTarget("-classpath \"" + stringClassPath + "\" " + mainClass + " " + targetClass + " " + startMethodName);
+				final String mainClass = HyperionTestLauncher.class.getName();
+				final String testProgramClass = binaryClassName(this.hyperionParameters.getTestProgramSignature().getClassName());
+				final String testProgramName = this.hyperionParameters.getTestProgramSignature().getName();
+				return launchTarget("-classpath \"" + stringClassPath + "\" " + mainClass + " " + testProgramClass + " " + testProgramName);
 			} catch (IOException e) {
 				throw new GuidanceException(e);
 			}
@@ -203,7 +190,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 				//System.out.println("ClassLOADED: " + classType.name());
 			}
 
-			trySetBreakPoint(sig);
+			trySetBreakPoint(this.hyperionParameters.getTestProgramSignature());
 
 			//executes
 			this.vm.resume();
@@ -218,7 +205,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 						Event event = it.nextEvent();
 						handleClassPrepareEvents(event);
 						if (this.breakpoint == null) {
-							trySetBreakPoint(sig);
+							trySetBreakPoint(this.hyperionParameters.getTestProgramSignature());
 						} else {
 							stopPointFound = handleBreakpointEvents(event);
 						}
@@ -239,7 +226,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 					if (stopPointFound) {
 						return; //must not try to disable event requests
 					} else {
-						throw new GuidanceException("while looking for " + sig + "::" + 0 + " : " + e);
+						throw new GuidanceException("while looking for " + this.hyperionParameters.getTestProgramSignature() + "::" + 0 + " : " + e);
 					}
 				}
 			}
@@ -323,7 +310,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 				if (!origin.asOriginString().equals(e.getMessage())) {
 					log.info("[JDI] WARNING: In DecisionProcedureGuidanceJDI.typeOfObject: " + origin.asOriginString() + " leads to invalid throw reference: " + e +
 							"\n ** Normally this happens when JBSE wants to extract concrete types for Fresh-expands, but the reference is null in the concrete state, thus we can safely assume that no Fresh object shall be considered"
-							+ "\n ** However it seems that the considered references do not to match with this assumtion in this case.");
+							+ "\n ** However it seems that the considered references do not to match with this assumption in this case.");
 				}
 				return null; // Origin depends on out-of-bound array access: Fresh expansion is neither possible, nor needed
 			}
@@ -470,7 +457,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
                             numberOfHits = 1;
 			}
 			this.symbolicApplyOperatorOccurrences.put(op, numberOfHits);
-			return new SymbolicApplyJVMJDI(this.calc, this.runnerParameters, this.stopSignature, symbolicApply, numberOfHits);
+			return new SymbolicApplyJVMJDI(this.calc, this.hyperionParameters, symbolicApply, numberOfHits);
 		}
 
 		private Value getJDIValueLocalVariable(String var)
@@ -622,9 +609,9 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		private Value symbolicApplyRetValue;
 		private final BreakpointRequest targetMethodExitedBreakpoint;
 
-		public SymbolicApplyJVMJDI(Calculator calc, RunnerParameters runnerParameters, Signature stopSignature, SymbolicApply symbolicApply, int symbolicApplyNumberOfHits)
+		public SymbolicApplyJVMJDI(Calculator calc, HyperionParameters hyperionParameters, SymbolicApply symbolicApply, int symbolicApplyNumberOfHits)
 		throws GuidanceException {
-			super(calc, runnerParameters, stopSignature);
+			super(calc, hyperionParameters);
 
 			/* We set up a control breakpoint to check if, at any next step, JDI erroneously returns from the method under analysis */
 			try { 
@@ -637,7 +624,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 			this.targetMethodExitedBreakpoint.setSuspendPolicy(EventRequest.SUSPEND_EVENT_THREAD);
 			this.targetMethodExitedBreakpoint.enable();
 			
-			// Make JDI execute the uninterpreted function that corresponds to the symboliApply
+			// Make JDI execute the uninterpreted function that corresponds to the symbolicApply
 			this.eval_INVOKEX(symbolicApply, symbolicApplyNumberOfHits);
 			this.targetMethodExitedBreakpoint.disable();
 			

@@ -1,18 +1,13 @@
 {
-  "sut": ["../full-teaching/target/classes/"],
-  "testPrograms": ["../full-teaching/target/test-classes/"],
+  "sut": [
+    "../train-ticket/ts-common/target/classes/",
+    "../train-ticket/ts-admin-basic-info-service/target/classes/"
+  ],
+  "testPrograms": ["../train-ticket/ts-admin-basic-info-service/target/test-classes/"],
   "includeTest": [
-    "newUserTest",
-    "symbolicInt",
-    "symbolicLoopStart",
-    "symbolicLoopUpper",
-    "symbolicString",
-    "symbolicStringWithPrefix",
-    "sum"
+    "testHome"
   ],
-  "excludeTest": [
-
-  ],
+  "excludeTest": [],
   "additionalClasspath": [],
   "excludeTracedPackages": [
     "java/",
