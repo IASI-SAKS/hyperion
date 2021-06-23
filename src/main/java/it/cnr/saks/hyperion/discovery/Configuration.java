@@ -1,6 +1,7 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.discovery;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 
 import java.io.File;
 import java.io.IOException;

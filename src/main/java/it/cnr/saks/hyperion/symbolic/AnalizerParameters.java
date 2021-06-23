@@ -1,5 +1,6 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.symbolic;
 
+import it.cnr.saks.hyperion.symbolic.Analyzer;
 import jbse.bc.Signature;
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.jvm.RunnerParameters;
@@ -7,11 +8,11 @@ import jbse.rewr.CalculatorRewriting;
 
 import java.util.concurrent.TimeUnit;
 
-public class HyperionParameters implements Cloneable {
+public class AnalizerParameters implements Cloneable {
     private final RunnerParameters runnerParameters;
     private Signature testProgramSignature;
 
-    public HyperionParameters() {
+    public AnalizerParameters() {
         this.runnerParameters = new RunnerParameters();
     }
 

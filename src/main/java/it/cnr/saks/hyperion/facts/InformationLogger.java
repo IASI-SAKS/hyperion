@@ -1,5 +1,6 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.facts;
 
+import it.cnr.saks.hyperion.discovery.Configuration;
 import jbse.bc.ClassFile;
 import jbse.bc.Signature;
 import jbse.common.Type;

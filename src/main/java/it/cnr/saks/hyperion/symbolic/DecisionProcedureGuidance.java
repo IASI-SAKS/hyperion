@@ -1,4 +1,4 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.symbolic;
 
 import jbse.apps.run.GuidanceException;
 import jbse.bc.ClassFile;

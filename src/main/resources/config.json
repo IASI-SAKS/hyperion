@@ -1,13 +1,12 @@
 {
-  "sut": [
-    "../train-ticket/ts-common/target/classes/",
-    "../train-ticket/ts-admin-basic-info-service/target/classes/"
-  ],
-  "testPrograms": ["../train-ticket/ts-admin-basic-info-service/target/test-classes/"],
+  "sut": ["../full-teaching/target/classes/"],
+  "testPrograms": ["../full-teaching/target/test-classes/"],
   "includeTest": [
-    "testHome"
+    "newUserTest"
   ],
-  "excludeTest": [],
+  "excludeTest": [
+
+  ],
   "additionalClasspath": [],
   "excludeTracedPackages": [
     "java/",

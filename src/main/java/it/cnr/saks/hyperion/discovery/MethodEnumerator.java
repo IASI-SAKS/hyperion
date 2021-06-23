@@ -1,5 +1,6 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.discovery;
 
+import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
