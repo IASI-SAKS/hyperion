@@ -11,7 +11,6 @@ import jbse.dec.exc.DecisionException;
 import jbse.jvm.Engine;
 import jbse.jvm.Runner;
 import jbse.jvm.RunnerBuilder;
-import jbse.jvm.RunnerParameters;
 import jbse.jvm.exc.*;
 import jbse.mem.State;
 import jbse.mem.exc.ContradictionException;
@@ -25,26 +24,21 @@ import jbse.tree.StateTree;
 
 import java.net.URL;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
 
 import static jbse.bc.Opcodes.*;
 
 public final class Analyzer {
     private boolean trackMethods = false;
 
-    private final RunnerParameters runnerParameters;
     private Engine engine;
-
-    private boolean isGuided = false;
-    private Signature guidedStopSignature;
+    private final HyperionParameters hyperionParameters;
 
     private final InformationLogger informationLogger;
 
     public Analyzer(InformationLogger informationLogger) throws AnalyzerException {
-        this.runnerParameters = new RunnerParameters();
-        this.runnerParameters.setActions(new ActionsRun());
+        this.hyperionParameters = new HyperionParameters();
+        this.hyperionParameters.setActions(new ActionsRun());
 
         this.informationLogger = informationLogger;
         this.informationLogger.resetCounters();
@@ -128,7 +122,7 @@ public final class Analyzer {
             .withUninterpreted("org/junit/Assert", "(Ljava/lang/String;Z)V", "assertTrue");
     }
 
-    private class ActionsRun extends Runner.Actions {
+    class ActionsRun extends Runner.Actions {
 
         @Override
         public boolean atInitial() {
@@ -217,12 +211,12 @@ public final class Analyzer {
 
     public void run() throws AnalyzerException {
         final CalculatorRewriting calc = createCalculator();
-        this.runnerParameters.setCalculator(calc);
-        this.runnerParameters.setDecisionProcedure(createDecisionProcedure(calc));
+        this.hyperionParameters.setCalculator(calc);
+        this.hyperionParameters.setDecisionProcedure(createDecisionProcedure(calc));
 
         try {
             final RunnerBuilder rb = new RunnerBuilder();
-            final Runner runner = rb.build(this.runnerParameters);
+            final Runner runner = rb.build(this.hyperionParameters.getRunnerParameters());
             this.engine = rb.getEngine();
             runner.run();
             this.engine.close();
@@ -240,28 +234,27 @@ public final class Analyzer {
         }
         String[] pathsArray = new String[paths.size()];
         pathsArray = paths.toArray(pathsArray);
-        this.runnerParameters.addUserClasspath(pathsArray);
+        this.hyperionParameters.addUserClasspath(pathsArray);
         return this;
     }
 
-    public Analyzer withMethodSignature(Signature method) {
-        this.runnerParameters.setMethodSignature(method);
+    public Analyzer withJbseEntryPoint(Signature method) {
+        this.hyperionParameters.setMethodSignature(method);
         return this;
     }
 
     public Analyzer withDepthScope(int depthScope) {
-        this.runnerParameters.setDepthScope(depthScope);
+        this.hyperionParameters.setDepthScope(depthScope);
         return this;
     }
 
     public Analyzer withTimeout(long time) {
-        this.runnerParameters.setTimeout(time, TimeUnit.MINUTES);
+        this.hyperionParameters.setTimeout(time, TimeUnit.MINUTES);
         return this;
     }
 
-    public Analyzer withGuided(boolean isGuided, Signature stopSignature) {
-        this.isGuided = isGuided;
-        this.guidedStopSignature = stopSignature;
+    public Analyzer withTestProgram(Signature testProgramSignature) {
+        this.hyperionParameters.setTestProgramSignature(testProgramSignature);
         return this;
     }
 
@@ -285,9 +278,7 @@ public final class Analyzer {
             core = new DecisionProcedureClassInit(core, new ClassInitRulesRepo());
 
             // Setup guidance using JDI
-            if(this.isGuided) {
-                core = new DecisionProcedureGuidanceJDI(core, calc, this.runnerParameters, this.guidedStopSignature);
-            }
+            core = new DecisionProcedureGuidanceJDI(core, calc, this.hyperionParameters);
 
             // sets the result
             return new DecisionProcedureAlgorithms(core);
@@ -304,7 +295,7 @@ public final class Analyzer {
     }
 
     public Analyzer withUninterpreted(String methodClassName, String methodDescriptor, String methodName) {
-        this.runnerParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
+        this.hyperionParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
         return this;
     }
 
