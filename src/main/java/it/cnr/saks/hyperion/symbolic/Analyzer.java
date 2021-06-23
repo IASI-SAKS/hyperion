@@ -1,5 +1,6 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.symbolic;
 
+import it.cnr.saks.hyperion.facts.InformationLogger;
 import jbse.algo.exc.CannotManageStateException;
 import jbse.bc.Signature;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
@@ -32,13 +33,13 @@ public final class Analyzer {
     private boolean trackMethods = false;
 
     private Engine engine;
-    private final HyperionParameters hyperionParameters;
+    private final AnalizerParameters analizerParameters;
 
     private final InformationLogger informationLogger;
 
     public Analyzer(InformationLogger informationLogger) throws AnalyzerException {
-        this.hyperionParameters = new HyperionParameters();
-        this.hyperionParameters.setActions(new ActionsRun());
+        this.analizerParameters = new AnalizerParameters();
+        this.analizerParameters.setActions(new ActionsRun());
 
         this.informationLogger = informationLogger;
         this.informationLogger.resetCounters();
@@ -122,7 +123,7 @@ public final class Analyzer {
             .withUninterpreted("org/junit/Assert", "(Ljava/lang/String;Z)V", "assertTrue");
     }
 
-    class ActionsRun extends Runner.Actions {
+    public class ActionsRun extends Runner.Actions {
 
         @Override
         public boolean atInitial() {
@@ -211,12 +212,12 @@ public final class Analyzer {
 
     public void run() throws AnalyzerException {
         final CalculatorRewriting calc = createCalculator();
-        this.hyperionParameters.setCalculator(calc);
-        this.hyperionParameters.setDecisionProcedure(createDecisionProcedure(calc));
+        this.analizerParameters.setCalculator(calc);
+        this.analizerParameters.setDecisionProcedure(createDecisionProcedure(calc));
 
         try {
             final RunnerBuilder rb = new RunnerBuilder();
-            final Runner runner = rb.build(this.hyperionParameters.getRunnerParameters());
+            final Runner runner = rb.build(this.analizerParameters.getRunnerParameters());
             this.engine = rb.getEngine();
             runner.run();
             this.engine.close();
@@ -234,27 +235,27 @@ public final class Analyzer {
         }
         String[] pathsArray = new String[paths.size()];
         pathsArray = paths.toArray(pathsArray);
-        this.hyperionParameters.addUserClasspath(pathsArray);
+        this.analizerParameters.addUserClasspath(pathsArray);
         return this;
     }
 
     public Analyzer withJbseEntryPoint(Signature method) {
-        this.hyperionParameters.setMethodSignature(method);
+        this.analizerParameters.setMethodSignature(method);
         return this;
     }
 
     public Analyzer withDepthScope(int depthScope) {
-        this.hyperionParameters.setDepthScope(depthScope);
+        this.analizerParameters.setDepthScope(depthScope);
         return this;
     }
 
     public Analyzer withTimeout(long time) {
-        this.hyperionParameters.setTimeout(time, TimeUnit.MINUTES);
+        this.analizerParameters.setTimeout(time, TimeUnit.MINUTES);
         return this;
     }
 
     public Analyzer withTestProgram(Signature testProgramSignature) {
-        this.hyperionParameters.setTestProgramSignature(testProgramSignature);
+        this.analizerParameters.setTestProgramSignature(testProgramSignature);
         return this;
     }
 
@@ -278,7 +279,7 @@ public final class Analyzer {
             core = new DecisionProcedureClassInit(core, new ClassInitRulesRepo());
 
             // Setup guidance using JDI
-            core = new DecisionProcedureGuidanceJDI(core, calc, this.hyperionParameters);
+            core = new DecisionProcedureGuidanceJDI(core, calc, this.analizerParameters);
 
             // sets the result
             return new DecisionProcedureAlgorithms(core);
@@ -295,7 +296,7 @@ public final class Analyzer {
     }
 
     public Analyzer withUninterpreted(String methodClassName, String methodDescriptor, String methodName) {
-        this.hyperionParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
+        this.analizerParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
         return this;
     }
 

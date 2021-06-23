@@ -1,4 +1,4 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.symbolic;
 
 import com.sun.jdi.Value;
 import com.sun.jdi.*;
@@ -42,9 +42,9 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 	 *         is to blame).
 	 * @throws InvalidInputException if {@code component == null}.
 	 */
-	public DecisionProcedureGuidanceJDI(DecisionProcedure component, Calculator calc, HyperionParameters hyperionParameters)
+	public DecisionProcedureGuidanceJDI(DecisionProcedure component, Calculator calc, AnalizerParameters analizerParameters)
 			throws GuidanceException, InvalidInputException {
-		super(component, new JVMJDI(calc, hyperionParameters));
+		super(component, new JVMJDI(calc, analizerParameters));
 	}
 
 	private static class JVMJDI extends JVM {
@@ -60,17 +60,17 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		protected Event currentExecutionPointEvent;        
 		private final Map<String, ReferenceType> alreadyLoadedClasses = new HashMap<>();
 
-		private final HyperionParameters hyperionParameters;
+		private final AnalizerParameters analizerParameters;
 
 		// Handling of uninterpreted functions
 		private final Map<SymbolicApply, SymbolicApplyJVMJDI> symbolicApplyCache = new HashMap<>();
 		private final Map<String, Integer> symbolicApplyOperatorOccurrences = new HashMap<>();
 		
-		public JVMJDI(Calculator calc, HyperionParameters hyperionParameters) throws GuidanceException {
+		public JVMJDI(Calculator calc, AnalizerParameters analizerParameters) throws GuidanceException {
 			super(calc);
-			this.hyperionParameters = hyperionParameters;
+			this.analizerParameters = analizerParameters;
 			this.vm = createVM();
-			this.goToBreakpoint(this.hyperionParameters.getTestProgramSignature());
+			this.goToBreakpoint(this.analizerParameters.getTestProgramSignature());
 			try 	{
 				this.numOfFramesAtMethodEntry = getCurrentThread().frameCount();
 			} catch (IncompatibleThreadStateException e) {
@@ -143,13 +143,13 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		private VirtualMachine createVM() 
 				throws GuidanceException {
 			try {
-				final Iterable<Path> classPath = this.hyperionParameters.getRunnerParameters().getClasspath().classPath();
+				final Iterable<Path> classPath = this.analizerParameters.getRunnerParameters().getClasspath().classPath();
 				final ArrayList<String> listClassPath = new ArrayList<>();
 				classPath.forEach(p -> listClassPath.add(p.toString()));
 				final String stringClassPath = String.join(File.pathSeparator, listClassPath.toArray(new String[0]));
-				final String mainClass = HyperionTestLauncher.class.getName();
-				final String testProgramClass = binaryClassName(this.hyperionParameters.getTestProgramSignature().getClassName());
-				final String testProgramName = this.hyperionParameters.getTestProgramSignature().getName();
+				final String mainClass = TestLauncher.class.getName();
+				final String testProgramClass = binaryClassName(this.analizerParameters.getTestProgramSignature().getClassName());
+				final String testProgramName = this.analizerParameters.getTestProgramSignature().getName();
 				return launchTarget("-classpath \"" + stringClassPath + "\" " + mainClass + " " + testProgramClass + " " + testProgramName);
 			} catch (IOException e) {
 				throw new GuidanceException(e);
@@ -157,6 +157,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		}
 
 		private VirtualMachine launchTarget(String mainArgs) throws GuidanceException {
+			System.out.println("*** launching TestLauncher as: java " + mainArgs);
 			final LaunchingConnector connector = findLaunchingConnector();
 			final Map<String, Connector.Argument> arguments = connectorArguments(connector, mainArgs);
 			try {
@@ -187,10 +188,10 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 
 			for (ReferenceType classType: vm.allClasses()) {
 				alreadyLoadedClasses.put(classType.name().replace('.', '/'), classType);
-				//System.out.println("ClassLOADED: " + classType.name());
+//				System.out.println("ClassLOADED: " + classType.name());
 			}
 
-			trySetBreakPoint(this.hyperionParameters.getTestProgramSignature());
+			trySetBreakPoint(this.analizerParameters.getTestProgramSignature());
 
 			//executes
 			this.vm.resume();
@@ -205,7 +206,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 						Event event = it.nextEvent();
 						handleClassPrepareEvents(event);
 						if (this.breakpoint == null) {
-							trySetBreakPoint(this.hyperionParameters.getTestProgramSignature());
+							trySetBreakPoint(this.analizerParameters.getTestProgramSignature());
 						} else {
 							stopPointFound = handleBreakpointEvents(event);
 						}
@@ -226,7 +227,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 					if (stopPointFound) {
 						return; //must not try to disable event requests
 					} else {
-						throw new GuidanceException("while looking for " + this.hyperionParameters.getTestProgramSignature() + "::" + 0 + " : " + e);
+						throw new GuidanceException("Stop point not found while looking for " + this.analizerParameters.getTestProgramSignature() + "::" + 0 + " : " + e);
 					}
 				}
 			}
@@ -457,7 +458,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
                             numberOfHits = 1;
 			}
 			this.symbolicApplyOperatorOccurrences.put(op, numberOfHits);
-			return new SymbolicApplyJVMJDI(this.calc, this.hyperionParameters, symbolicApply, numberOfHits);
+			return new SymbolicApplyJVMJDI(this.calc, this.analizerParameters, symbolicApply, numberOfHits);
 		}
 
 		private Value getJDIValueLocalVariable(String var)
@@ -609,9 +610,9 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		private Value symbolicApplyRetValue;
 		private final BreakpointRequest targetMethodExitedBreakpoint;
 
-		public SymbolicApplyJVMJDI(Calculator calc, HyperionParameters hyperionParameters, SymbolicApply symbolicApply, int symbolicApplyNumberOfHits)
+		public SymbolicApplyJVMJDI(Calculator calc, AnalizerParameters analizerParameters, SymbolicApply symbolicApply, int symbolicApplyNumberOfHits)
 		throws GuidanceException {
-			super(calc, hyperionParameters);
+			super(calc, analizerParameters);
 
 			/* We set up a control breakpoint to check if, at any next step, JDI erroneously returns from the method under analysis */
 			try { 

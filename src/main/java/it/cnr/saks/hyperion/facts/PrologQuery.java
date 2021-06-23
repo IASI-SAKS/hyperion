@@ -1,5 +1,6 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.facts;
 
+import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.jpl7.*;
 import org.jpl7.fli.Prolog;
 import org.slf4j.Logger;

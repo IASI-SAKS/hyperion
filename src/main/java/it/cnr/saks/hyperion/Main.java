@@ -1,5 +1,11 @@
 package it.cnr.saks.hyperion;
 
+import it.cnr.saks.hyperion.discovery.Configuration;
+import it.cnr.saks.hyperion.discovery.MethodDescriptor;
+import it.cnr.saks.hyperion.discovery.MethodEnumerator;
+import it.cnr.saks.hyperion.facts.InformationLogger;
+import it.cnr.saks.hyperion.symbolic.Analyzer;
+import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import jbse.bc.Signature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -16,7 +22,7 @@ public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
     private static MethodEnumerator methodEnumerator;
     private static Configuration configuration;
-    private static final Signature hyperionLauncherEntryPoint = new Signature("it/cnr/saks/hyperion/HyperionTestLauncher", "([Ljava/lang/String;)V", "main");
+    private static final Signature hyperionLauncherEntryPoint = new Signature("it/cnr/saks/hyperion/symbolic/TestLauncher", "()Z", "runTest");
 
     public static void main(String[] args) {
         if(args.length < 1) {
@@ -47,6 +53,7 @@ public class Main {
         InformationLogger inspector = new InformationLogger(configuration);
         inspector.setDatalogOutputFile(facts);
 
+        int analyzed = 0;
         long startTime = System.nanoTime();
 
         for(MethodDescriptor method: methodEnumerator) {
@@ -70,19 +77,6 @@ public class Main {
                         .withTestProgram(testProgramSignature);
 
                 a.setupStatic();
-
-//                final List<MethodDescriptor> beforeMethods = methodEnumerator.getBeforeMethods(method.getClassName());
-//                if(beforeMethods == null) {
-
-//                } else {
-//                    continue;
-//                    log.info("Generating wrapper for @Before methods");
-//                    testWrapper.generateWrapper(testProgramSignature, beforeMethods);
-//
-//                    a.withMethodSignature(testWrapperSignature);
-//                    a.withMethodSignature(testWrapperSignature)
-//                     .withGuided(true, testProgramSignature);
-//                }
                 a.run();
 
             } catch (AnalyzerException | OutOfMemoryError | StackOverflowError e) {
@@ -90,6 +84,8 @@ public class Main {
                 inspector.emitDatalog();
                 System.gc();
                 continue;
+            } finally {
+                analyzed++;
             }
 
             inspector.emitDatalog();
@@ -107,6 +103,6 @@ public class Main {
 
         long endTime = System.nanoTime();
         double duration = (double)(endTime - startTime) / 1000000000;
-        log.info("Analyzed " + methodEnumerator.getMethodsCount() + " methods in " + duration + " seconds.");
+        log.info("Analyzed " + analyzed + " method" + (analyzed > 1 ? "s" : "") + " in " + duration + " seconds.");
     }
 }

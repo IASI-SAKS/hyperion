@@ -1,4 +1,4 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.symbolic;
 
 public class AnalyzerException extends Exception {
 
