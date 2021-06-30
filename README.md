@@ -164,10 +164,3 @@ where `inspection-invokes.pl` is the dataset of `invokes` facts used to generate
 
 - [similarEndpoints-trace-report.txt](src/test/resources/report/similarEndpoints-trace-report.txt), including the pairs of
   similar programs together with the lists of `endpoint` facts `Es1` and `Es2` of `TP1` and `TP2`, respectively, that makes the two test programs similar.
-
-## Wrapping @Before and @BeforeEach
-
-To wrap @Before and @BeforeEach methods, we rely on Javassist. In particular, for each test class which is discovered
-during the test program analysis, we keep track of every @Before method for each class.
-We then dynamically generate a static method in a custom class (TestWrapper) which allocates an object of the test
-class, invokes (in random order) all methods annotated as @Before, and then invokes the test program.
