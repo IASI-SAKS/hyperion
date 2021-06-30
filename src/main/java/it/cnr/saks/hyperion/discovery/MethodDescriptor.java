@@ -1,4 +1,4 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.discovery;
 
 import java.lang.reflect.Method;
 

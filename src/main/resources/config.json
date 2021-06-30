@@ -1,0 +1,16 @@
+{
+  "sut": ["../full-teaching/target/classes/"],
+  "testPrograms": ["../full-teaching/target/test-classes/"],
+  "includeTest": [
+    "newUserTest"
+  ],
+  "excludeTest": [
+
+  ],
+  "additionalClasspath": [],
+  "excludeTracedPackages": [
+    "java/",
+    "sun/",
+    "com/google/gson"
+  ]
+}

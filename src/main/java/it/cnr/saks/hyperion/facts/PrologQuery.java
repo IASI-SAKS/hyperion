@@ -1,5 +1,6 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.facts;
 
+import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.jpl7.*;
 import org.jpl7.fli.Prolog;
 import org.slf4j.Logger;
@@ -23,7 +24,7 @@ public class PrologQuery {
                                     String.format("-x %s", System.getenv("SWIPL_BOOT_FILE")),
                             System.getenv("SWI_HOME_DIR") == null ? "" :
                                     String.format("--home=%s", System.getenv("SWI_HOME_DIR")));
-            log.info("\nSWIPL initialized with: %s%n", init_swi_config);
+            log.info("\nSWIPL initialized with: " + init_swi_config);
 
             JPL.setDefaultInitArgs(init_swi_config.split("\\s+"));
         } else
@@ -77,6 +78,4 @@ public class PrologQuery {
         Query q = new Query(function, terms);
         return q.allSolutions();
     }
-
-
 }
