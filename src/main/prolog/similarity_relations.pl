@@ -432,32 +432,6 @@ method(A,M) :-
 % else M is bound to the atom domain_error/1
 method(_,domain_error(not_a_method)).
 
-%% SIMILARITY RELATION ---------------------------------------------------------
-% MODE: similar_tp(+EpSrc,+SimCr,-TP1,-TP2,-Es1,-Es2)
-% SEMANTICS: Es1 and Es2 are lists of endpoints of test programs TP1 and TP2,
-% respectively, generated from lists of invokes representing either a trace
-% (EpSrc = trace) or a maximal invoke sequence (EpSrc = iseq)
-% that satisfy the similarity criterion SimCr.
-similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
-  endpoints(EpSrc,TP1,Es1), Es1\==[],
-  endpoints(EpSrc,TP2,Es2), TP1\==TP2,
-  similar_endpoints(SimCr,Es1,Es2).
-% similar_endpoints(nonemptyEqSet,Es1,Es2) holds if
-similar_endpoints(nonemptyEqSet,Es1,Es2) :-
-  % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
-  matching_endpoints_lst(Es1,Es2),
-  % for all E2 in Es2, there exists a E1 in Es1 s.t E1 is similar to E2
-  matching_endpoints_lst(Es2,Es1).
-% similar_endpoints(nonemptySubSet,Es1,Es2) holds if
-similar_endpoints(nonemptySubSet,Es1,Es2) :-
-  % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
-  matching_endpoints_lst(Es1,Es2).
-% similar_endpoints(nonemptyIntersection,Es1,Es2) holds if
-similar_endpoints(nonemptyIntersection,Es1,Es2) :-
-  % there exist E1 in Es1, E2 in Es2 s.t. E1 is similar to E2
-  member(E1,Es1), member(E2,Es2),
-  matching_endpoints(E1,E2), !.
-
 % MODE: endpoints(+InvokesLst,-EndpointLst)
 % SEMANTICS: EndpointLst is the list of endpoint/4 atoms generated from the
 % list of invokes InvokesLst
@@ -479,6 +453,52 @@ endpoints(InvokesLst,EndpointLst) :-
     EndpointLst
   ).
 
+%% SIMILARITY RELATION ---------------------------------------------------------
+% MODE: similar_tp(+EpSrc,+SimCr,-TP1,-TP2,-Es1,-Es2)
+% SEMANTICS: Es1 and Es2 are lists of endpoints of test programs TP1 and TP2,
+% respectively, generated from lists of invokes representing either a trace
+% (EpSrc = trace) or a maximal invoke sequence (EpSrc = iseq)
+% that satisfy the similarity criterion SimCr.
+similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2) :-
+  endpoints(EpSrc,TP1,Es1), Es1\==[],
+  endpoints(EpSrc,TP2,Es2), TP1\==TP2,
+  similar_endpoints(SimCr,Es1,Es2).
+% similarity based on SET operations
+% similar_endpoints(nonemptyEqSet,Es1,Es2) holds if
+similar_endpoints(nonemptyEqSet,Es1,Es2) :-
+  % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
+  matching_endpoints_lst(Es1,Es2),
+  % for all E2 in Es2, there exists a E1 in Es1 s.t E1 is similar to E2
+  matching_endpoints_lst(Es2,Es1).
+% similar_endpoints(nonemptySubSet,Es1,Es2) holds if
+similar_endpoints(nonemptySubSet,Es1,Es2) :-
+  % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
+  matching_endpoints_lst(Es1,Es2).
+% similar_endpoints(nonemptyIntersection,Es1,Es2) holds if
+similar_endpoints(nonemptyIntersection,Es1,Es2) :-
+  % there exist E1 in Es1, E2 in Es2 s.t. E1 is similar to E2
+  member(E1,Es1), member(E2,Es2),
+  matching_endpoints(E1,E2), !.
+% similarity based on SEQ operations
+% similar_endpoints(eqSeq,Es1,Es2) holds if
+% for all i. Es1[i] is similar to Es2[i]
+similar_endpoints(eqSeq,[],[]).
+similar_endpoints(eqSeq,[E1|Es1],[E2|Es2]) :-
+  matching_endpoints(E1,E2),
+  similar_endpoints(eqSeq,Es1,Es2).
+% similar_endpoints(subSeq,Es1,Es2) holds if
+% Es1 can be obtained from Es2 by deleting some of its elements.
+similar_endpoints(subSeq,[],_).
+similar_endpoints(subSeq,[E1|Es1],[E2|Es2]) :-
+  matching_endpoints(E1,E2),
+  !,
+  similar_endpoints(subSeq,Es1,Es2).
+similar_endpoints(subSeq,Es1,[_|Es2]) :-
+  similar_endpoints(subSeq,Es1,Es2).
+% similar_endpoints(commonSeq,Es1,Es2) holds if
+similar_endpoints(commonSeq,Es1,Es2) :-
+  similar_endpoints(nonemptyIntersection,Es1,Es2).
+
 % MODE: matching_endpoints_lst(+Es1,+Es2)
 % SEMANTICS: Es1 and Es2 are lists of endpoints and for all E in Es1
 % there exists an element in Es2 that satisfies matching_endpoints.
@@ -491,28 +511,46 @@ matching_endpoints_lst([E1|Es1],Es2) :-
 % MODE: matching_endpoints(+E1,+E2)
 % SEMANTICS: there exists in S an element E2 s.t.
 % (*1*) E1 and E2 perform the same HTTP request, and
-% (*2*) E1 and E2 match a regular expression REX representing a REST API
-%       (the set of regular expressions is defined by rest_api_regex/1 facts)
+% (*2*) E1 and E2 match a common pattern
 matching_endpoints(E1,E2) :-
   E1 = endpoint(_TP1,_Caller1,HTTPMethod,URI1), % E1 invokes HTTPMethod (*1*)
   E2 = endpoint(_TP2,_Caller2,HTTPMethod,URI2), % E2 invokes HTTPMethod (*1*)
   atom_string(URI1,URI1Str),
   atom_string(URI2,URI2Str),
+  matching_URIs(URI1Str,URI2Str).
+
+% MODE: matching_URIs(+U1,+U2)
+% SEMANTICS: E1 and E2 match a regular expression REX representing a REST API
+% (the set of regular expressions is defined by rest_api_regex/1 facts)
+matching_URIs(URI1Str,URI2Str) :-
   rest_api_regex(REX),   % REX is a user-provided REST API regular expression
   re_match(REX,URI1Str),  % the URI string URI1Str of E1 matches REX    (*2*)
   re_match(REX,URI2Str).  % the URI string URI2Str of E2 matches REX    (*2*)
+% TODO: matching a regular expression parameters
+%matching_URIs(URI1Str,URI2Str) :-
+%  true. %
 
-% MODE: select_matching_endpoints(+Es1,+Es2,-Es)
+% MODE: select_matching_endpoints_set(+Es1,+Es2,-Es)
 % SEMANTICS: Es consists of all elements in Es1 for which there exists a
 % matching element in Es2.
-select_matching_endpoints([],_Es2,[]).
-select_matching_endpoints([E1|Es1],Es2,[E1|Es]) :-
+select_matching_endpoints_set([],_Es2,[]).
+select_matching_endpoints_set([E1|Es1],Es2,[E1|Es]) :-
   member(E2,Es2),
   matching_endpoints(E1,E2),
   !,
-  select_matching_endpoints(Es1,Es2,Es).
-select_matching_endpoints([_|Es1],Es2,Es) :-
-  select_matching_endpoints(Es1,Es2,Es).
+  select_matching_endpoints_set(Es1,Es2,Es).
+select_matching_endpoints_set([_|Es1],Es2,Es) :-
+  select_matching_endpoints_set(Es1,Es2,Es).
+
+% MODE: select_matching_endpoints_seq(+Es1,+Es2,-Es)
+% SEMANTICS: Es is the longest common subsequence of Es1 and Es2
+select_matching_endpoints_seq([],_Es2,[]).
+select_matching_endpoints_seq([E1|Es1],[E2|Es2],[E1|Es]) :-
+  matching_endpoints(E1,E2),
+  !,
+  select_matching_endpoints_seq(Es1,Es2,Es).
+select_matching_endpoints_seq([_|Es1],Es2,Es) :-
+  select_matching_endpoints_seq(Es1,Es2,Es).
 
 % MODE: similarity_score(+SimCr,+Es1,+Es2,Score)
 % SEMANTICS: Score is
@@ -523,10 +561,24 @@ similarity_score(nonemptySubSet,Es1,Es2,Score) :-
   sort(Es1,S1), length(S1,N1),
   sort(Es2,S2), length(S2,N2),
   Score is N1/N2.
-% |intersect(ES1,ES2)| / min(|ES1|,|ES2|), if SimCris=nonemptyIntersection
+% |nonemptyIntersection(ES1,ES2)| / min(|ES1|,|ES2|), if SimCris=nonemptyIntersection
 similarity_score(nonemptyIntersection,Es1,Es2,Score) :-
   sort(Es1,S1), length(S1,N1),
   sort(Es2,S2), length(S2,N2),
-  select_matching_endpoints(S1,S2,I), length(I,N),
+  select_matching_endpoints_set(S1,S2,I), length(I,N),
+  M is min(N1,N2),
+  Score is N/M.
+% 1, if SimCris=eqSeq
+similarity_score(eqSeq,_Es1,_Es2,1).
+% length(ES1)/length(ES2), if SimCris=subSeq
+similarity_score(subSeq,Es1,Es2,Score) :-
+  length(Es1,N1),
+  length(Es2,N2),
+  Score is N1/N2.
+% |commonSubSeq(ES1,ES2)| / min(length(ES1),length(ES2)), if SimCris=commonSubSeq
+similarity_score(commonSubSeq,Es1,Es2,Score) :-
+  length(Es1,N1),
+  length(Es2,N2),
+  select_matching_endpoints_seq(Es1,Es2,I), length(I,N),
   M is min(N1,N2),
   Score is N/M.

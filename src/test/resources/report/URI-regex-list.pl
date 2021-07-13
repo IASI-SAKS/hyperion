@@ -6,7 +6,8 @@ rest_api_regex("^/api-courses/edit$").
 rest_api_regex("^/api-courses/delete/.*$").
 rest_api_regex("^/api-courses/edit/add-attenders/course/.*$").
 rest_api_regex("^/api-courses/edit/delete-attenders$").
-rest_api_regex("^/api-entries/forum/.*$").
+%rest_api_regex("^/api-entries/forum/.*$").
+rest_api_regex("^/api-entries/forum/[^/]*$").
 rest_api_regex("^/api-load-files/upload/course/.*/file-group/.*$").
 rest_api_regex("^/api-load-files/course/.*/download/.*$").
 rest_api_regex("^/api-load-files/upload/picture/.*$").
