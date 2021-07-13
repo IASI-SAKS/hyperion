@@ -1,5 +1,9 @@
 :- consult(similarity_relations).
 
+:- dynamic setting/1.
+
+setting(endpoints_set(false)).
+
 %% Checking similarity of test programs
 check(Src) :-
   retractall(invokes(_,_,_,_,_,_,_,_,_)),
@@ -98,24 +102,8 @@ print_qatom_args([L|Ls]) :-
   !,
   print_qatom_args(Ls).
 
-% :- dynamic endpoints/3.
-% :- multifile endpoints/3.
-% similarity_from_endpoints_dir(Dir,_EpSrc,SimCr) :-
-%   directory_files(Dir,Files),
-%   delete(Files,'.',Files1),
-%   delete(Files1,'..',InFiles),
-%   retractall(endpoints(_,_,_)),
-%   retractall(invokes(_,_,_,_,_,_,_,_,_)),
-%   write('Consulting endpoints/3 from:'), nl,
-%   member(InFileName,InFiles),
-%   write(InFileName), nl, flush_output,
-%   atom_concat(Dir,InFileName,InFile),
-%   consult(InFile),
-%   fail.
-% similarity_from_endpoints_dir(_Dir,EpSrc,SimCr) :-
-%   write('done.'), flush_output,
-%   print_similarity(EpSrc,SimCr).
-
+:- dynamic endpoints/3.
+:- multifile endpoints/3.
 % SEMANTICS: generate and assert endpoints from the invokes in File,
 % run similarity predicates and prints the answers to csv and txt files
 similarity_from_invokes_file(File,EpSrc,SimCr) :-
@@ -158,7 +146,7 @@ generate_and_assert_endpoints(trace) :-
   retract(counter(N)), M is N+1, assert(counter(M)),
   write(N), write(' '), flush_output,
   endpoints(Trace,ESeq),
-  assert(endpoints(trace,TP,ESeq)),
+  assert_endpoint(endpoints(trace,TP,ESeq)),
   fail.
 % from all the invoke sequences of all entry points
 generate_and_assert_endpoints(iseq) :-
@@ -169,18 +157,29 @@ generate_and_assert_endpoints(iseq) :-
   retract(counter(N)), M is N+1, assert(counter(M)),
   write(N), write(' '), flush_output,
   endpoints(ISeq,ESeq),
-  assert(endpoints(iseq,TP,ESeq)),
+  assert_endpoint(endpoints(iseq,TP,ESeq)),
   fail.
 generate_and_assert_endpoints(_) :-
   retractall(counter(_)).
 
+%
+assert_endpoint(endpoints(EpSrc,TP,ESeq)) :-
+  setting(endpoints_set(true)),
+  endpoints(EpSrc,TP,ESeq),
+  % if endpoints_set(true) and
+  %    endpoints(EpSrc,TP,ESeq) already exists, do nothing
+  !.
+assert_endpoint(endpoints(EpSrc,TP,ESeq)) :-
+  % if endpoints_set(false) or
+  %    endpoints(EpSrc,TP,ESeq) does not belong to the database
+  assert(endpoints(EpSrc,TP,ESeq)).
+
 % SEMANTICS: open the txt and csv files and run
 % printall_similarity_answers
 print_similarity(EpSrc,SimCr) :-
-  atom_concat('similarEndpoints-',EpSrc,FileNamePrefix),
-  atom_concat(FileNamePrefix,'-report.txt',TXTFileName),
+  atomic_list_concat(['similarEndpoints-',EpSrc,'-',SimCr,'-report.txt'],TXTFileName),
   open(TXTFileName,write,Fd1,[alias(txt)]),
-  atom_concat(FileNamePrefix,'-report.csv',CSVFileName),
+  atomic_list_concat(['similarEndpoints-',EpSrc,'-',SimCr,'-report.csv'],CSVFileName),
   open(CSVFileName,write,Fd2,[alias(csv)]),
   assert(ln(1)),
   printall_similarity_answers(EpSrc,SimCr),
@@ -201,7 +200,7 @@ print_similarity_ans(EpSrc,SimCr) :-
   write(txt,'Querying similar_tp/6'),                  nl(txt), nl(txt),
   write(txt,'* Endpoints source: '), write(txt,EpSrc), nl(txt),
   write(txt,'* Criterion:        '), write(txt,SimCr), nl(txt),
-  write(txt,'----------------------------------'),     nl(txt), nl(txt),
+  write(txt,'----------------------------------'),     nl(txt), nl(txt), trace,
   similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2),
   similarity_score(SimCr,Es1,Es2,Score),
   retract(ln(N)),
