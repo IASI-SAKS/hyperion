@@ -6,6 +6,7 @@ import jbse.bc.Signature;
 import jbse.common.Type;
 import jbse.mem.*;
 import jbse.mem.exc.FrozenStateException;
+import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.val.*;
 
@@ -37,6 +38,20 @@ public class InformationLogger {
         this.callerFrame.empty();
         this.invocationEpoch = 0;
         this.callerFrame.push(this.invocationEpoch++);
+    }
+
+    public void onThrow(State currentState) {
+        final Objekt myException;
+        try {
+            final Frame frame = currentState.getCurrentFrame();
+            final Value[] operands = frame.operands(1); // athrow has one operand
+            myException = currentState.getObject((Reference) operands[0]);
+        } catch (ThreadStackEmptyException | FrozenStateException | InvalidNumberOfOperandsException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        System.out.println("Exception thrown: " + myException.getType().getClassName());
     }
 
     public void onMethodReturn() {
@@ -86,13 +101,6 @@ public class InformationLogger {
         String pathId = "[" + branchId.replaceAll("\\.", ", ") + "], " + s.getSequenceNumber();
         String programPoint = caller.getClassName() + ":" + caller.getName() + ":" + caller.getDescriptor();
 
-//        System.out.println(name);
-
-//        if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
-//                && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
-//            this.inspectHttpRequest(s, name, pathId);
-//        }
-
         this.inspectMethodCall(s, name, callee, classFile, pathId, programPoint, callerPC);
     }
 
@@ -118,14 +126,6 @@ public class InformationLogger {
         if(this.datalogOut == null)
             return;
 
-//        this.datalogOut.println("FORMATO:\n\ninvokes("
-//                + "\"nome\" del test, "
-//                + "branch point, sequence number" + ", " + "caller" + ", " + "path condition" + ", "
-//                + "metodo chiamato" + ", "
-//                + "parametri" + ").\n\n");
-//        Formato:
-//        invokes(test name, branch point, branch sequence number, caller, callerPC, frameEpoch, path condition, callee, parameters)
-
         this.loggedInformation.forEach((klass,methodsInKlass) -> { // for each class
             if(methodsInKlass.size() == 0)
                 return;
@@ -135,14 +135,14 @@ public class InformationLogger {
                 ArrayList<TestInformation.MethodCall> methodCalls = methodLoggedInformation.getMethodCalls();
                 for (TestInformation.MethodCall methodCall : methodCalls) {
                     StringBuilder invokes = new StringBuilder();
-                    invokes.append("invokes(")
-                            .append("'" + klass + ":" + method + "', ")
-                            .append(methodCall.getPathId() + ", ")
-                            .append("'" + methodCall.getProgramPoint() + "', ")
-                            .append(methodCall.getCallerPC() + ", ")
-                            .append(methodCall.getCallerEpoch() + ", ")
-                            .append(methodCall.getPathCondition() + ", ")
-                            .append("'" + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + "', ")
+                    invokes.append("invokes(").append("'")
+                            .append(klass).append(":").append(method).append("', ")
+                            .append(methodCall.getPathId()).append(", ")
+                            .append("'").append(methodCall.getProgramPoint()).append("', ")
+                            .append(methodCall.getCallerPC()).append(", ")
+                            .append(methodCall.getCallerEpoch()).append(", ")
+                            .append(methodCall.getPathCondition()).append(", ")
+                            .append("'").append(methodCall.getClassName()).append(":").append(methodCall.getMethodName()).append(":").append(methodCall.getMethodDescriptor()).append("', ")
                             .append(methodCall.getParameterSet().getParameters())
                             .append(").");
 
