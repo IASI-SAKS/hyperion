@@ -76,6 +76,11 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 this.methods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
             }
         }
+
+        // Refine the list of methods to analyze
+        this.methods.removeIf(method -> configuration.getExcludeTest().contains(method.getMethodName()));
+        if(configuration.getIncludeTest().size() > 0)
+            this.methods.removeIf(method -> !configuration.getIncludeTest().contains(method.getMethodName()));
     }
 
     @Override

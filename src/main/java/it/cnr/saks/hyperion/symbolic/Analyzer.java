@@ -17,8 +17,7 @@ import jbse.mem.State;
 import jbse.mem.exc.ContradictionException;
 import jbse.mem.exc.FrozenStateException;
 import jbse.mem.exc.ThreadStackEmptyException;
-import jbse.rewr.CalculatorRewriting;
-import jbse.rewr.RewriterOperationOnSimplex;
+import jbse.rewr.*;
 import jbse.rules.ClassInitRulesRepo;
 import jbse.rules.LICSRulesRepo;
 import jbse.tree.StateTree;
@@ -30,16 +29,16 @@ import java.util.concurrent.TimeUnit;
 import static jbse.bc.Opcodes.*;
 
 public final class Analyzer {
-    private boolean trackMethods = false;
+    private boolean trackingEnabled = false;
 
     private Engine engine;
-    private final AnalizerParameters analizerParameters;
+    public final AnalyzerParameters analyzerParameters;
 
     private final InformationLogger informationLogger;
 
     public Analyzer(InformationLogger informationLogger) throws AnalyzerException {
-        this.analizerParameters = new AnalizerParameters();
-        this.analizerParameters.setActions(new ActionsRun());
+        this.analyzerParameters = new AnalyzerParameters();
+        this.analyzerParameters.setActions(new ActionsRun());
 
         this.informationLogger = informationLogger;
         this.informationLogger.resetCounters();
@@ -127,80 +126,29 @@ public final class Analyzer {
 
         @Override
         public boolean atInitial() {
-            Analyzer.this.trackMethods = true;
+            Analyzer.this.trackingEnabled = true;
             return super.atInitial();
         }
 
         @Override
-        public boolean atBranch(StateTree.BranchPoint bp) {
-            if(Analyzer.this.trackMethods) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
-            }
-
-            return super.atBranch(bp);
-        }
-
-        @Override
-        public boolean atPathEnd() {
-            if(Analyzer.this.trackMethods) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
-            }
-            return super.atPathEnd();
-        }
-
-        @Override
-        public boolean atBacktrackPre() {
-            if(Analyzer.this.trackMethods) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
-            }
-
-            return super.atBacktrackPre();
-        }
-
-        @Override
-        public boolean atBacktrackPost(StateTree.BranchPoint bp) {
-            if(Analyzer.this.trackMethods) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
-            }
-
-            return super.atBacktrackPost(bp);
-        }
-
-        // If backtrack is successful, called after atBacktrackPost
-        @Override
-        public boolean atBacktrackFinally() {
-            if(Analyzer.this.trackMethods) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
-            }
-
-            return super.atBacktrackFinally();
-        }
-
-        @Override
         public void atEnd() {
-            if(Analyzer.this.trackMethods) {
+            if(Analyzer.this.trackingEnabled) {
                 final State currentState = Analyzer.this.engine.getCurrentState();
             }
-        }
-
-        @Override
-        public boolean atMethodPre() {
-            if(Analyzer.this.trackMethods) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
-                Analyzer.this.informationLogger.onMethodCall(currentState);
-            }
-
-            return super.atMethodPre();
         }
 
         @Override
         public boolean atStepPre() {
-            if(Analyzer.this.trackMethods) {
+            if(Analyzer.this.trackingEnabled) {
                 final State currentState = Analyzer.this.engine.getCurrentState();
                 try {
                     byte opcode = currentState.getInstruction();
+                    if(opcode == OP_INVOKEVIRTUAL || opcode == OP_INVOKEDYNAMIC || opcode == OP_INVOKESTATIC || opcode == OP_INVOKESPECIAL || opcode == OP_INVOKEHANDLE || opcode == OP_INVOKEINTERFACE)
+                            Analyzer.this.informationLogger.onMethodCall(currentState);
                     if(opcode == OP_IRETURN || opcode == OP_LRETURN || opcode == OP_FRETURN || opcode == OP_DRETURN || opcode == OP_ARETURN || opcode == OP_RETURN)
                         Analyzer.this.informationLogger.onMethodReturn();
+                    if(opcode == OP_ATHROW)
+                        Analyzer.this.informationLogger.onThrow(currentState);
                 } catch (ThreadStackEmptyException | FrozenStateException e) {
                     e.printStackTrace();
                 }
@@ -212,12 +160,13 @@ public final class Analyzer {
 
     public void run() throws AnalyzerException {
         final CalculatorRewriting calc = createCalculator();
-        this.analizerParameters.setCalculator(calc);
-        this.analizerParameters.setDecisionProcedure(createDecisionProcedure(calc));
+        this.analyzerParameters.setCalculator(calc);
+        this.analyzerParameters.setDecisionProcedure(createDecisionProcedure(calc));
+
 
         try {
             final RunnerBuilder rb = new RunnerBuilder();
-            final Runner runner = rb.build(this.analizerParameters.getRunnerParameters());
+            final Runner runner = rb.build(this.analyzerParameters.getRunnerParameters());
             this.engine = rb.getEngine();
             runner.run();
             this.engine.close();
@@ -235,30 +184,33 @@ public final class Analyzer {
         }
         String[] pathsArray = new String[paths.size()];
         pathsArray = paths.toArray(pathsArray);
-        this.analizerParameters.addUserClasspath(pathsArray);
+        this.analyzerParameters.addUserClasspath(pathsArray);
         return this;
     }
 
     public Analyzer withJbseEntryPoint(Signature method) {
-        this.analizerParameters.setMethodSignature(method);
+        this.analyzerParameters.setMethodSignature(method);
         return this;
     }
 
     public Analyzer withDepthScope(int depthScope) {
-        this.analizerParameters.setDepthScope(depthScope);
+        this.analyzerParameters.setDepthScope(depthScope);
         return this;
     }
 
     public Analyzer withTimeout(long time) {
-        this.analizerParameters.setTimeout(time, TimeUnit.MINUTES);
+        this.analyzerParameters.setTimeout(time, TimeUnit.MINUTES);
         return this;
     }
 
     public Analyzer withTestProgram(Signature testProgramSignature) {
-        this.analizerParameters.setTestProgramSignature(testProgramSignature);
+        this.analyzerParameters.setTestProgramSignature(testProgramSignature);
         return this;
     }
 
+    private State getCurrentState() {
+        return this.engine.getCurrentState();
+    }
 
     private DecisionProcedureAlgorithms createDecisionProcedure(CalculatorRewriting calc) throws AnalyzerException {
         // initializes core
@@ -279,7 +231,8 @@ public final class Analyzer {
             core = new DecisionProcedureClassInit(core, new ClassInitRulesRepo());
 
             // Setup guidance using JDI
-            core = new DecisionProcedureGuidanceJDI(core, calc, this.analizerParameters);
+            core = new DecisionProcedureGuidanceJDI(core, calc, this.analyzerParameters);
+            core.setCurrentStateSupplier(this::getCurrentState);
 
             // sets the result
             return new DecisionProcedureAlgorithms(core);
@@ -291,12 +244,15 @@ public final class Analyzer {
 
     private CalculatorRewriting createCalculator() {
         final CalculatorRewriting calc = new CalculatorRewriting();
-        calc.addRewriter(new RewriterOperationOnSimplex()); //indispensable
+        calc.addRewriter(new RewriterExpressionOrConversionOnSimplex()); //indispensable
+        calc.addRewriter(new RewriterFunctionApplicationOnSimplex()); //indispensable
+        calc.addRewriter(new RewriterZeroUnit()); //indispensable
+        calc.addRewriter(new RewriterNegationElimination()); //indispensable?
         return calc;
     }
 
     public Analyzer withUninterpreted(String methodClassName, String methodDescriptor, String methodName) {
-        this.analizerParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
+        this.analyzerParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
         return this;
     }
 

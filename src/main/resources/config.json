@@ -1,13 +1,17 @@
 {
-  "sut": ["../full-teaching/target/classes/"],
-  "testPrograms": ["../full-teaching/target/test-classes/"],
+  "sut": [
+    "../train-ticket/ts-common/target/classes/",
+    "../train-ticket/ts-admin-basic-info-service/target/classes/"
+  ],
+  "testPrograms": ["../train-ticket/ts-admin-basic-info-service/target/test-classes/"],
   "includeTest": [
-    "newUserTest"
   ],
   "excludeTest": [
-
+    "testModifyContact"
   ],
-  "additionalClasspath": [],
+  "additionalClasspath": [
+    "/home/pellegrini/.m2/repository/org/springframework/spring-web/4.3.3.RELEASE/spring-web-4.3.3.RELEASE.jar"
+  ],
   "excludeTracedPackages": [
     "java/",
     "sun/",

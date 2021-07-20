@@ -8,11 +8,11 @@ import jbse.rewr.CalculatorRewriting;
 
 import java.util.concurrent.TimeUnit;
 
-public class AnalizerParameters implements Cloneable {
+public class AnalyzerParameters implements Cloneable {
     private final RunnerParameters runnerParameters;
     private Signature testProgramSignature;
 
-    public AnalizerParameters() {
+    public AnalyzerParameters() {
         this.runnerParameters = new RunnerParameters();
     }
 

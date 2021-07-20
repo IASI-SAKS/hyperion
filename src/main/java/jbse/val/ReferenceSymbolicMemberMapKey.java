@@ -25,7 +25,7 @@ public final class ReferenceSymbolicMemberMapKey extends ReferenceSymbolicMember
     /**
      * Constructor.
      * 
-     * @param container a {@link ReferenceSymbolic}, the container objectbb
+     * @param container a {@link ReferenceSymbolic}, the container object
      *        this symbol originates from. It must refer a map.
      * @param keyOriginSpecifier a {@link String}. It will be used to specify
      *        the origin string representation of this symbol, that will be 
