@@ -208,7 +208,7 @@ public class InformationLogger {
                 sb.append("null");
             } else if(op instanceof ReferenceSymbolicMemberField) {
                 ReferenceSymbolicMemberField rsmf = (ReferenceSymbolicMemberField) op;
-                final String value = rsmf.getValue();
+                final String value = rsmf.getStaticType();
                 sb.append(value);
             } else if (op instanceof Simplex) {
                 sb.append(renderSimplex((Simplex) op));
