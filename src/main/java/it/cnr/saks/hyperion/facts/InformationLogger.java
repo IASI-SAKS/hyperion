@@ -53,7 +53,7 @@ public class InformationLogger {
             return;
         }
 
-        System.out.println("Exception thrown: " + myException.getType().getClassName());
+        TestInformation.ExceptionThrown ex = this.loggedInformation.get(this.currClass).get(this.currMethod).addExceptionThrown(myException.getType().getClassName());
     }
 
     public void onMethodReturn() {
@@ -149,6 +149,17 @@ public class InformationLogger {
                             .append(").");
 
                     this.datalogOut.println(invokes);
+                }
+
+                ArrayList<TestInformation.ExceptionThrown> exceptionsThrown = methodLoggedInformation.getExceptionsThrown();
+                for(TestInformation.ExceptionThrown ex : exceptionsThrown) {
+                    StringBuilder exception = new StringBuilder();
+                    exception.append("exception('")
+                            .append(klass).append(":").append(method).append("', ")
+                            .append("'").append(ex.getExceptionClass()).append("'")
+                            .append(")");
+
+                    this.datalogOut.println(exception);
                 }
             });
         });
