@@ -4,6 +4,7 @@ import java.util.ArrayList;
 
 public class TestInformation {
     private final ArrayList<MethodCall> methodCalls = new ArrayList<>();
+    private final ArrayList<ExceptionThrown> exceptionsThrown = new ArrayList<>();
 
     protected MethodCall addMethodCall(String methodName, int callerEpoch, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
         MethodCall md = new MethodCall(methodName, callerEpoch, methodDescriptor, className, pathId, programPoint, callerPC, pathCondition);
@@ -13,6 +14,28 @@ public class TestInformation {
 
     public ArrayList<MethodCall> getMethodCalls() {
         return this.methodCalls;
+    }
+
+    protected ExceptionThrown addExceptionThrown(String exceptionClass) {
+        ExceptionThrown ex = new ExceptionThrown(exceptionClass);
+        this.exceptionsThrown.add(ex);
+        return ex;
+    }
+
+    public ArrayList<ExceptionThrown> getExceptionsThrown() {
+        return this.exceptionsThrown;
+    }
+
+    protected static class ExceptionThrown {
+        private final String exceptionClass;
+
+        public ExceptionThrown(String exceptionClass) {
+            this.exceptionClass = exceptionClass;
+        }
+
+        public String getExceptionClass() {
+            return this.exceptionClass;
+        }
     }
 
     protected static class MethodCall {

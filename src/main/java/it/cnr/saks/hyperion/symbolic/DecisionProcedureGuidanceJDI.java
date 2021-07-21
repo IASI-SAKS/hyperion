@@ -550,6 +550,8 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 					return getJDIObjectStatic(((KlassPseudoReference) origin).getClassFile().getClassName());
 				} else if (origin instanceof SymbolicMemberField) {
 					final Object o = getJDIValue(((SymbolicMemberField) origin).getContainer());
+					if(o == null)
+						return null;
 					if (!(o instanceof com.sun.jdi.ReferenceType) && !(o instanceof com.sun.jdi.ObjectReference)) {
 						throw new GuidanceException(ERROR_BAD_PATH + origin.asOriginString() + " : Fails because containing object is " + o);
 					}
