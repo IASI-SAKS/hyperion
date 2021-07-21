@@ -69,8 +69,8 @@ public class Main {
             try {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(configuration.getClassPath())
-                        .withTimeout(15)
-                        .withDepthScope(500)
+                        .withTimeout(configuration.getTimeout())
+                        .withDepthScope(configuration.getDepth())
                         .withJbseEntryPoint(testProgramSignature)
                         .withTestProgram(testProgramSignature);
 
