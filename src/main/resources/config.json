@@ -3,10 +3,53 @@
     "../train-ticket/ts-common/target/classes/",
     "../train-ticket/ts-admin-basic-info-service/target/classes/"
   ],
-  "testPrograms": ["../train-ticket/ts-admin-basic-info-service/target/test-classes/"],
+  "testPrograms": [
+    "../train-ticket/ts-admin-basic-info-service/target/test-classes/"
+  ],
   "includeTest": [
+    "testDeleteContact"
   ],
   "excludeTest": [
+    "testGetAllContacts",
+    "testModifyContact",
+    "testGetAllStations",
+    "testAddStation",
+    "testDeleteStation",
+    "testModifyStation",
+    "testGetAllTrains",
+    "testAddTrain",
+    "testDeleteTrain",
+    "testModifyTrain",
+    "testGetAllConfigs",
+    "testAddConfig",
+    "testDeleteConfig",
+    "testModifyConfig",
+    "testGetAllPrices",
+    "testAddPrice",
+    "testDeletePrice",
+    "testModifyPrice",
+    "testAddContact",
+    "testGetAllContacts",
+    "testGetAllStations",
+    "testAddStation",
+    "testDeleteStation",
+    "testModifyStation",
+    "testGetAllTrains",
+    "testAddTrain",
+    "testDeleteTrain",
+    "testModifyTrain",
+    "testGetAllConfigs",
+    "testAddConfig",
+    "testDeleteConfig",
+    "testModifyConfig",
+    "testGetAllPrices",
+    "testAddPrice",
+    "testDeletePrice",
+    "testModifyPrice",
+    "testDeleteContacts",
+    "testModifyContacts",
+    "testAddContacts",
+    "testHome"
   ],
   "additionalClasspath": [
     "/home/pellegrini/.m2/repository/org/springframework/spring-web/4.3.3.RELEASE/spring-web-4.3.3.RELEASE.jar"
@@ -16,6 +59,6 @@
     "sun/",
     "com/google/gson"
   ],
-  "depth": 400,
-  "timeout": 5
+  "depth": 300,
+  "timeout": 3
 }

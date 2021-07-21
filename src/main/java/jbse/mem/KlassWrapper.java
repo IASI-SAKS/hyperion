@@ -1,9 +1,12 @@
 package jbse.mem;
 
 import jbse.bc.ClassFile;
+import jbse.bc.Signature;
 import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
 import jbse.val.ReferenceSymbolic;
+
+import java.util.Collection;
 
 /**
  * Abstract superclass of all the wrapper classes for objects that go in the heap.
@@ -66,7 +69,7 @@ final class KlassWrapper extends ObjektWrapper<KlassImpl> implements Klass {
 		getDelegate().makeSymbolic(origin);
 	}
 
-    @Override
+	@Override
     public Klass clone() {
         //a wrapper shall never be cloned
         throw new UnexpectedInternalException("Tried to clone a KlassWrapper.");
