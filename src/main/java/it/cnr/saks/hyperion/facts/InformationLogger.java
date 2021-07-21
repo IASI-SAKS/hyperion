@@ -215,35 +215,45 @@ public class InformationLogger {
             } else if(op instanceof ReferenceConcrete || op instanceof ReferenceSymbolic) {
                 try {
                     Objekt obj = s.getObject((Reference) op);
-                    switch (obj.getType().getClassName()) {
-                        case "java/lang/String":
-                            final Reference valueRef = (Reference) obj.getFieldValue(JAVA_STRING_VALUE);
-                            final Array value = (Array) s.getObject(valueRef);
-                            sb.append(value.valueString());
-                            break;
-                        case "java/lang/Byte":
-                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_BYTE_VALUE)));
-                            break;
-                        case "java/lang/Double":
-                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_DOUBLE_VALUE)));
-                            break;
-                        case "java/lang/Float":
-                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_FLOAT_VALUE)));
-                            break;
-                        case "java/lang/Integer":
-                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_INTEGER_VALUE)));
-                            break;
-                        case "java/lang/Long":
-                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_LONG_VALUE)));
-                            break;
-                        case "java/lang/Short":
-                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_SHORT_VALUE)));
-                            break;
-                        default:
-                            sb.append("L");
-                            sb.append(obj.getType().getClassName());
-                            sb.append(";");
-                            break;
+                    if(obj.getType().getSuperclassName().equals(JAVA_ENUM)) {
+                        final Signature ordinalSig = new Signature("java/lang/Enum", "I", "ordinal");
+                        final int enumMember = Integer.parseInt(obj.getFieldValue(ordinalSig).toString()); // 0 based!
+                        final Collection<Signature> fieldSignatures = obj.getAllStoredFieldSignatures();
+                        final Signature[] fieldSignaturesArray = fieldSignatures.toArray(new Signature[fieldSignatures.size()]);
+                        sb.append(obj.getType().getClassName())
+                            .append(".")
+                            .append(fieldSignaturesArray[enumMember].getName());
+                    } else {
+                        switch (obj.getType().getClassName()) {
+                            case JAVA_STRING:
+                                final Reference valueRef = (Reference) obj.getFieldValue(JAVA_STRING_VALUE);
+                                final Array value = (Array) s.getObject(valueRef);
+                                sb.append(value.valueString());
+                                break;
+                            case JAVA_BYTE:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_BYTE_VALUE)));
+                                break;
+                            case JAVA_DOUBLE:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_DOUBLE_VALUE)));
+                                break;
+                            case JAVA_FLOAT:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_FLOAT_VALUE)));
+                                break;
+                            case JAVA_INTEGER:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_INTEGER_VALUE)));
+                                break;
+                            case JAVA_LONG:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_LONG_VALUE)));
+                                break;
+                            case JAVA_SHORT:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_SHORT_VALUE)));
+                                break;
+                            default:
+                                sb.append("L");
+                                sb.append(obj.getType().getClassName());
+                                sb.append(";");
+                                break;
+                        }
                     }
                 } catch (FrozenStateException e) {
                     throw new AnalyzerException("Frozen State while peeking Objext: " + e.getMessage());
