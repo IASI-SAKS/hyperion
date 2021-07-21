@@ -75,10 +75,6 @@ public class Main {
                         .withTestProgram(testProgramSignature);
 
                 a.setupStatic();
-
-//                wtf(a.analizerParameters, configuration);
-//                System.exit(0);
-
                 a.run();
 
             } catch (AnalyzerException | OutOfMemoryError | StackOverflowError e) {
@@ -104,50 +100,4 @@ public class Main {
         double duration = (double)(endTime - startTime) / 1000000000;
         log.info("Analyzed " + analyzed + " method" + (analyzed > 1 ? "s" : "") + " in " + duration + " seconds.");
     }
-/*
-    private static void wtf(AnalizerParameters analizerParameters, Configuration configuration) {
-        final RunParameters p = new RunParameters();
-
-        p.setJBSELibPath("/home/pellegrini/git/CNR/hyperion/target/classes/");
-        p.addUserClasspath(gimmeClasspath(configuration));
-        p.addSourcePath(Paths.get(System.getProperty("java.home", "") + "src.zip"));
-        p.setMethodSignature(analizerParameters.getTestProgramSignature().getClassName(), analizerParameters.getTestProgramSignature().getDescriptor(), analizerParameters.getTestProgramSignature().getName());
-        p.setOutputFilePath("fuuuuuu");
-        p.setDecisionProcedureType(RunParameters.DecisionProcedureType.Z3);
-        p.setExternalDecisionProcedurePath("z3");
-        p.setStateFormatMode(RunParameters.StateFormatMode.TEXT);
-        p.setStepShowMode(RunParameters.StepShowMode.METHOD);
-        p.setGuided(analizerParameters.getTestProgramSignature().getClassName(), analizerParameters.getTestProgramSignature().getName());
-        p.setGuidanceType(RunParameters.GuidanceType.JDI);
-
-        final Run r = new Run(p);
-        r.run();
-    }
-
-    private static String[] gimmeClasspath(Configuration configuration) {
-        List<String> daList = new ArrayList<>();
-
-        for (String p: configuration.getTestPrograms()) {
-            daList.add(new File(p).getAbsolutePath());
-        }
-        for (String p: configuration.getSut()) {
-            daList.add(new File(p).getAbsolutePath());
-        }
-        for (String p: configuration.getAdditionalClasspath()) {
-            daList.add(new File(p).getAbsolutePath());
-        }
-        daList.add(new File("data/jre/rt.jar").getAbsolutePath());
-
-        String runtimeClasspath = ManagementFactory.getRuntimeMXBean().getClassPath();
-        String separator = System.getProperty("path.separator");
-        String[] additionalClasspath = runtimeClasspath.split(separator);
-
-        for (String p: additionalClasspath) {
-            daList.add(new File(p).getAbsolutePath());
-        }
-
-        String[] arr = new String[daList.size()];
-        daList.toArray(arr);
-        return arr;
-    }*/
 }
