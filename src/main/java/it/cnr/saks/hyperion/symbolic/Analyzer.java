@@ -140,20 +140,24 @@ public final class Analyzer {
         @Override
         public boolean atStepPre() {
             if(Analyzer.this.trackingEnabled) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
                 try {
-                    byte opcode = currentState.getInstruction();
-                    if(opcode == OP_INVOKEVIRTUAL || opcode == OP_INVOKEDYNAMIC || opcode == OP_INVOKESTATIC || opcode == OP_INVOKESPECIAL || opcode == OP_INVOKEHANDLE || opcode == OP_INVOKEINTERFACE)
+                    final State currentState = Analyzer.this.engine.getCurrentState();
+                    try {
+                        byte opcode = currentState.getInstruction();
+                        if (opcode == OP_INVOKEVIRTUAL || opcode == OP_INVOKEDYNAMIC || opcode == OP_INVOKESTATIC || opcode == OP_INVOKESPECIAL || opcode == OP_INVOKEHANDLE || opcode == OP_INVOKEINTERFACE) {
                             Analyzer.this.informationLogger.onMethodCall(currentState);
-                    if(opcode == OP_IRETURN || opcode == OP_LRETURN || opcode == OP_FRETURN || opcode == OP_DRETURN || opcode == OP_ARETURN || opcode == OP_RETURN)
-                        Analyzer.this.informationLogger.onMethodReturn();
-                    if(opcode == OP_ATHROW)
-                        Analyzer.this.informationLogger.onThrow(currentState);
-                } catch (ThreadStackEmptyException | FrozenStateException e) {
+                        }
+                        if (opcode == OP_IRETURN || opcode == OP_LRETURN || opcode == OP_FRETURN || opcode == OP_DRETURN || opcode == OP_ARETURN || opcode == OP_RETURN)
+                            Analyzer.this.informationLogger.onMethodReturn();
+                        if (opcode == OP_ATHROW)
+                            Analyzer.this.informationLogger.onThrow(currentState);
+                    } catch (ThreadStackEmptyException | FrozenStateException e) {
+                        e.printStackTrace();
+                    }
+                } catch (AnalyzerException e) {
                     e.printStackTrace();
                 }
             }
-
             return super.atStepPre();
         }
     }

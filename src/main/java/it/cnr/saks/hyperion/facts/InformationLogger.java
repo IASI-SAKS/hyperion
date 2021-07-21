@@ -1,6 +1,7 @@
 package it.cnr.saks.hyperion.facts;
 
 import it.cnr.saks.hyperion.discovery.Configuration;
+import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import jbse.bc.ClassFile;
 import jbse.bc.Signature;
 import jbse.common.Type;
@@ -16,6 +17,7 @@ import java.io.PrintStream;
 import java.util.*;
 
 import static jbse.algo.Util.valueString;
+import static jbse.bc.Signatures.*;
 import static jbse.common.Type.splitParametersDescriptors;
 
 public class InformationLogger {
@@ -58,7 +60,7 @@ public class InformationLogger {
         this.callerFrame.pop();
     }
 
-    public void onMethodCall(State s) {
+    public void onMethodCall(State s) throws AnalyzerException {
         Signature callee;
         ClassFile classFile;
 
@@ -155,7 +157,7 @@ public class InformationLogger {
         this.loggedInformation = new HashMap<>();
     }
 
-    private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint, int callerPC) {
+    private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint, int callerPC) throws AnalyzerException {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         formatPathCondition(s, sb);
@@ -171,72 +173,93 @@ public class InformationLogger {
         SortedMap<Integer, Variable> localVariablesTreeMap = null;
         try {
             localVariablesTreeMap = s.getCurrentFrame().localVariables();
-            localVariablesTreeMap = localVariablesTreeMap.tailMap(localVariablesTreeMap.size() - numOperands);
+
+            if(localVariablesTreeMap.get(0).getName().equals("this")) {
+                localVariablesTreeMap = localVariablesTreeMap.tailMap(1);
+            }
+
+            // We might get a higher count of operands, due to variadic functions
+            localVariablesTreeMap = localVariablesTreeMap.headMap(Math.min(localVariablesTreeMap.size(), numOperands) + 1);
         } catch (ThreadStackEmptyException | FrozenStateException e) {
             e.printStackTrace();
         }
 
         TestInformation.ParameterSet pSet = new TestInformation.ParameterSet();
 
+        // Extract parameter information
         for(Map.Entry<Integer, Variable> v: Objects.requireNonNull(localVariablesTreeMap).entrySet()) {
             Value op = v.getValue().getValue();
 
             sb = new StringBuilder();
 
+            sb.append("'");
             if(op instanceof ReferenceSymbolicMemberField) {
-                ReferenceSymbolicMemberField rsmf = (ReferenceSymbolicMemberField)op;
+                ReferenceSymbolicMemberField rsmf = (ReferenceSymbolicMemberField) op;
                 final String value = rsmf.getValue();
-
-                Set<Map.Entry<ClassFile, Klass>> entries = null;
+                sb.append(value);
+            } else if (op instanceof Simplex) {
+                sb.append(renderSimplex((Simplex) op));
+            } else if(op instanceof ReferenceConcrete || op instanceof ReferenceSymbolic) {
                 try {
-                    final Map<ClassFile, Klass> a = s.getStaticMethodArea();
-                    entries = a.entrySet();
-                } catch (FrozenStateException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            if (op instanceof Simplex) {
-                String representation = op.toString();
-                if(v.getValue().getType().equals("B"))
-                    representation = representation.replaceAll("\\(byte\\) ", "");
-                if(v.getValue().getType().equals("J"))
-                    representation = representation.replaceAll("L", "");
-                if(v.getValue().getType().equals("F"))
-                    representation = representation.replaceAll("f", "");
-                sb.append(representation);
-            } else if(op.isSymbolic()) {
-                sb.append("'");
-                formatValueForPathCondition(op, sb, new HashSet<>());
-                sb.append("'");
-            } else if(op instanceof Reference) {
-                try {
-                    HeapObjekt obj = s.getObject((Reference) op);
-                    if (obj == null) {
-                        sb.append("null");
-                    } else {
-                        if (obj.getType().getClassName().equals("java/lang/String")) {
-                            sb.append("'")
-                              .append(valueString(s, (Instance) obj))
-                              .append("'");
-                        } else {
-                            sb.append("'")
-                              .append(op)
-                              .append("'");
-                        }
+                    Objekt obj = s.getObject((Reference) op);
+                    switch (obj.getType().getClassName()) {
+                        case "java/lang/String":
+                            final Reference valueRef = (Reference) obj.getFieldValue(JAVA_STRING_VALUE);
+                            final Array value = (Array) s.getObject(valueRef);
+                            sb.append(value.valueString());
+                            break;
+                        case "java/lang/Byte":
+                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_BYTE_VALUE)));
+                            break;
+                        case "java/lang/Double":
+                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_DOUBLE_VALUE)));
+                            break;
+                        case "java/lang/Float":
+                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_FLOAT_VALUE)));
+                            break;
+                        case "java/lang/Integer":
+                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_INTEGER_VALUE)));
+                            break;
+                        case "java/lang/Long":
+                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_LONG_VALUE)));
+                            break;
+                        case "java/lang/Short":
+                            sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_SHORT_VALUE)));
+                            break;
+                        default:
+                            sb.append("L");
+                            sb.append(obj.getType().getClassName());
+                            sb.append(";");
+                            break;
                     }
                 } catch (FrozenStateException e) {
-                    e.printStackTrace();
+                    throw new AnalyzerException("Frozen State while peeking Objext: " + e.getMessage());
                 }
-            } else {
-                sb.append(op.getClass().toString());
-            }
+            } else
+                throw new AnalyzerException("WIP: might have missed some cases...");
+            sb.append("'");
 
             String parm = sb.toString();
             pSet.addParameter(parm);
         }
 
         md.setParameterSet(pSet);
+    }
+
+    private String renderSimplex(Simplex op) {
+        String representation = op.toString();
+        char type = op.getType();
+        if(type == 'B')
+            representation = representation.replaceAll("\\(byte\\) ", "");
+        if(type == 'S')
+            representation = representation.replaceAll("\\(short\\) ", "");
+        if(type == 'J')
+            representation = representation.replaceAll("L", "");
+        if(type == 'F')
+            representation = representation.replaceAll("f", "");
+        if(type == 'D')
+            representation = representation.replaceAll("d", "");
+        return representation;
     }
 
     private static void formatPathCondition(State s, StringBuilder sb) {
