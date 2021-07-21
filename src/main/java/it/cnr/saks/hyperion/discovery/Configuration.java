@@ -18,6 +18,8 @@ public class Configuration {
     private List<String> excludeTest;
     private List<String> additionalClasspath;
     private List<String> excludeTracedPackages;
+    private Integer depth;
+    private Integer timeout;
     private URL[] classPath;
 
     private Configuration() {}
@@ -114,6 +116,22 @@ public class Configuration {
 
     public void setExcludeTracedPackages(List<String> excludeTracedPackages) {
         this.excludeTracedPackages = excludeTracedPackages;
+    }
+
+    public Integer getDepth() {
+        return depth;
+    }
+
+    public void setDepth(Integer depth) {
+        this.depth = depth;
+    }
+
+    public Integer getTimeout() {
+        return timeout;
+    }
+
+    public void setTimeout(Integer timeout) {
+        this.timeout = timeout;
     }
 }
 

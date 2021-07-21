@@ -204,7 +204,9 @@ public class InformationLogger {
             sb = new StringBuilder();
 
             sb.append("'");
-            if(op instanceof ReferenceSymbolicMemberField) {
+            if (op instanceof Null) {
+                sb.append("null");
+            } else if(op instanceof ReferenceSymbolicMemberField) {
                 ReferenceSymbolicMemberField rsmf = (ReferenceSymbolicMemberField) op;
                 final String value = rsmf.getValue();
                 sb.append(value);

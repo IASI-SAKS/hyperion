@@ -47,15 +47,44 @@ configuration file is:
 
 ```json
 {
-  "sut": ["path to classes 1", "path to classes 2"],
-  "testPrograms": ["path to test classes 1", "path to test classes 1"],
-  "includeTest": ["list", "of", "@Test", "methods", "to", "analyze"],
-  "excludeTest": ["list", "of", "@Test", "methods", "to", "skip"],
-  "additionalClasspath": ["path", "to", "any", "other", "needed", "dependency"],
+  "sut": [
+    "path to classes 1",
+    "path to classes 2"
+  ],
+  "testPrograms": [
+    "path to test classes 1",
+    "path to test classes 1"
+  ],
+  "includeTest": [
+    "list",
+    "of",
+    "@Test",
+    "methods",
+    "to",
+    "analyze"
+  ],
+  "excludeTest": [
+    "list",
+    "of",
+    "@Test",
+    "methods",
+    "to",
+    "skip"
+  ],
+  "additionalClasspath": [
+    "path",
+    "to",
+    "any",
+    "other",
+    "needed",
+    "dependency"
+  ],
   "excludeTracedPackages": [
     "java/",
     "sun/"
-  ]
+  ],
+  "depth": 100,
+  "timeout": 5
 }
 ```
 
