@@ -157,7 +157,7 @@ public class InformationLogger {
                     exception.append("exception('")
                             .append(klass).append(":").append(method).append("', ")
                             .append("'").append(ex.getExceptionClass()).append("'")
-                            .append(")");
+                            .append(").");
 
                     this.datalogOut.println(exception);
                 }
