@@ -190,7 +190,7 @@ public class InformationLogger {
             }
 
             // We might get a higher count of operands, due to variadic functions
-            localVariablesTreeMap = localVariablesTreeMap.headMap(Math.min(localVariablesTreeMap.size() + 1, numOperands));
+            localVariablesTreeMap = localVariablesTreeMap.headMap(Math.min(localVariablesTreeMap.size() + 1, numOperands + 1));
         } catch (ThreadStackEmptyException | FrozenStateException e) {
             e.printStackTrace();
         }
@@ -249,9 +249,12 @@ public class InformationLogger {
                                 sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_SHORT_VALUE)));
                                 break;
                             default:
-                                sb.append("L");
+                                final String className = obj.getType().getClassName();
+                                if(!className.startsWith("["))
+                                    sb.append("L");
                                 sb.append(obj.getType().getClassName());
-                                sb.append(";");
+                                if(!className.startsWith("["))
+                                    sb.append(";");
                                 break;
                         }
                     }
