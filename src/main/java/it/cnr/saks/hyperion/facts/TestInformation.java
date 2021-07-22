@@ -1,85 +1,42 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.facts;
 
 import java.util.ArrayList;
 
 public class TestInformation {
     private final ArrayList<MethodCall> methodCalls = new ArrayList<>();
-    private final ArrayList<EndPoint> endPoints = new ArrayList<>();
-    private final ArrayList<String> exceptions = new ArrayList<>();
+    private final ArrayList<ExceptionThrown> exceptionsThrown = new ArrayList<>();
 
     protected MethodCall addMethodCall(String methodName, int callerEpoch, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
-        for(MethodCall md : this.methodCalls) {
-            if (md.getMethodDescriptor().equals(methodDescriptor) && md.getClassName().equals(className) && md.getProgramPoint().equals(programPoint)) {
-                System.out.println("Invoked " + className + ":" + methodName + ":" + methodDescriptor);
-                return md;
-            }
-        }
-
         MethodCall md = new MethodCall(methodName, callerEpoch, methodDescriptor, className, pathId, programPoint, callerPC, pathCondition);
         this.methodCalls.add(md);
-        System.out.println("Invoked " + className + ":" + methodName + ":" + methodDescriptor);
         return md;
-    }
-
-    protected void addEndPoint(String type, String endPoint, String pathId) {
-        for(EndPoint ep : this.endPoints) {
-            if(ep.getEndPoint().equals(endPoint) && ep.getPathId().equals(pathId)) {
-                return;
-            }
-        }
-
-        EndPoint ep = new EndPoint(type, endPoint, null, pathId);
-        this.endPoints.add(ep);
-    }
-
-    protected void addException(String exception) {
-        this.exceptions.add(exception);
     }
 
     public ArrayList<MethodCall> getMethodCalls() {
         return this.methodCalls;
     }
 
-    public ArrayList<EndPoint> getEndPoints() {
-        return this.endPoints;
+    protected ExceptionThrown addExceptionThrown(String exceptionClass) {
+        ExceptionThrown ex = new ExceptionThrown(exceptionClass);
+        this.exceptionsThrown.add(ex);
+        return ex;
     }
 
-    public ArrayList<String> getExceptions() {
-        return this.exceptions;
+    public ArrayList<ExceptionThrown> getExceptionsThrown() {
+        return this.exceptionsThrown;
     }
 
+    protected static class ExceptionThrown {
+        private final String exceptionClass;
 
-    protected static class EndPoint {
-        private final String type;
-        private final String endPoint;
-        private final String args;
-        private final String pathId;
-
-        private EndPoint(String type, String endPoint, String args, String pathId) {
-            this.type = type;
-            this.endPoint = endPoint;
-            this.args = args;
-            this.pathId = pathId;
+        public ExceptionThrown(String exceptionClass) {
+            this.exceptionClass = exceptionClass;
         }
 
-        public String getType() {
-            return type;
+        public String getExceptionClass() {
+            return this.exceptionClass;
         }
-
-        public String getEndPoint() {
-            return endPoint;
-        }
-
-        public String getArgs() {
-            return args;
-        }
-
-        public String getPathId() {
-            return pathId;
-        }
-
     }
-
 
     protected static class MethodCall {
         private final String methodName;
