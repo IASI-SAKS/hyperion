@@ -29,7 +29,7 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
         List<Class> classes = this.enumerateClasses(configuration.getTestPrograms());
 
         for (Class klass: classes) {
-            System.out.print("Analysing class " + klass.getName() + ":");
+            log.info("Analysing class " + klass.getName() + ":");
 
             if(Modifier.isAbstract(klass.getModifiers())) {
                 log.info(" skipping, it's an abstract class.");
