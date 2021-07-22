@@ -1,7 +1,10 @@
 package it.cnr.saks.hyperion.discovery;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.cnr.saks.hyperion.Main;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,6 +15,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Configuration {
+    private static final Logger log = LoggerFactory.getLogger(Configuration.class);
     private List<String> sut;
     private List<String> testPrograms;
     private List<String> includeTest;
@@ -28,6 +32,7 @@ public class Configuration {
         File jsonFile = new File(jsonPath);
         Configuration configuration;
 
+        log.info("Loading configuration...");
         ObjectMapper om = new ObjectMapper();
         try {
             configuration = om.readValue(jsonFile, Configuration.class);

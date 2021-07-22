@@ -750,8 +750,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		private static Value cloneInitialMap(ThreadReference currentThread, Object o) {
 			final ObjectReference initialMapRef = (com.sun.jdi.ObjectReference) o;
 			try {
-				final Value intialMapClone = initialMapRef.invokeMethod(currentThread, initialMapRef.referenceType().methodsByName("clone").get(0), Collections.emptyList(), ObjectReference.INVOKE_SINGLE_THREADED);
-				return intialMapClone;
+				return initialMapRef.invokeMethod(currentThread, initialMapRef.referenceType().methodsByName("clone").get(0), Collections.emptyList(), ObjectReference.INVOKE_SINGLE_THREADED);
 			} catch (InvalidTypeException | ClassNotLoadedException | IncompatibleThreadStateException | InvocationException e) {
 				throw new UnexpectedInternalException(e);
 			}

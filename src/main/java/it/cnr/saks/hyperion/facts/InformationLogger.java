@@ -190,7 +190,7 @@ public class InformationLogger {
             }
 
             // We might get a higher count of operands, due to variadic functions
-            localVariablesTreeMap = localVariablesTreeMap.headMap(Math.min(localVariablesTreeMap.size(), numOperands) + 1);
+            localVariablesTreeMap = localVariablesTreeMap.headMap(Math.min(localVariablesTreeMap.size() + 1, numOperands));
         } catch (ThreadStackEmptyException | FrozenStateException e) {
             e.printStackTrace();
         }
