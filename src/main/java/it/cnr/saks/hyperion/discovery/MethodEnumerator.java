@@ -145,10 +145,11 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     }
 
 
-    private List<Class> enumerateClasses(List<String> classPaths) throws IOException, AnalyzerException {
+    private List<Class> enumerateClasses(List<String> classPaths) throws IOException {
         List<String> paths = new ArrayList<>();
         List<Class> classes = new ArrayList<>();
 
+        log.info("Loading classes...");
         for(String classPath: classPaths) {
             Files.find(Paths.get(classPath),
                     Integer.MAX_VALUE,
@@ -156,7 +157,9 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                     .forEach(pathVal -> paths.add(pathVal.toString()));
 
             for (String classFile : paths) {
-                classes.add(loadClass(classFile, classPath, this.configuration.getClassPath()));
+                try {
+                    classes.add(loadClass(classFile, classPath, this.configuration.getClassPath()));
+                } catch (AnalyzerException ignored) {}
             }
         }
 
