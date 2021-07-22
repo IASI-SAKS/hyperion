@@ -201,6 +201,12 @@ public class InformationLogger {
         for(Map.Entry<Integer, Variable> v: Objects.requireNonNull(localVariablesTreeMap).entrySet()) {
             Value op = v.getValue().getValue();
 
+            // The following might happen when we get an extra argument in the tree map.
+            // The extra argument is due to the fact that a last optional argument might/might not be present, but
+            // we have to pick a possible extra argument in that case.
+            if(op instanceof DefaultValue)
+                continue;
+
             sb = new StringBuilder();
 
             sb.append("'");
