@@ -29,7 +29,7 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
         List<Class> classes = this.enumerateClasses(configuration.getTestPrograms());
 
         for (Class klass: classes) {
-            System.out.print("Analysing class " + klass.getName() + ":");
+            log.info("Analysing class " + klass.getName() + ":");
 
             if(Modifier.isAbstract(klass.getModifiers())) {
                 log.info(" skipping, it's an abstract class.");
@@ -76,6 +76,11 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 this.methods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
             }
         }
+
+        // Refine the list of methods to analyze
+        this.methods.removeIf(method -> configuration.getExcludeTest().contains(method.getMethodName()));
+        if(configuration.getIncludeTest().size() > 0)
+            this.methods.removeIf(method -> !configuration.getIncludeTest().contains(method.getMethodName()));
     }
 
     @Override
@@ -140,10 +145,11 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     }
 
 
-    private List<Class> enumerateClasses(List<String> classPaths) throws IOException, AnalyzerException {
+    private List<Class> enumerateClasses(List<String> classPaths) throws IOException {
         List<String> paths = new ArrayList<>();
         List<Class> classes = new ArrayList<>();
 
+        log.info("Loading classes...");
         for(String classPath: classPaths) {
             Files.find(Paths.get(classPath),
                     Integer.MAX_VALUE,
@@ -151,7 +157,9 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                     .forEach(pathVal -> paths.add(pathVal.toString()));
 
             for (String classFile : paths) {
-                classes.add(loadClass(classFile, classPath, this.configuration.getClassPath()));
+                try {
+                    classes.add(loadClass(classFile, classPath, this.configuration.getClassPath()));
+                } catch (AnalyzerException ignored) {}
             }
         }
 
