@@ -1,11 +1,11 @@
 package jbse.algo.meta;
 
+import static jbse.algo.UtilControlFlow.exitFromAlgorithm;
+import static jbse.algo.UtilControlFlow.failExecution;
+import static jbse.algo.UtilControlFlow.throwNew;
+import static jbse.algo.UtilControlFlow.throwVerifyError;
 import static jbse.algo.Util.getFromArray;
-import static jbse.algo.Util.exitFromAlgorithm;
-import static jbse.algo.Util.failExecution;
 import static jbse.algo.Util.storeInArray;
-import static jbse.algo.Util.throwNew;
-import static jbse.algo.Util.throwVerifyError;
 import static jbse.bc.Offsets.INVOKESPECIALSTATICVIRTUAL_OFFSET;
 import static jbse.bc.Signatures.CLASS_NOT_FOUND_EXCEPTION;
 import static jbse.bc.Signatures.ILLEGAL_ACCESS_ERROR;
@@ -46,6 +46,7 @@ import jbse.dec.DecisionProcedureAlgorithms.Outcome;
 import jbse.dec.exc.DecisionException;
 import jbse.mem.Array;
 import jbse.mem.State;
+import jbse.mem.exc.ContradictionException;
 import jbse.mem.exc.HeapMemoryExhaustedException;
 import jbse.mem.exc.InvalidProgramCounterException;
 import jbse.mem.exc.ThreadStackEmptyException;
@@ -205,7 +206,7 @@ StrategyUpdate<DecisionAlternative_XALOAD>> {
         return new StrategyRefine_SUN_UNSAFE_GETX_Array() {
             @Override
             public void refineResolved(State state, DecisionAlternative_XALOAD_Resolved altResolved)
-            throws DecisionException, InvalidInputException {
+            throws DecisionException, ContradictionException, InvalidInputException {
                 //augments the path condition
             	final Expression accessExpression = altResolved.getArrayAccessExpressionSimplified();
             	if (accessExpression != null) {
@@ -222,7 +223,7 @@ StrategyUpdate<DecisionAlternative_XALOAD>> {
 
             @Override
             public void refineOut(State state, DecisionAlternative_XALOAD_Out altOut) 
-            throws InvalidInputException {
+            throws ContradictionException, InvalidInputException {
                 //augments the path condition
                 try {
                 	final Expression accessExpression = altOut.getArrayAccessExpressionSimplified();

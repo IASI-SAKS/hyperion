@@ -1,11 +1,13 @@
 package it.cnr.saks.hyperion.facts;
 
 import it.cnr.saks.hyperion.discovery.Configuration;
+import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import jbse.bc.ClassFile;
 import jbse.bc.Signature;
 import jbse.common.Type;
 import jbse.mem.*;
 import jbse.mem.exc.FrozenStateException;
+import jbse.mem.exc.InvalidNumberOfOperandsException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.val.*;
 
@@ -15,6 +17,7 @@ import java.io.PrintStream;
 import java.util.*;
 
 import static jbse.algo.Util.valueString;
+import static jbse.bc.Signatures.*;
 import static jbse.common.Type.splitParametersDescriptors;
 
 public class InformationLogger {
@@ -39,11 +42,25 @@ public class InformationLogger {
         this.callerFrame.push(this.invocationEpoch++);
     }
 
+    public void onThrow(State currentState) {
+        final Objekt myException;
+        try {
+            final Frame frame = currentState.getCurrentFrame();
+            final Value[] operands = frame.operands(1); // athrow has one operand
+            myException = currentState.getObject((Reference) operands[0]);
+        } catch (ThreadStackEmptyException | FrozenStateException | InvalidNumberOfOperandsException e) {
+            e.printStackTrace();
+            return;
+        }
+
+        TestInformation.ExceptionThrown ex = this.loggedInformation.get(this.currClass).get(this.currMethod).addExceptionThrown(myException.getType().getClassName());
+    }
+
     public void onMethodReturn() {
         this.callerFrame.pop();
     }
 
-    public void onMethodCall(State s) {
+    public void onMethodCall(State s) throws AnalyzerException {
         Signature callee;
         ClassFile classFile;
 
@@ -86,13 +103,6 @@ public class InformationLogger {
         String pathId = "[" + branchId.replaceAll("\\.", ", ") + "], " + s.getSequenceNumber();
         String programPoint = caller.getClassName() + ":" + caller.getName() + ":" + caller.getDescriptor();
 
-//        System.out.println(name);
-
-//        if((name.equals("get") || name.equals("post") || name.equals("put") || name.equals("delete") )
-//                && classFile.getClassName().equals("org/springframework/test/web/servlet/request/MockMvcRequestBuilders")) {
-//            this.inspectHttpRequest(s, name, pathId);
-//        }
-
         this.inspectMethodCall(s, name, callee, classFile, pathId, programPoint, callerPC);
     }
 
@@ -118,14 +128,6 @@ public class InformationLogger {
         if(this.datalogOut == null)
             return;
 
-//        this.datalogOut.println("FORMATO:\n\ninvokes("
-//                + "\"nome\" del test, "
-//                + "branch point, sequence number" + ", " + "caller" + ", " + "path condition" + ", "
-//                + "metodo chiamato" + ", "
-//                + "parametri" + ").\n\n");
-//        Formato:
-//        invokes(test name, branch point, branch sequence number, caller, callerPC, frameEpoch, path condition, callee, parameters)
-
         this.loggedInformation.forEach((klass,methodsInKlass) -> { // for each class
             if(methodsInKlass.size() == 0)
                 return;
@@ -135,18 +137,29 @@ public class InformationLogger {
                 ArrayList<TestInformation.MethodCall> methodCalls = methodLoggedInformation.getMethodCalls();
                 for (TestInformation.MethodCall methodCall : methodCalls) {
                     StringBuilder invokes = new StringBuilder();
-                    invokes.append("invokes(")
-                            .append("'" + klass + ":" + method + "', ")
-                            .append(methodCall.getPathId() + ", ")
-                            .append("'" + methodCall.getProgramPoint() + "', ")
-                            .append(methodCall.getCallerPC() + ", ")
-                            .append(methodCall.getCallerEpoch() + ", ")
-                            .append(methodCall.getPathCondition() + ", ")
-                            .append("'" + methodCall.getClassName() + ":" + methodCall.getMethodName() + ":" + methodCall.getMethodDescriptor() + "', ")
+                    invokes.append("invokes(").append("'")
+                            .append(klass).append(":").append(method).append("', ")
+                            .append(methodCall.getPathId()).append(", ")
+                            .append("'").append(methodCall.getProgramPoint()).append("', ")
+                            .append(methodCall.getCallerPC()).append(", ")
+                            .append(methodCall.getCallerEpoch()).append(", ")
+                            .append(methodCall.getPathCondition()).append(", ")
+                            .append("'").append(methodCall.getClassName()).append(":").append(methodCall.getMethodName()).append(":").append(methodCall.getMethodDescriptor()).append("', ")
                             .append(methodCall.getParameterSet().getParameters())
                             .append(").");
 
                     this.datalogOut.println(invokes);
+                }
+
+                ArrayList<TestInformation.ExceptionThrown> exceptionsThrown = methodLoggedInformation.getExceptionsThrown();
+                for(TestInformation.ExceptionThrown ex : exceptionsThrown) {
+                    StringBuilder exception = new StringBuilder();
+                    exception.append("exception('")
+                            .append(klass).append(":").append(method).append("', ")
+                            .append("'").append(ex.getExceptionClass()).append("'")
+                            .append(")");
+
+                    this.datalogOut.println(exception);
                 }
             });
         });
@@ -155,7 +168,7 @@ public class InformationLogger {
         this.loggedInformation = new HashMap<>();
     }
 
-    private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint, int callerPC) {
+    private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint, int callerPC) throws AnalyzerException {
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         formatPathCondition(s, sb);
@@ -171,72 +184,105 @@ public class InformationLogger {
         SortedMap<Integer, Variable> localVariablesTreeMap = null;
         try {
             localVariablesTreeMap = s.getCurrentFrame().localVariables();
-            localVariablesTreeMap = localVariablesTreeMap.tailMap(localVariablesTreeMap.size() - numOperands);
+
+            if(localVariablesTreeMap.get(0).getName().equals("this")) {
+                localVariablesTreeMap = localVariablesTreeMap.tailMap(1);
+            }
+
+            // We might get a higher count of operands, due to variadic functions
+            localVariablesTreeMap = localVariablesTreeMap.headMap(Math.min(localVariablesTreeMap.size() + 1, numOperands));
         } catch (ThreadStackEmptyException | FrozenStateException e) {
             e.printStackTrace();
         }
 
         TestInformation.ParameterSet pSet = new TestInformation.ParameterSet();
 
+        // Extract parameter information
         for(Map.Entry<Integer, Variable> v: Objects.requireNonNull(localVariablesTreeMap).entrySet()) {
             Value op = v.getValue().getValue();
 
             sb = new StringBuilder();
 
-            if(op instanceof ReferenceSymbolicMemberField) {
-                ReferenceSymbolicMemberField rsmf = (ReferenceSymbolicMemberField)op;
-                final String value = rsmf.getValue();
-
-                Set<Map.Entry<ClassFile, Klass>> entries = null;
+            sb.append("'");
+            if (op instanceof Null) {
+                sb.append("null");
+            } else if(op instanceof ReferenceSymbolicMemberField) {
+                ReferenceSymbolicMemberField rsmf = (ReferenceSymbolicMemberField) op;
+                final String value = rsmf.getStaticType();
+                sb.append(value);
+            } else if (op instanceof Simplex) {
+                sb.append(renderSimplex((Simplex) op));
+            } else if(op instanceof ReferenceConcrete || op instanceof ReferenceSymbolic) {
                 try {
-                    final Map<ClassFile, Klass> a = s.getStaticMethodArea();
-                    entries = a.entrySet();
-                } catch (FrozenStateException e) {
-                    e.printStackTrace();
-                }
-            }
-
-            if (op instanceof Simplex) {
-                String representation = op.toString();
-                if(v.getValue().getType().equals("B"))
-                    representation = representation.replaceAll("\\(byte\\) ", "");
-                if(v.getValue().getType().equals("J"))
-                    representation = representation.replaceAll("L", "");
-                if(v.getValue().getType().equals("F"))
-                    representation = representation.replaceAll("f", "");
-                sb.append(representation);
-            } else if(op.isSymbolic()) {
-                sb.append("'");
-                formatValueForPathCondition(op, sb, new HashSet<>());
-                sb.append("'");
-            } else if(op instanceof Reference) {
-                try {
-                    HeapObjekt obj = s.getObject((Reference) op);
-                    if (obj == null) {
-                        sb.append("null");
+                    Objekt obj = s.getObject((Reference) op);
+                    if(obj.getType().getSuperclassName().equals(JAVA_ENUM)) {
+                        final Signature ordinalSig = new Signature("java/lang/Enum", "I", "ordinal");
+                        final int enumMember = Integer.parseInt(obj.getFieldValue(ordinalSig).toString()); // 0 based!
+                        final Collection<Signature> fieldSignatures = obj.getAllStoredFieldSignatures();
+                        final Signature[] fieldSignaturesArray = fieldSignatures.toArray(new Signature[fieldSignatures.size()]);
+                        sb.append(obj.getType().getClassName())
+                            .append(".")
+                            .append(fieldSignaturesArray[enumMember].getName());
                     } else {
-                        if (obj.getType().getClassName().equals("java/lang/String")) {
-                            sb.append("'")
-                              .append(valueString(s, (Instance) obj))
-                              .append("'");
-                        } else {
-                            sb.append("'")
-                              .append(op)
-                              .append("'");
+                        switch (obj.getType().getClassName()) {
+                            case JAVA_STRING:
+                                final Reference valueRef = (Reference) obj.getFieldValue(JAVA_STRING_VALUE);
+                                final Array value = (Array) s.getObject(valueRef);
+                                sb.append(value.valueString());
+                                break;
+                            case JAVA_BYTE:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_BYTE_VALUE)));
+                                break;
+                            case JAVA_DOUBLE:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_DOUBLE_VALUE)));
+                                break;
+                            case JAVA_FLOAT:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_FLOAT_VALUE)));
+                                break;
+                            case JAVA_INTEGER:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_INTEGER_VALUE)));
+                                break;
+                            case JAVA_LONG:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_LONG_VALUE)));
+                                break;
+                            case JAVA_SHORT:
+                                sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_SHORT_VALUE)));
+                                break;
+                            default:
+                                sb.append("L");
+                                sb.append(obj.getType().getClassName());
+                                sb.append(";");
+                                break;
                         }
                     }
                 } catch (FrozenStateException e) {
-                    e.printStackTrace();
+                    throw new AnalyzerException("Frozen State while peeking Objext: " + e.getMessage());
                 }
-            } else {
-                sb.append(op.getClass().toString());
-            }
+            } else
+                throw new AnalyzerException("WIP: might have missed some cases...");
+            sb.append("'");
 
             String parm = sb.toString();
             pSet.addParameter(parm);
         }
 
         md.setParameterSet(pSet);
+    }
+
+    private String renderSimplex(Simplex op) {
+        String representation = op.toString();
+        char type = op.getType();
+        if(type == 'B')
+            representation = representation.replaceAll("\\(byte\\) ", "");
+        if(type == 'S')
+            representation = representation.replaceAll("\\(short\\) ", "");
+        if(type == 'J')
+            representation = representation.replaceAll("L", "");
+        if(type == 'F')
+            representation = representation.replaceAll("f", "");
+        if(type == 'D')
+            representation = representation.replaceAll("d", "");
+        return representation;
     }
 
     private static void formatPathCondition(State s, StringBuilder sb) {

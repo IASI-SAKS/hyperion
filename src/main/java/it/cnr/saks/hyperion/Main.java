@@ -22,7 +22,9 @@ public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
     private static MethodEnumerator methodEnumerator;
     private static Configuration configuration;
-    private static final Signature hyperionLauncherEntryPoint = new Signature("it/cnr/saks/hyperion/symbolic/TestLauncher", "()Z", "runTest");
+//    private static final Signature hyperionLauncherEntryPoint = new Signature("it/cnr/saks/hyperion/symbolic/TestLauncher", "([Ljava/lang/String;)V", "main");
+//    private static final Signature hyperionLauncherEntryPoint = new Signature("org/junit/runner/JUnitCore", "(Lorg/junit/runner/Runner;)Lorg/junit/runner/Result;", "run");
+    private static final Signature hyperionLauncherEntryPoint = new Signature("org/junit/runners/ParentRunner", "(Lorg/junit/runner/notification/RunNotifier;)V", "run");
 
     public static void main(String[] args) {
         if(args.length < 1) {
@@ -57,23 +59,19 @@ public class Main {
         long startTime = System.nanoTime();
 
         for(MethodDescriptor method: methodEnumerator) {
-
-            if(configuration.getIncludeTest().size() > 0 && !configuration.getIncludeTest().contains(method.getMethodName()))
-                continue;
-            if(configuration.getExcludeTest().contains(method.getMethodName()))
-                continue;
+            analyzed++;
 
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
-            log.info("Analysing: " + method.getMethodName() + ":" + method.getMethodDescriptor());
+            log.info("[{}/{}] Analysing: {}:{}", analyzed, methodEnumerator.getMethodsCount(), method.getMethodName(), method.getMethodDescriptor());
 
             Signature testProgramSignature = new Signature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName());
 
             try {
                 Analyzer a = new Analyzer(inspector)
                         .withUserClasspath(configuration.getClassPath())
-                        .withTimeout(2)
-                        .withDepthScope(500)
-                        .withJbseEntryPoint(hyperionLauncherEntryPoint)
+                        .withTimeout(configuration.getTimeout())
+                        .withDepthScope(configuration.getDepth())
+                        .withJbseEntryPoint(testProgramSignature)
                         .withTestProgram(testProgramSignature);
 
                 a.setupStatic();
@@ -84,10 +82,7 @@ public class Main {
                 inspector.emitDatalog();
                 System.gc();
                 continue;
-            } finally {
-                analyzed++;
             }
-
             inspector.emitDatalog();
             System.gc();
 
