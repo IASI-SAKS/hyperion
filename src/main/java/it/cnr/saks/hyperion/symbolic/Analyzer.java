@@ -1,5 +1,6 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.symbolic;
 
+import it.cnr.saks.hyperion.facts.InformationLogger;
 import jbse.algo.exc.CannotManageStateException;
 import jbse.bc.Signature;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
@@ -11,38 +12,36 @@ import jbse.dec.exc.DecisionException;
 import jbse.jvm.Engine;
 import jbse.jvm.Runner;
 import jbse.jvm.RunnerBuilder;
-import jbse.jvm.RunnerParameters;
 import jbse.jvm.exc.*;
 import jbse.mem.State;
 import jbse.mem.exc.ContradictionException;
 import jbse.mem.exc.FrozenStateException;
 import jbse.mem.exc.ThreadStackEmptyException;
-import jbse.rewr.CalculatorRewriting;
-import jbse.rewr.RewriterOperationOnSimplex;
+import jbse.rewr.*;
 import jbse.rules.ClassInitRulesRepo;
 import jbse.rules.LICSRulesRepo;
+import jbse.tree.StateTree;
 
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.concurrent.TimeUnit;
 
 import static jbse.bc.Opcodes.*;
 
 public final class Analyzer {
-    private boolean trackMethods = false;
+    private boolean trackingEnabled = false;
 
-    private final RunnerParameters runnerParameters;
     private Engine engine;
-
-    private boolean isGuided = false;
-    private Signature guidedStopSignature;
+    public final AnalyzerParameters analyzerParameters;
 
     private final InformationLogger informationLogger;
 
     public Analyzer(InformationLogger informationLogger) throws AnalyzerException {
-        this.runnerParameters = new RunnerParameters();
-        this.runnerParameters.setActions(new ActionsRun());
+        this.analyzerParameters = new AnalyzerParameters();
+        this.analyzerParameters.setActions(new ActionsRun());
 
         this.informationLogger = informationLogger;
+        this.informationLogger.resetCounters();
     }
 
     public void setupStatic() {
@@ -123,49 +122,55 @@ public final class Analyzer {
             .withUninterpreted("org/junit/Assert", "(Ljava/lang/String;Z)V", "assertTrue");
     }
 
-    private class ActionsRun extends Runner.Actions {
+    public class ActionsRun extends Runner.Actions {
 
         @Override
         public boolean atInitial() {
-            Analyzer.this.trackMethods = true;
+            Analyzer.this.trackingEnabled = true;
             return super.atInitial();
         }
 
         @Override
-        public boolean atMethodPre() {
-            if(Analyzer.this.trackMethods) {
+        public void atEnd() {
+            if(Analyzer.this.trackingEnabled) {
                 final State currentState = Analyzer.this.engine.getCurrentState();
-                Analyzer.this.informationLogger.onMethodCall(currentState);
             }
-
-            return super.atMethodPre();
         }
 
         @Override
         public boolean atStepPre() {
-            if(Analyzer.this.trackMethods) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
+            if(Analyzer.this.trackingEnabled) {
                 try {
-                    byte opcode = currentState.getInstruction();
-                    if(opcode == OP_IRETURN || opcode == OP_LRETURN || opcode == OP_FRETURN || opcode == OP_DRETURN || opcode == OP_ARETURN || opcode == OP_RETURN)
-                        Analyzer.this.informationLogger.onMethodReturn();
-                } catch (ThreadStackEmptyException | FrozenStateException e) {
+                    final State currentState = Analyzer.this.engine.getCurrentState();
+                    try {
+                        byte opcode = currentState.getInstruction();
+                        if (opcode == OP_INVOKEVIRTUAL || opcode == OP_INVOKEDYNAMIC || opcode == OP_INVOKESTATIC || opcode == OP_INVOKESPECIAL || opcode == OP_INVOKEHANDLE || opcode == OP_INVOKEINTERFACE) {
+                            Analyzer.this.informationLogger.onMethodCall(currentState);
+                        }
+                        if (opcode == OP_IRETURN || opcode == OP_LRETURN || opcode == OP_FRETURN || opcode == OP_DRETURN || opcode == OP_ARETURN || opcode == OP_RETURN)
+                            Analyzer.this.informationLogger.onMethodReturn();
+                        if (opcode == OP_ATHROW)
+                            Analyzer.this.informationLogger.onThrow(currentState);
+                    } catch (ThreadStackEmptyException | FrozenStateException e) {
+                        e.printStackTrace();
+                    }
+                } catch (AnalyzerException e) {
                     e.printStackTrace();
                 }
             }
-
             return super.atStepPre();
         }
     }
 
     public void run() throws AnalyzerException {
         final CalculatorRewriting calc = createCalculator();
-        this.runnerParameters.setCalculator(calc);
-        this.runnerParameters.setDecisionProcedure(createDecisionProcedure(calc));
+        this.analyzerParameters.setCalculator(calc);
+        this.analyzerParameters.setDecisionProcedure(createDecisionProcedure(calc));
+
 
         try {
             final RunnerBuilder rb = new RunnerBuilder();
-            final Runner runner = rb.build(this.runnerParameters);
+            final Runner runner = rb.build(this.analyzerParameters.getRunnerParameters());
             this.engine = rb.getEngine();
             runner.run();
             this.engine.close();
@@ -176,35 +181,43 @@ public final class Analyzer {
     }
 
 
-    public Analyzer withUserClasspath(String... paths) {
-        this.runnerParameters.addUserClasspath(paths);
+    public Analyzer withUserClasspath(URL[] urlPaths) {
+        ArrayList<String> paths = new ArrayList<>();
+        for (URL urlPath : urlPaths) {
+            paths.add(urlPath.getPath());
+        }
+        String[] pathsArray = new String[paths.size()];
+        pathsArray = paths.toArray(pathsArray);
+        this.analyzerParameters.addUserClasspath(pathsArray);
         return this;
     }
 
-    public Analyzer withMethodSignature(Signature method) {
-        this.runnerParameters.setMethodSignature(method);
+    public Analyzer withJbseEntryPoint(Signature method) {
+        this.analyzerParameters.setMethodSignature(method);
         return this;
     }
 
     public Analyzer withDepthScope(int depthScope) {
-        this.runnerParameters.setDepthScope(depthScope);
+        this.analyzerParameters.setDepthScope(depthScope);
         return this;
     }
 
     public Analyzer withTimeout(long time) {
-        this.runnerParameters.setTimeout(time, TimeUnit.MINUTES);
+        this.analyzerParameters.setTimeout(time, TimeUnit.MINUTES);
         return this;
     }
 
-    public Analyzer withGuided(boolean isGuided, Signature stopSignature) {
-        this.isGuided = isGuided;
-        this.guidedStopSignature = stopSignature;
+    public Analyzer withTestProgram(Signature testProgramSignature) {
+        this.analyzerParameters.setTestProgramSignature(testProgramSignature);
         return this;
     }
 
+    private State getCurrentState() {
+        return this.engine.getCurrentState();
+    }
 
     private DecisionProcedureAlgorithms createDecisionProcedure(CalculatorRewriting calc) throws AnalyzerException {
-        // initializes cores
+        // initializes core
         DecisionProcedure core = new DecisionProcedureAlwSat(calc);
 
         // wraps cores with external numeric decision procedure
@@ -222,9 +235,8 @@ public final class Analyzer {
             core = new DecisionProcedureClassInit(core, new ClassInitRulesRepo());
 
             // Setup guidance using JDI
-            if(this.isGuided) {
-                core = new DecisionProcedureGuidanceJDI(core, calc, this.runnerParameters, this.guidedStopSignature);
-            }
+            core = new DecisionProcedureGuidanceJDI(core, calc, this.analyzerParameters);
+            core.setCurrentStateSupplier(this::getCurrentState);
 
             // sets the result
             return new DecisionProcedureAlgorithms(core);
@@ -236,12 +248,15 @@ public final class Analyzer {
 
     private CalculatorRewriting createCalculator() {
         final CalculatorRewriting calc = new CalculatorRewriting();
-        calc.addRewriter(new RewriterOperationOnSimplex()); //indispensable
+        calc.addRewriter(new RewriterExpressionOrConversionOnSimplex()); //indispensable
+        calc.addRewriter(new RewriterFunctionApplicationOnSimplex()); //indispensable
+        calc.addRewriter(new RewriterZeroUnit()); //indispensable
+        calc.addRewriter(new RewriterNegationElimination()); //indispensable?
         return calc;
     }
 
     public Analyzer withUninterpreted(String methodClassName, String methodDescriptor, String methodName) {
-        this.runnerParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
+        this.analyzerParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
         return this;
     }
 

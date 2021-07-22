@@ -1,15 +1,14 @@
-package it.cnr.saks.hyperion;
+package it.cnr.saks.hyperion.discovery;
 
+import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Annotation;
-import java.lang.management.ManagementFactory;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -23,17 +22,14 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(MethodEnumerator.class);
     private final List<MethodDescriptor> methods = new ArrayList<>();
     private final Hashtable<String, ArrayList<MethodDescriptor>> beforeMethods = new Hashtable<>();
-    private final URL[] classPath;
-    private final List<Class> classes;
-    private final List<Class> SUTClasses;
+    Configuration configuration;
 
-    public MethodEnumerator(String classPath, String SUTPath) throws IOException, AnalyzerException {
-        this.classPath = this.initializeClasspath(classPath, SUTPath);
-        this.classes = this.enumerateClasses(classPath);
-        this.SUTClasses = this.enumerateClasses(SUTPath); // To load classes from the SUT
+    public MethodEnumerator(Configuration configuration) throws IOException, AnalyzerException {
+        this.configuration = configuration;
+        List<Class> classes = this.enumerateClasses(configuration.getTestPrograms());
 
-        for (Class klass: this.classes) {
-            System.out.print("Analysing class " + klass.getName() + ":");
+        for (Class klass: classes) {
+            log.info("Analysing class " + klass.getName() + ":");
 
             if(Modifier.isAbstract(klass.getModifiers())) {
                 log.info(" skipping, it's an abstract class.");
@@ -56,6 +52,9 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                     }
                     if(ann.toString().contains("@org.junit.Test")) {
                         isTest = true;
+                    }
+                    if(ann.toString().contains("@org.junit.Ignore")) {
+                        isTest = false;
                         break;
                     }
                 }
@@ -77,6 +76,11 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 this.methods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
             }
         }
+
+        // Refine the list of methods to analyze
+        this.methods.removeIf(method -> configuration.getExcludeTest().contains(method.getMethodName()));
+        if(configuration.getIncludeTest().size() > 0)
+            this.methods.removeIf(method -> !configuration.getIncludeTest().contains(method.getMethodName()));
     }
 
     @Override
@@ -86,18 +90,6 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     
     public List<MethodDescriptor> getBeforeMethods(String klass) {
         return this.beforeMethods.get(klass);
-    }
-
-    public Class findClass(String fqn) throws ClassNotFoundException {
-        for (Class klass: this.classes) {
-            if(klass.getName().equals(fqn))
-                return klass;
-        }
-        for (Class klass: this.SUTClasses) {
-            if(klass.getName().equals(fqn))
-                return klass;
-        }
-        throw new ClassNotFoundException("Unable to find class " + fqn);
     }
 
     private String getMethodDescriptor(Method m)
@@ -153,20 +145,22 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     }
 
 
-    private List<Class> enumerateClasses(String classPath) throws IOException, AnalyzerException {
+    private List<Class> enumerateClasses(List<String> classPaths) throws IOException {
         List<String> paths = new ArrayList<>();
         List<Class> classes = new ArrayList<>();
 
-        Files.find(Paths.get(classPath),
-                Integer.MAX_VALUE,
-                (filePath, fileAttr) -> fileAttr.isRegularFile() && filePath.toString().endsWith(".class"))
-                .forEach(pathVal -> paths.add(pathVal.toString()));
+        log.info("Loading classes...");
+        for(String classPath: classPaths) {
+            Files.find(Paths.get(classPath),
+                    Integer.MAX_VALUE,
+                    (filePath, fileAttr) -> fileAttr.isRegularFile() && filePath.toString().endsWith(".class"))
+                    .forEach(pathVal -> paths.add(pathVal.toString()));
 
-
-        //ClassPathHacker.addFiles(paths); // TODO: serve?!
-
-        for (String classFile: paths) {
-            classes.add(loadClass(classFile, classPath, this.getClassPath()));
+            for (String classFile : paths) {
+                try {
+                    classes.add(loadClass(classFile, classPath, this.configuration.getClassPath()));
+                } catch (AnalyzerException ignored) {}
+            }
         }
 
         return classes;
@@ -198,27 +192,4 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     public int getMethodsCount() {
         return this.methods.size();
     }
-
-    private URL[] initializeClasspath(String classPath, String SUTPath) throws MalformedURLException {
-        List<URL> ret = new ArrayList<>();
-        ret.add(new File(classPath).toURI().toURL());
-        ret.add(new File(SUTPath).toURI().toURL());
-        ret.add(new File("data/jre/rt.jar").toURI().toURL());
-
-        String runtimeClasspath = ManagementFactory.getRuntimeMXBean().getClassPath();
-        String separator = System.getProperty("path.separator");
-        String[] additionalClasspath = runtimeClasspath.split(separator);
-
-        for (String p: additionalClasspath) {
-            ret.add(new File(p).toURI().toURL());
-        }
-
-        URL[] arr = new URL[ret.size()];
-        return ret.toArray(arr);
-    }
-
-    public URL[] getClassPath() {
-        return this.classPath;
-    }
-
 }

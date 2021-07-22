@@ -301,60 +301,33 @@ public class ClassFileJavassist extends ClassFile {
                 }
                 final Object cpItem = longVectorElementAt.invoke(cpItems, Integer.valueOf(i));
                 if (tag == ConstPool.CONST_Integer) {
-                    final Integer value = (Integer) cpPatches[i];
-                    final Class<?> integerInfoClass = Class.forName("javassist.bytecode.IntegerInfo");
-                    final Field integerInfoValueField = integerInfoClass.getDeclaredField("value");
-                    integerInfoValueField.setAccessible(true);
-                    integerInfoValueField.set(cpItem, value);
-                    continue;
-                }
-                if (tag == ConstPool.CONST_Long) {
-                    final Long value = (Long) cpPatches[i];
-                    final Class<?> longInfoClass = Class.forName("javassist.bytecode.LongInfo");
-                    final Field longInfoValueField = longInfoClass.getDeclaredField("value");
-                    longInfoValueField.setAccessible(true);
-                    longInfoValueField.set(cpItem, value);
-                    continue;
-                }
-                if (tag == ConstPool.CONST_Float) {
-                    final Float value = (Float) cpPatches[i];
-                    final Class<?> floatInfoClass = Class.forName("javassist.bytecode.FloatInfo");
-                    final Field floatInfoValueField = floatInfoClass.getDeclaredField("value");
-                    floatInfoValueField.setAccessible(true);
-                    floatInfoValueField.set(cpItem, value);
-                    continue;
-                }
-                if (tag == ConstPool.CONST_Double) {
-                    final Double value = (Double) cpPatches[i];
-                    final Class<?> doubleInfoClass = Class.forName("javassist.bytecode.DoubleInfo");
-                    final Field doubleInfoValueField = doubleInfoClass.getDeclaredField("value");
-                    doubleInfoValueField.setAccessible(true);
-                    doubleInfoValueField.set(cpItem, value);
-                    continue;
-                }
-                if (tag == ConstPool.CONST_Utf8) {
-                    final String value = (String) cpPatches[i];
-                    final Class<?> utf8InfoClass = Class.forName("javassist.bytecode.Utf8Info");
-                    final Field utf8InfoStringField = utf8InfoClass.getDeclaredField("string");
-                    utf8InfoStringField.setAccessible(true);
-                    utf8InfoStringField.set(cpItem, value);
-                    continue;
-                }
-                if (tag == ConstPool.CONST_Class) {
-                    final int value = cp.addUtf8Info(((ClassFile) cpPatches[i]).getClassName());
-                    final Class<?> classInfoClass = Class.forName("javassist.bytecode.ClassInfo");
-                    final Field classInfoNameField = classInfoClass.getDeclaredField("name");
-                    classInfoNameField.setAccessible(true);
-                    classInfoNameField.set(cpItem, Integer.valueOf(value));
-                    continue;
+                	setPatch(cpItem, cpPatches[i], "javassist.bytecode.IntegerInfo", "value");
+                } else if (tag == ConstPool.CONST_Long) {
+                	setPatch(cpItem, cpPatches[i], "javassist.bytecode.LongInfo", "value");
+                } else if (tag == ConstPool.CONST_Float) {
+                	setPatch(cpItem, cpPatches[i], "javassist.bytecode.FloatInfo", "value");
+                } else if (tag == ConstPool.CONST_Double) {
+                	setPatch(cpItem, cpPatches[i], "javassist.bytecode.DoubleInfo", "value");
+                } else if (tag == ConstPool.CONST_Utf8) {
+                	setPatch(cpItem, cpPatches[i], "javassist.bytecode.Utf8Info", "string");
+                } else if (tag == ConstPool.CONST_Class) {
+                	setPatch(cpItem, Integer.valueOf(cp.addUtf8Info(((ClassFile) cpPatches[i]).getClassName())), "javassist.bytecode.ClassInfo", "name");
                 }
             }
-        } catch (NoSuchFieldException | SecurityException | IllegalArgumentException | 
-                 IllegalAccessException | ClassNotFoundException | NoSuchMethodException | 
+        } catch (ClassNotFoundException | NoSuchFieldException | SecurityException | 
+                 IllegalArgumentException | IllegalAccessException  | NoSuchMethodException | 
                  InvocationTargetException e) {
             //this should never happen
             throw new UnexpectedInternalException(e);
         }
+    }
+    
+    private void setPatch(Object cpItem, Object patch, String className, String fieldName) 
+    throws ClassNotFoundException, NoSuchFieldException, SecurityException, IllegalArgumentException, IllegalAccessException {
+        final Class<?> utf8InfoClass = Class.forName(className);
+        final Field utf8InfoStringField = utf8InfoClass.getDeclaredField(fieldName);
+        utf8InfoStringField.setAccessible(true);
+        utf8InfoStringField.set(cpItem, patch);
     }
     
     @Override
@@ -702,7 +675,8 @@ public class ClassFileJavassist extends ClassFile {
     }
 
     /**
-     * Finds a method declaration in the classfile.
+     * Finds a method declaration in the classfile (non 
+     * signature polymorphic).
      * 
      * @param methodSignature a {@link Signature}.
      * @return {@code null} if no method with {@code methodSignature} 
@@ -710,7 +684,7 @@ public class ClassFileJavassist extends ClassFile {
      *         {@link CtBehavior} for it; the class name in {@code methodSignature}
      *         is ignored.
      */
-    private MethodInfo findMethodDeclaration(Signature methodSignature) {
+    private MethodInfo findMethodDeclarationNonSignaturePolymorphic(Signature methodSignature) {
         if ("<clinit>".equals(methodSignature.getName())) {
             return this.cf.getStaticInitializer();
         }
@@ -782,84 +756,103 @@ public class ClassFileJavassist extends ClassFile {
             throw new InvalidIndexException(indexOutOfRangeMessage(index));
         }
         final int tag = this.cp.getTag(index);
+        final ConstantPoolValue retVal;
         switch (tag) {
         case ConstPool.CONST_Integer:
-            return new ConstantPoolPrimitive(this.cp.getIntegerInfo(index));
+            retVal = new ConstantPoolPrimitive(this.cp.getIntegerInfo(index)); break;
         case ConstPool.CONST_Float:
-            return new ConstantPoolPrimitive(this.cp.getFloatInfo(index));
+        	retVal = new ConstantPoolPrimitive(this.cp.getFloatInfo(index)); break;
         case ConstPool.CONST_Long:
-            return new ConstantPoolPrimitive(this.cp.getLongInfo(index));
+        	retVal = new ConstantPoolPrimitive(this.cp.getLongInfo(index)); break;
         case ConstPool.CONST_Double:
-            return new ConstantPoolPrimitive(this.cp.getDoubleInfo(index));
+        	retVal = new ConstantPoolPrimitive(this.cp.getDoubleInfo(index)); break;
         case ConstPool.CONST_String:
             if (this.cpPatches != null && index < this.cpPatches.length && this.cpPatches[index] != null) {
-                return new ConstantPoolObject((Reference) this.cpPatches[index]);
+            	retVal = new ConstantPoolObject((Reference) this.cpPatches[index]);
+            } else {
+            	retVal = new ConstantPoolString(this.cp.getStringInfo(index));
             }
-            return new ConstantPoolString(this.cp.getStringInfo(index));
+            break;
         case ConstPool.CONST_Class:
-            return new ConstantPoolClass(internalClassName(this.cp.getClassInfo(index)));
+        	retVal = new ConstantPoolClass(internalClassName(this.cp.getClassInfo(index))); break;
         case ConstPool.CONST_Utf8:
-            return new ConstantPoolUtf8(this.cp.getUtf8Info(index));
+        	retVal = new ConstantPoolUtf8(this.cp.getUtf8Info(index)); break;
         case ConstPool.CONST_MethodType:
-            return new ConstantPoolMethodType(this.cp.getUtf8Info(this.cp.getMethodTypeInfo(index)));
+        	retVal = new ConstantPoolMethodType(this.cp.getUtf8Info(this.cp.getMethodTypeInfo(index))); break;
         case ConstPool.CONST_MethodHandle:
         	try {
-            	return getMethodHandleValueFromConstantPool(index);
+        		retVal = getMethodHandleValueFromConstantPool(index); break;
         	} catch (InvalidIndexException e) {
         		throw new ClassFileIllFormedException(e);
         	}
+        default:
+            throw new InvalidIndexException(entryInvalidMessage(index));
         }
-        throw new InvalidIndexException(entryInvalidMessage(index));
+        
+        return retVal;
     }
     
     private ConstantPoolValue getMethodHandleValueFromConstantPool(int index) 
     throws InvalidIndexException {
+        final ConstantPoolValue retVal;
 		switch (this.cp.getMethodHandleKind(index)) {
 		case ConstPool.REF_getField:
-			return new ConstantPoolMethodHandleGetField(getFieldSignature(this.cp.getMethodHandleIndex(index)));
+			retVal = new ConstantPoolMethodHandleGetField(getFieldSignature(this.cp.getMethodHandleIndex(index))); break;
 		case ConstPool.REF_getStatic:
-			return new ConstantPoolMethodHandleGetStatic(getFieldSignature(this.cp.getMethodHandleIndex(index)));
+			retVal = new ConstantPoolMethodHandleGetStatic(getFieldSignature(this.cp.getMethodHandleIndex(index))); break;
 		case ConstPool.REF_putField:
-			return new ConstantPoolMethodHandlePutField(getFieldSignature(this.cp.getMethodHandleIndex(index)));
+			retVal = new ConstantPoolMethodHandlePutField(getFieldSignature(this.cp.getMethodHandleIndex(index))); break;
 		case ConstPool.REF_putStatic:
-			return new ConstantPoolMethodHandlePutStatic(getFieldSignature(this.cp.getMethodHandleIndex(index)));
+			retVal = new ConstantPoolMethodHandlePutStatic(getFieldSignature(this.cp.getMethodHandleIndex(index))); break;
 		case ConstPool.REF_invokeVirtual:
-			return new ConstantPoolMethodHandleInvokeVirtual(getMethodSignature(this.cp.getMethodHandleIndex(index)));
+			retVal = new ConstantPoolMethodHandleInvokeVirtual(getMethodSignature(this.cp.getMethodHandleIndex(index))); break;
 		case ConstPool.REF_invokeStatic:
+		{
+			ConstantPoolValue _retVal;
 			try {
-				return new ConstantPoolMethodHandleInvokeStatic(getMethodSignature(this.cp.getMethodHandleIndex(index)));
+				_retVal = new ConstantPoolMethodHandleInvokeStatic(getMethodSignature(this.cp.getMethodHandleIndex(index)));
 			} catch (InvalidIndexException e) {
 				if (getMajorVersion() >= JAVA_8) {
-					return new ConstantPoolMethodHandleInvokeStatic(getInterfaceMethodSignature(this.cp.getMethodHandleIndex(index)));
+					_retVal = new ConstantPoolMethodHandleInvokeStatic(getInterfaceMethodSignature(this.cp.getMethodHandleIndex(index)));
 				} else {
 					throw e;
 				}
 			}
-		case ConstPool.REF_invokeSpecial:
-			try {
-				return new ConstantPoolMethodHandleInvokeSpecial(getMethodSignature(this.cp.getMethodHandleIndex(index)));
-			} catch (InvalidIndexException e) {
-				if (getMajorVersion() >= JAVA_8) {
-					return new ConstantPoolMethodHandleInvokeSpecial(getInterfaceMethodSignature(this.cp.getMethodHandleIndex(index)));
-				} else {
-					throw e;
-				}
-			}
-		case ConstPool.REF_newInvokeSpecial:
-			return new ConstantPoolMethodHandleNewInvokeSpecial(getMethodSignature(this.cp.getMethodHandleIndex(index)));
-		case ConstPool.REF_invokeInterface:
-			return new ConstantPoolMethodHandleInvokeInterface(getInterfaceMethodSignature(this.cp.getMethodHandleIndex(index)));
+			retVal = _retVal;
+			break;
 		}
-        throw new InvalidIndexException(entryInvalidMessage(index));
+		case ConstPool.REF_invokeSpecial:
+		{
+			ConstantPoolValue _retVal;
+			try {
+				_retVal = new ConstantPoolMethodHandleInvokeSpecial(getMethodSignature(this.cp.getMethodHandleIndex(index)));
+			} catch (InvalidIndexException e) {
+				if (getMajorVersion() >= JAVA_8) {
+					_retVal = new ConstantPoolMethodHandleInvokeSpecial(getInterfaceMethodSignature(this.cp.getMethodHandleIndex(index)));
+				} else {
+					throw e;
+				}
+			}
+			retVal = _retVal;
+			break;
+		}
+		case ConstPool.REF_newInvokeSpecial:
+			retVal = new ConstantPoolMethodHandleNewInvokeSpecial(getMethodSignature(this.cp.getMethodHandleIndex(index))); break;
+		case ConstPool.REF_invokeInterface:
+			retVal = new ConstantPoolMethodHandleInvokeInterface(getInterfaceMethodSignature(this.cp.getMethodHandleIndex(index))); break;
+		default:
+	        throw new InvalidIndexException(entryInvalidMessage(index));
+		}
+		
+		return retVal;
     }
-
 
     @Override
     public boolean hasMethodDeclaration(Signature methodSignature) {
     	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
     		return true;
     	} else {
-    		return (findMethodDeclaration(methodSignature) != null);
+    		return (findMethodDeclarationNonSignaturePolymorphic(methodSignature) != null);
     	}
     }
     
@@ -882,29 +875,27 @@ public class ClassFileJavassist extends ClassFile {
 
     @Override
     public boolean hasOneSignaturePolymorphicMethodDeclaration(String methodName) {
-        //cannot be signature polymorphic if it is not in JAVA_METHODHANDLE
-        if (!JAVA_METHODHANDLE.equals(getClassName())) {
-            return false;
-        }
-        
-        //the method declaration must be unique
-        final MethodInfo uniqueMethod = findUniqueMethodDeclarationWithName(methodName);
-        if (uniqueMethod == null) {
-            return false;
-        }
-        
-        //cannot be signature polymorphic if it has wrong descriptor
-        if (!SIGNATURE_POLYMORPHIC_DESCRIPTOR.equals(uniqueMethod.getDescriptor())) {
-            return false;
-        }
-        
-        //cannot be signature polymorphic if it not native or if it is not varargs
-        if (!Modifier.isNative(AccessFlag.toModifier(uniqueMethod.getAccessFlags())) || (AccessFlag.toModifier(uniqueMethod.getAccessFlags()) & Modifier.VARARGS) == 0) {
-            return false;
+    	final boolean retVal;
+        if (JAVA_METHODHANDLE.equals(getClassName())) {
+        	//the method declaration must be unique
+        	final MethodInfo uniqueMethod = findUniqueMethodDeclarationWithName(methodName);
+        	if (uniqueMethod == null) {
+        		retVal = false;
+        	} else if (!SIGNATURE_POLYMORPHIC_DESCRIPTOR.equals(uniqueMethod.getDescriptor())) {
+            	//cannot be signature polymorphic if it has wrong descriptor
+        		retVal = false;
+        	} else if (!Modifier.isNative(AccessFlag.toModifier(uniqueMethod.getAccessFlags())) || (AccessFlag.toModifier(uniqueMethod.getAccessFlags()) & Modifier.VARARGS) == 0) {
+            	//cannot be signature polymorphic if it not native or if it is not varargs
+        		retVal = false;
+        	} else {
+        		retVal = true;
+        	}
+        } else {
+            //cannot be signature polymorphic if it is not in JAVA_METHODHANDLE
+        	retVal = false;
         }
 
-        //all checks passed
-        return true;
+        return retVal;
     }
 
     @Override
@@ -912,7 +903,7 @@ public class ClassFileJavassist extends ClassFile {
     	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
     		return false;
     	} else {
-    		final MethodInfo m = findMethodDeclaration(methodSignature);
+    		final MethodInfo m = findMethodDeclarationNonSignaturePolymorphic(methodSignature);
     		return (m != null && (m.getCodeAttribute() != null || Modifier.isNative(AccessFlag.toModifier(m.getAccessFlags()))));
     	}
     }
@@ -931,130 +922,71 @@ public class ClassFileJavassist extends ClassFile {
     public boolean isInterface() {
         return this.cf.isInterface();
     }
-
-    @Override
-    public boolean isMethodAbstract(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
+    
+    private MethodInfo findMethodDeclaration(Signature methodSignature) throws MethodNotFoundException {
+    	final MethodInfo retVal;
     	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
+    		retVal = findUniqueMethodDeclarationWithName(methodSignature.getName());
     	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
+	        retVal = findMethodDeclarationNonSignaturePolymorphic(methodSignature);
+	        if (retVal == null) {
 	            throw new MethodNotFoundException(methodSignature.toString());
 	        }
     	}
+    	return retVal;
+    }
+
+    @Override
+    public boolean isMethodAbstract(Signature methodSignature) throws MethodNotFoundException {
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
     	return Modifier.isAbstract(AccessFlag.toModifier(m.getAccessFlags()));
     }
 
     @Override
     public boolean isMethodStatic(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         return Modifier.isStatic(AccessFlag.toModifier(m.getAccessFlags()));
     }
 
     @Override
     public boolean isMethodPublic(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         return Modifier.isPublic(AccessFlag.toModifier(m.getAccessFlags()));
     }
 
     @Override
     public boolean isMethodProtected(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         return Modifier.isProtected(AccessFlag.toModifier(m.getAccessFlags()));
     }
 
     @Override
     public boolean isMethodPackage(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         return Modifier.isPackage(AccessFlag.toModifier(m.getAccessFlags()));
     }
 
     @Override
     public boolean isMethodPrivate(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         return Modifier.isPrivate(AccessFlag.toModifier(m.getAccessFlags()));
     }
 
     @Override
     public boolean isMethodNative(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         return Modifier.isNative(AccessFlag.toModifier(m.getAccessFlags()));
     }
     
     @Override
     public boolean isMethodVarargs(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         return (AccessFlag.toModifier(m.getAccessFlags()) & Modifier.VARARGS) != 0;
     }
     
     @Override
     public boolean isMethodFinal(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         return Modifier.isFinal(AccessFlag.toModifier(m.getAccessFlags()));
     }
     
@@ -1087,15 +1019,7 @@ public class ClassFileJavassist extends ClassFile {
 
     @Override
     public String getMethodGenericSignatureType(Signature methodSignature) throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         final SignatureAttribute sa
             = (SignatureAttribute) m.getAttribute(SignatureAttribute.tag);
         return sa == null ? null : sa.getSignature();
@@ -1104,15 +1028,7 @@ public class ClassFileJavassist extends ClassFile {
     @Override
     public int getMethodModifiers(Signature methodSignature) 
     throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         return AccessFlag.toModifier(m.getAccessFlags());
     }
 
@@ -1128,15 +1044,7 @@ public class ClassFileJavassist extends ClassFile {
     @Override
     public byte[] getMethodAnnotationsRaw(Signature methodSignature) 
     throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         final AttributeInfo attrVisible = m.getAttribute(AnnotationsAttribute.visibleTag);
         final AttributeInfo attrInvisible = m.getAttribute(AnnotationsAttribute.invisibleTag);
         return mergeVisibleAndInvisibleAttributes(attrVisible, attrInvisible);
@@ -1145,18 +1053,10 @@ public class ClassFileJavassist extends ClassFile {
     @Override
     public String[] getMethodAvailableAnnotations(Signature methodSignature)
     throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
-        AnnotationsAttribute ainfo = 
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
+        final AnnotationsAttribute ainfo = 
             (AnnotationsAttribute) m.getAttribute(AnnotationsAttribute.invisibleTag);  
-        AnnotationsAttribute ainfo2 = 
+        final AnnotationsAttribute ainfo2 = 
             (AnnotationsAttribute) m.getAttribute(AnnotationsAttribute.visibleTag);
         final ArrayList<String> anno = new ArrayList<>();
         if (ainfo != null) {
@@ -1175,18 +1075,10 @@ public class ClassFileJavassist extends ClassFile {
     @Override
     public String getMethodAnnotationParameterValueString(Signature methodSignature, String annotation, String parameter) 
     throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
-        AnnotationsAttribute ainfo = 
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
+        final AnnotationsAttribute ainfo = 
             (AnnotationsAttribute) m.getAttribute(AnnotationsAttribute.invisibleTag);  
-        AnnotationsAttribute ainfo2 = 
+        final AnnotationsAttribute ainfo2 = 
             (AnnotationsAttribute) m.getAttribute(AnnotationsAttribute.visibleTag);
         if (ainfo != null) {
             for (Annotation a : ainfo.getAnnotations()) {
@@ -1207,23 +1099,9 @@ public class ClassFileJavassist extends ClassFile {
         return null;
     }
     
-    private MethodInfo getMethodInfo(Signature methodSignature) 
-    throws MethodNotFoundException {
-    	final MethodInfo m;
-    	if (hasOneSignaturePolymorphicMethodDeclaration(methodSignature.getName())) {
-    		m = findUniqueMethodDeclarationWithName(methodSignature.getName());
-    	} else {
-	        m = findMethodDeclaration(methodSignature);
-	        if (m == null) {
-	            throw new MethodNotFoundException(methodSignature.toString());
-	        }
-    	}
-    	return m;
-    }
-
     public ParameterInfo[] getMethodParameters(Signature methodSignature)
     throws MethodNotFoundException {
-    	final MethodInfo m = getMethodInfo(methodSignature);
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
     	final MethodParametersAttribute p = (MethodParametersAttribute) m.getAttribute(MethodParametersAttribute.tag);
     	if (p == null) {
     		return null;
@@ -1238,7 +1116,7 @@ public class ClassFileJavassist extends ClassFile {
     @Override
     public String[] getMethodThrownExceptions(Signature methodSignature) 
     throws MethodNotFoundException {
-    	final MethodInfo m = getMethodInfo(methodSignature);
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         final ExceptionsAttribute exc = m.getExceptionsAttribute();
         if (exc == null) {
             return new String[0];
@@ -1248,7 +1126,7 @@ public class ClassFileJavassist extends ClassFile {
     
     private CodeAttribute getMethodCodeAttribute(Signature methodSignature) 
     throws MethodNotFoundException, MethodCodeNotFoundException {
-    	final MethodInfo m = getMethodInfo(methodSignature);
+    	final MethodInfo m = findMethodDeclaration(methodSignature);
         final CodeAttribute ca = m.getCodeAttribute();
         if (ca == null) {
             throw new MethodCodeNotFoundException(methodSignature.toString()); 
@@ -1315,16 +1193,16 @@ public class ClassFileJavassist extends ClassFile {
     public LineNumberTable getLineNumberTable(Signature methodSignature) 
     throws MethodNotFoundException, MethodCodeNotFoundException {
         final CodeAttribute ca = getMethodCodeAttribute(methodSignature);
-        final LineNumberAttribute lnJA = (LineNumberAttribute) ca.getAttribute(LineNumberAttribute.tag);
+        final LineNumberAttribute lna = (LineNumberAttribute) ca.getAttribute(LineNumberAttribute.tag);
 
-        if (lnJA == null) {
+        if (lna == null) {
             return defaultLineNumberTable();
         }
-        final LineNumberTable LN = new LineNumberTable(lnJA.tableLength());
-        for (int i = 0; i < lnJA.tableLength(); ++i) {
-            LN.addRow(lnJA.startPc(i), lnJA.lineNumber(i));
+        final LineNumberTable retVal = new LineNumberTable(lna.tableLength());
+        for (int i = 0; i < lna.tableLength(); ++i) {
+            retVal.addRow(lna.startPc(i), lna.lineNumber(i));
         }
-        return LN;
+        return retVal;
     }
 
     @Override
@@ -1346,15 +1224,17 @@ public class ClassFileJavassist extends ClassFile {
 
     @Override
     public boolean hasFieldDeclaration(Signature fieldSignature) {
-        return (findField(fieldSignature) != null);
+        try {
+			return (findField(fieldSignature, false) != null);
+		} catch (FieldNotFoundException e) {
+			//this cannot happen
+			throw new UnexpectedInternalException(e);
+		}
     }
 
     @Override
     public int fieldConstantValueIndex(Signature fieldSignature) throws FieldNotFoundException, AttributeNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         final int cpVal = fld.getConstantValue();
         if (cpVal == 0) {
             throw new AttributeNotFoundException();
@@ -1364,107 +1244,81 @@ public class ClassFileJavassist extends ClassFile {
 
     @Override
     public boolean hasFieldConstantValue(Signature fieldSignature) throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         return (fld.getConstantValue() != 0);
     }
 
     @Override
     public boolean isFieldFinal(Signature fieldSignature) throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         return Modifier.isFinal(AccessFlag.toModifier(fld.getAccessFlags()));
     }
 
     @Override
     public boolean isFieldPublic(Signature fieldSignature) throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         return Modifier.isPublic(AccessFlag.toModifier(fld.getAccessFlags()));
     }
 
     @Override
     public boolean isFieldProtected(Signature fieldSignature) throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         return Modifier.isProtected(AccessFlag.toModifier(fld.getAccessFlags()));
     }
 
     @Override
     public boolean isFieldPackage(Signature fieldSignature) throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         return Modifier.isPackage(AccessFlag.toModifier(fld.getAccessFlags()));
     }
 
     @Override
     public boolean isFieldPrivate(Signature fieldSignature) throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         return Modifier.isPrivate(AccessFlag.toModifier(fld.getAccessFlags()));
     }
 
     @Override
     public boolean isFieldStatic(Signature fieldSignature) throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         return Modifier.isStatic(AccessFlag.toModifier(fld.getAccessFlags()));
     }
 
     @Override
     public String getFieldGenericSignatureType(Signature fieldSignature) 
     throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
-        SignatureAttribute sa = (SignatureAttribute) fld.getAttribute(SignatureAttribute.tag);
+        final FieldInfo fld = findField(fieldSignature, true);
+        final SignatureAttribute sa = (SignatureAttribute) fld.getAttribute(SignatureAttribute.tag);
         return (sa == null ? null : sa.getSignature());
     }
 
     @Override
     public int getFieldModifiers(Signature fieldSignature) 
     throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         return AccessFlag.toModifier(fld.getAccessFlags());
     }
 
     @Override
     public byte[] getFieldAnnotationsRaw(Signature fieldSignature) 
     throws FieldNotFoundException {
-        final FieldInfo fld = findField(fieldSignature);
-        if (fld == null) {
-            throw new FieldNotFoundException(fieldSignature.toString());
-        }
+        final FieldInfo fld = findField(fieldSignature, true);
         final AttributeInfo attrVisible = fld.getAttribute(AnnotationsAttribute.visibleTag);
         final AttributeInfo attrInvisible = fld.getAttribute(AnnotationsAttribute.invisibleTag);
         return mergeVisibleAndInvisibleAttributes(attrVisible, attrInvisible);
     }
 
-    private FieldInfo findField(Signature fieldSignature) {
+    private FieldInfo findField(Signature fieldSignature, boolean throwFieldNotFoundException) 
+    throws FieldNotFoundException {
         final List<FieldInfo> fieldsJA = this.cf.getFields();
         for (FieldInfo fld : fieldsJA) {
             if (fld.getDescriptor().equals(fieldSignature.getDescriptor()) && 
                 fld.getName().equals(fieldSignature.getName())) {
                 return fld;
             }
+        }
+        if (throwFieldNotFoundException) {
+        	throw new FieldNotFoundException(fieldSignature.toString());
         }
         return null;
     }
