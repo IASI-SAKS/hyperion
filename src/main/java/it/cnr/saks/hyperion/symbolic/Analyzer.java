@@ -20,7 +20,6 @@ import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.rewr.*;
 import jbse.rules.ClassInitRulesRepo;
 import jbse.rules.LICSRulesRepo;
-import jbse.tree.StateTree;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -41,7 +40,7 @@ public final class Analyzer {
         this.analyzerParameters.setActions(new ActionsRun());
 
         this.informationLogger = informationLogger;
-        this.informationLogger.resetCounters();
+        this.informationLogger.resetLogger();
     }
 
     public void setupStatic() {
@@ -174,6 +173,7 @@ public final class Analyzer {
             this.engine = rb.getEngine();
             runner.run();
             this.engine.close();
+            this.engine = null;
         } catch (ClasspathException | DecisionException | CannotManageStateException | EngineStuckException | CannotBacktrackException | NonexistingObservedVariablesException | ThreadStackEmptyException | ContradictionException | FailureException | UnexpectedInternalException | CannotBuildEngineException | InitializationException | InvalidClassFileFactoryClassException e) {
             System.err.println(e.getStackTrace());
             throw new AnalyzerException(e.getMessage());
