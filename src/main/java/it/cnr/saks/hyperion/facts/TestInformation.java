@@ -5,6 +5,13 @@ import java.util.ArrayList;
 public class TestInformation {
     private final ArrayList<MethodCall> methodCalls = new ArrayList<>();
     private final ArrayList<ExceptionThrown> exceptionsThrown = new ArrayList<>();
+    private final String testClass;
+    private final String testMethod;
+
+    public TestInformation(String className, String methodName) {
+        this.testClass = className;
+        this.testMethod = methodName;
+    }
 
     protected MethodCall addMethodCall(String methodName, int callerEpoch, String methodDescriptor, String className, String pathId, String programPoint, int callerPC, String pathCondition) {
         MethodCall md = new MethodCall(methodName, callerEpoch, methodDescriptor, className, pathId, programPoint, callerPC, pathCondition);
@@ -36,6 +43,14 @@ public class TestInformation {
         public String getExceptionClass() {
             return this.exceptionClass;
         }
+    }
+
+    public String getTestClass() {
+        return testClass;
+    }
+
+    public String getTestMethod() {
+        return testMethod;
     }
 
     protected static class MethodCall {
@@ -122,5 +137,4 @@ public class TestInformation {
             return ret.toString();
         }
     }
-
 }

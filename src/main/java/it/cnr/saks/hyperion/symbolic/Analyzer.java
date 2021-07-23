@@ -40,7 +40,6 @@ public final class Analyzer {
         this.analyzerParameters.setActions(new ActionsRun());
 
         this.informationLogger = informationLogger;
-        this.informationLogger.resetLogger();
     }
 
     public void setupStatic() {

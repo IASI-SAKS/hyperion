@@ -22,9 +22,6 @@ public class Main {
     private static final Logger log = LoggerFactory.getLogger(Main.class);
     private static MethodEnumerator methodEnumerator;
     private static Configuration configuration;
-//    private static final Signature hyperionLauncherEntryPoint = new Signature("it/cnr/saks/hyperion/symbolic/TestLauncher", "([Ljava/lang/String;)V", "main");
-//    private static final Signature hyperionLauncherEntryPoint = new Signature("org/junit/runner/JUnitCore", "(Lorg/junit/runner/Runner;)Lorg/junit/runner/Result;", "run");
-    private static final Signature hyperionLauncherEntryPoint = new Signature("org/junit/runners/ParentRunner", "(Lorg/junit/runner/notification/RunNotifier;)V", "run");
 
     public static void main(String[] args) {
         if(args.length < 1) {
@@ -61,7 +58,7 @@ public class Main {
         for(MethodDescriptor method: methodEnumerator) {
             analyzed++;
 
-            inspector.setCurrMethod(method.getClassName(), method.getMethodName());
+            inspector.prepareForNewTestProgram(method.getClassName(), method.getMethodName());
             log.info("[{}/{}] Analysing: {}.{}:{}", analyzed, methodEnumerator.getMethodsCount(), method.getClassName(), method.getMethodName(), method.getMethodDescriptor());
 
             Signature testProgramSignature = new Signature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName());
@@ -76,16 +73,15 @@ public class Main {
 
                 a.setupStatic();
                 a.run();
-
             } catch (AnalyzerException | OutOfMemoryError | StackOverflowError e) {
                 e.printStackTrace();
-                inspector.emitDatalog();
-                System.gc();
-                continue;
+            } finally {
+                try {
+                    inspector.emitDatalog();
+                } catch (AnalyzerException e) {
+                    e.printStackTrace();
+                }
             }
-            inspector.emitDatalog();
-            System.gc();
-
         }
 
 //        try {
