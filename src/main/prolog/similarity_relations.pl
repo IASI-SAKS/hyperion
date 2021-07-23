@@ -381,12 +381,15 @@ isNthSubAtom(L,I,S) :-
   subStr(A,S).
 
 % MODE: isHttpMethod(+A)
-% SEMANTICS: A is an atom and MockMvcRequestBuilders:M,
+% SEMANTICS: A is an atom and either MockMvcRequestBuilders:M,
 % with M in {get,post,put,delete}, is a sub-atom of A.
 isHttpMethod(A) :-
   member(H,['get','post','put','delete']),
   atom_concat('MockMvcRequestBuilders:',H,M),
   sub_atom(A,_,_,_,M).
+% or A starts with 'org/springframework/web/client/RestTemplate:exchange:'
+isHttpMethod(A) :-
+  sub_atom(A,0,_,_,'org/springframework/web/client/RestTemplate:exchange:').
 
 %%% user defined predicates to be used as 4th argument of filter/6
 % MODE: head(+L,-H)
@@ -404,15 +407,26 @@ head(L,domain_error(empty_list)) :-
   !.
 head(_,domain_error(not_a_list)).
 
-% MODE: httpMethod(+A,-H)
+% MODE: httpMethod(?A,?L,-H)
 % SEMANTICS:
-% if   A is bound to an atom and MockMvcRequestBuilders:M,
+% if A is bound to an atom and MockMvcRequestBuilders:M,
 %      with M in {get,post,put,delete}, is a sub-atom of A,
 % then H is bound to M
-httpMethod(A,H) :-
+httpMethod(A,_,H) :-
   nonvar(A),
   member(M,['get','post','put','delete']),
   atom_concat('MockMvcRequestBuilders:',M,S),
+  isSubAtom(A,S),
+  !,
+  H=M.
+% else if L is bound to a list whose 2nd element is org/springframework/http/HttpMethod.M,
+%      with M in {DELETE,GET,HEAD,OPTIONS,PATCH,POST,PUT,TRACE}, is a sub-atom of A,
+% then H is bound to M
+httpMethod(_,L,H) :-
+  nonvar(L),
+  L = [_,A|_],
+  member(M,['DELETE','GET','HEAD','OPTIONS','PATCH','POST','PUT','TRACE']),
+  atom_concat('org/springframework/http/HttpMethod.',M,S),
   isSubAtom(A,S),
   !,
   H=M.
@@ -448,7 +462,7 @@ endpoints(InvokesLst,EndpointLst) :-
             callee,
             parameters),
     [isHttpMethod(callee)],
-    [testProgram,method(caller),httpMethod(callee),head(parameters)],
+    [testProgram,method(caller),httpMethod(callee,parameters),head(parameters)],
     endpoint,
     EndpointLst
   ).
