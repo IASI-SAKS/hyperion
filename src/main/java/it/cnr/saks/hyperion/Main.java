@@ -62,7 +62,7 @@ public class Main {
             analyzed++;
 
             inspector.setCurrMethod(method.getClassName(), method.getMethodName());
-            log.info("[{}/{}] Analysing: {}:{}", analyzed, methodEnumerator.getMethodsCount(), method.getMethodName(), method.getMethodDescriptor());
+            log.info("[{}/{}] Analysing: {}.{}:{}", analyzed, methodEnumerator.getMethodsCount(), method.getClassName(), method.getMethodName(), method.getMethodDescriptor());
 
             Signature testProgramSignature = new Signature(method.getClassName().replace(".", File.separator), method.getMethodDescriptor(), method.getMethodName());
 
