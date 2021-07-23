@@ -27,7 +27,7 @@ public class InformationLogger {
     private final List<String> excludePackages;
 
     // Class -> Method -> Information Data
-    private HashMap<String, HashMap<String, TestInformation>> loggedInformation = new HashMap<>();
+    private HashMap<String, HashMap<String, TestInformation>> loggedInformation = null;
     private String currClass;
     private String currMethod;
 
@@ -36,7 +36,23 @@ public class InformationLogger {
         this.excludePackages = configuration.getExcludeTracedPackages();
     }
 
-    public void resetCounters() {
+    public void resetLogger() {
+        for (Map.Entry<String, HashMap<String, TestInformation>> entry : this.loggedInformation.entrySet()) {
+            HashMap<String, TestInformation> methodsInKlass = entry.getValue();
+            for (Map.Entry<String, TestInformation> e : methodsInKlass.entrySet()) {
+                TestInformation methodLoggedInformation = e.getValue();
+                ArrayList<TestInformation.MethodCall> methodCalls = methodLoggedInformation.getMethodCalls();
+                methodCalls.forEach(methodCall -> {
+                    methodCall.setParameterSet(null);
+                });
+                methodCalls.clear();
+                methodLoggedInformation.getExceptionsThrown().clear();
+            }
+            methodsInKlass.entrySet().clear();
+        }
+        this.loggedInformation.entrySet().clear();
+        this.loggedInformation = new HashMap<>();
+
         this.callerFrame.empty();
         this.invocationEpoch = 0;
         this.callerFrame.push(this.invocationEpoch++);
@@ -157,15 +173,12 @@ public class InformationLogger {
                     exception.append("exception('")
                             .append(klass).append(":").append(method).append("', ")
                             .append("'").append(ex.getExceptionClass()).append("'")
-                            .append(")");
+                            .append(").");
 
                     this.datalogOut.println(exception);
                 }
             });
         });
-
-        // Get rid of dumped data from memory
-        this.loggedInformation = new HashMap<>();
     }
 
     private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint, int callerPC) throws AnalyzerException {
@@ -190,7 +203,7 @@ public class InformationLogger {
             }
 
             // We might get a higher count of operands, due to variadic functions
-            localVariablesTreeMap = localVariablesTreeMap.headMap(Math.min(localVariablesTreeMap.size() + 1, numOperands));
+            localVariablesTreeMap = localVariablesTreeMap.headMap(Math.min(localVariablesTreeMap.size() + 1, numOperands + 1));
         } catch (ThreadStackEmptyException | FrozenStateException e) {
             e.printStackTrace();
         }
@@ -200,6 +213,12 @@ public class InformationLogger {
         // Extract parameter information
         for(Map.Entry<Integer, Variable> v: Objects.requireNonNull(localVariablesTreeMap).entrySet()) {
             Value op = v.getValue().getValue();
+
+            // The following might happen when we get an extra argument in the tree map.
+            // The extra argument is due to the fact that a last optional argument might/might not be present, but
+            // we have to pick a possible extra argument in that case.
+            if(op instanceof DefaultValue)
+                continue;
 
             sb = new StringBuilder();
 
@@ -249,9 +268,12 @@ public class InformationLogger {
                                 sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_SHORT_VALUE)));
                                 break;
                             default:
-                                sb.append("L");
+                                final String className = obj.getType().getClassName();
+                                if(!className.startsWith("["))
+                                    sb.append("L");
                                 sb.append(obj.getType().getClassName());
-                                sb.append(";");
+                                if(!className.startsWith("["))
+                                    sb.append(";");
                                 break;
                         }
                     }

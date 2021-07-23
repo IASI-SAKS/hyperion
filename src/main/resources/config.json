@@ -1,15 +1,18 @@
 {
   "sut": [
     "../train-ticket/ts-common/target/classes/",
-    "../train-ticket/ts-admin-basic-info-service/target/classes/"
+    "../train-ticket/ts-admin-basic-info-service/target/classes/",
+    "../train-ticket/ts-assurance-service/target/classes/"
   ],
   "testPrograms": [
-    "../train-ticket/ts-admin-basic-info-service/target/test-classes/"
+    "../train-ticket/ts-admin-basic-info-service/target/test-classes/",
+    "../train-ticket/ts-assurance-service/target/test-classes/"
   ],
   "includeTest": [
-    "testDeleteContact"
+    "testCreate1"
   ],
   "excludeTest": [
+    "testHome",
     "testGetAllContacts",
     "testModifyContact",
     "testGetAllStations",
@@ -49,10 +52,11 @@
     "testDeleteContacts",
     "testModifyContacts",
     "testAddContacts",
-    "testHome"
+    "testDeleteContact"
   ],
   "additionalClasspath": [
-    "/home/pellegrini/.m2/repository/org/springframework/spring-web/4.3.3.RELEASE/spring-web-4.3.3.RELEASE.jar"
+    "/home/pellegrini/.m2/repository/org/springframework/spring-web/4.3.3.RELEASE/spring-web-4.3.3.RELEASE.jar",
+    "/home/pellegrini/.m2/repository/org/springframework/data/spring-data-mongodb/1.10.23.RELEASE/spring-data-mongodb-1.10.23.RELEASE.jar"
   ],
   "excludeTracedPackages": [
     "java/",

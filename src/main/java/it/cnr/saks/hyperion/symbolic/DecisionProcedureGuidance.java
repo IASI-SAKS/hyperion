@@ -49,23 +49,7 @@ import jbse.tree.DecisionAlternative_XYLOAD_GETX_Expands;
 import jbse.tree.DecisionAlternative_XYLOAD_GETX_Null;
 import jbse.tree.DecisionAlternative_XNEWARRAY;
 import jbse.tree.DecisionAlternative_XSWITCH;
-import jbse.val.Any;
-import jbse.val.Calculator;
-import jbse.val.Expression;
-import jbse.val.PrimitiveSymbolicApply;
-import jbse.val.PrimitiveSymbolicAtomic;
-import jbse.val.NarrowingConversion;
-import jbse.val.Operator;
-import jbse.val.Primitive;
-import jbse.val.PrimitiveSymbolic;
-import jbse.val.PrimitiveVisitor;
-import jbse.val.ReferenceConcrete;
-import jbse.val.ReferenceSymbolic;
-import jbse.val.Simplex;
-import jbse.val.Symbolic;
-import jbse.val.SymbolicApply;
-import jbse.val.Term;
-import jbse.val.WideningConversion;
+import jbse.val.*;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
 
@@ -442,17 +426,13 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
         /**
          * Constructor. The subclass constructor must launch
          * a JVM and run it until the execution hits the method
-         * with signature {@code stopSignature} for {@code numberOfHits}
-         * times.
+         * with signature {@code stopSignature}
          *
          * @param calc a {@link Calculator}
          *             about the classpath and the method to run.
          */
-        public JVM(Calculator calc, AnalyzerParameters analyzerParameters, int numberOfHits)
+        public JVM(Calculator calc)
                 throws GuidanceException {
-            if (numberOfHits < 1) {
-                throw new GuidanceException("Invalid number of hits " + numberOfHits + ".");
-            }
             this.calc = calc;
         }
 
