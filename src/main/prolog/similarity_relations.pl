@@ -483,6 +483,10 @@ similar_tp(invokes,TSrc,SimCr,TP1,TP2,Is1,Is2) :-
   invokesLst_fact(TSrc,TP1,Is1),  Is1\==[],
   invokesLst_fact(TSrc,TP2,Is2),  TP1\==TP2,
   similar_elems(invokes,SimCr,Is1,Is2).
+% similar_tp that also computes the degree of similarity between TP1 and TP2
+similar_tp(T,TSrc,SimCr,TP1,TP2,WT1,WT2,Score) :-
+  similar_tp(T,TSrc,SimCr,TP1,TP2,WT1,WT2),
+  similarity_score(SimCr,WT1,WT2,Score).
 % similarity based on SET operations -------------------------------------------
 % similar_elems(EType,nonemptyEqSet,Es1,Es2) holds if
 similar_elems(EType,nonemptyEqSet,Es1,Es2) :-
@@ -544,17 +548,18 @@ matching(invokes,I1,I2) :-
   invokes_component(I2,callee,Callee).
 
 % MODE: matching_URIs(+URI1,+URI2)
-% SEMANTICS: E1 and E2 match a regular expression REX representing a REST API
+% SEMANTICS: URI1 and URI2 match a regular expression REX representing a REST API
 % (the set of regular expressions is defined by rest_api_regex/1 facts)
+:- dynamic rest_api_regex/1.
 matching_URIs(URI1,URI2) :-
   atom_string(URI1,URI1Str),
   atom_string(URI2,URI2Str),
   rest_api_regex(REX),   % REX is a user-provided REST API regular expression
   re_match(REX,URI1Str),  % the URI string URI1Str of E1 matches REX    (*2*)
   re_match(REX,URI2Str).  % the URI string URI2Str of E2 matches REX    (*2*)
-% TODO: matching a regular expression parameters
-%matching_URIs(URI1,URI2) :-
-%  true. %
+% URI1 and URI2 are equivalent
+matching_URIs(URI1,URI2) :-
+  URI1==URI2.
 
 % MODE: select_common_set(+L1,+L2,-C)
 % SEMANTICS: C is a set of elements occurring in L1 and L2.
