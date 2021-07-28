@@ -84,7 +84,8 @@ configuration file is:
     "sun/"
   ],
   "depth": 100,
-  "timeout": 5
+  "timeout": 5,
+  "skip": 0
 }
 ```
 
