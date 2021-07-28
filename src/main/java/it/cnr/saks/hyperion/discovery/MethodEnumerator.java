@@ -29,14 +29,12 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
         List<Class> classes = this.enumerateClasses(configuration.getTestPrograms());
 
         for (Class klass: classes) {
-            log.info("Analysing class " + klass.getName() + ":");
-
             if(Modifier.isAbstract(klass.getModifiers())) {
-                log.info(" skipping, it's an abstract class.");
+                log.info("Analysing class {}: skipping, it's an abstract class.", klass.getName());
                 continue;
             }
 
-            log.info(" retrieving valid methods...");
+            log.info("Analysing class {}: retrieving valid methods...", klass.getName());
             Method[] methods = this.getAccessibleMethods(klass);
             for(Method currentMethod: methods) {
                 boolean isTest = false;

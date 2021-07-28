@@ -25,40 +25,17 @@ public class InformationLogger {
     private final Stack<Integer> callerFrame = new Stack<>();
     private Integer invocationEpoch = 0;
     private final List<String> excludePackages;
-
-    // Class -> Method -> Information Data
-    private HashMap<String, HashMap<String, TestInformation>> loggedInformation = null;
-    private String currClass;
-    private String currMethod;
+    private TestInformation testInformation;
 
     public InformationLogger(Configuration configuration) {
         this.callerFrame.push(this.invocationEpoch++);
         this.excludePackages = configuration.getExcludeTracedPackages();
     }
 
-    public void resetLogger() {
-        for (Map.Entry<String, HashMap<String, TestInformation>> entry : this.loggedInformation.entrySet()) {
-            HashMap<String, TestInformation> methodsInKlass = entry.getValue();
-            for (Map.Entry<String, TestInformation> e : methodsInKlass.entrySet()) {
-                TestInformation methodLoggedInformation = e.getValue();
-                ArrayList<TestInformation.MethodCall> methodCalls = methodLoggedInformation.getMethodCalls();
-                methodCalls.forEach(methodCall -> {
-                    methodCall.setParameterSet(null);
-                });
-                methodCalls.clear();
-                methodLoggedInformation.getExceptionsThrown().clear();
-            }
-            methodsInKlass.entrySet().clear();
-        }
-        this.loggedInformation.entrySet().clear();
-        this.loggedInformation = new HashMap<>();
+    public void onThrow(State currentState) throws AnalyzerException {
+        if(this.testInformation == null)
+            throw new AnalyzerException("InformationLogger has not been correctly initialized: what test are you running?");
 
-        this.callerFrame.empty();
-        this.invocationEpoch = 0;
-        this.callerFrame.push(this.invocationEpoch++);
-    }
-
-    public void onThrow(State currentState) {
         final Objekt myException;
         try {
             final Frame frame = currentState.getCurrentFrame();
@@ -69,7 +46,7 @@ public class InformationLogger {
             return;
         }
 
-        TestInformation.ExceptionThrown ex = this.loggedInformation.get(this.currClass).get(this.currMethod).addExceptionThrown(myException.getType().getClassName());
+        this.testInformation.addExceptionThrown(myException.getType().getClassName());
     }
 
     public void onMethodReturn() {
@@ -131,64 +108,59 @@ public class InformationLogger {
         }
     }
 
-    public void setCurrMethod(String currClass, String currMethod) {
-        this.currClass = currClass;
-        this.currMethod = currMethod;
-        if(!loggedInformation.containsKey(currClass)) {
-            loggedInformation.put(currClass, new HashMap<>());
-        }
-        loggedInformation.get(this.currClass).put(currMethod, new TestInformation());
+    public void prepareForNewTestProgram(String currClass, String currMethod) {
+        this.callerFrame.empty();
+        this.invocationEpoch = 0;
+        this.callerFrame.push(this.invocationEpoch++);
+        this.testInformation = new TestInformation(currClass, currMethod);
     }
 
-    public void emitDatalog() {
+    public void emitDatalog() throws AnalyzerException {
         if(this.datalogOut == null)
-            return;
+            throw new AnalyzerException("InformationLogger has not been correctly initialized: output file not specified.");
+        if(this.testInformation == null)
+            throw new AnalyzerException("InformationLogger has not been correctly initialized: what test are you running?");
 
-        this.loggedInformation.forEach((klass,methodsInKlass) -> { // for each class
-            if(methodsInKlass.size() == 0)
-                return;
+        ArrayList<TestInformation.MethodCall> methodCalls = this.testInformation.getMethodCalls();
+        for (TestInformation.MethodCall methodCall : methodCalls) {
+            StringBuilder invokes = new StringBuilder();
+            invokes.append("invokes(").append("'")
+                    .append(this.testInformation.getTestClass()).append(":").append(this.testInformation.getTestMethod()).append("', ")
+                    .append(methodCall.getPathId()).append(", ")
+                    .append("'").append(methodCall.getProgramPoint()).append("', ")
+                    .append(methodCall.getCallerPC()).append(", ")
+                    .append(methodCall.getCallerEpoch()).append(", ")
+                    .append(methodCall.getPathCondition()).append(", ")
+                    .append("'").append(methodCall.getClassName()).append(":").append(methodCall.getMethodName()).append(":").append(methodCall.getMethodDescriptor()).append("', ")
+                    .append(methodCall.getParameterSet().getParameters())
+                    .append(").");
 
-            methodsInKlass.forEach((method, methodLoggedInformation) -> { // for each analyzed method
-                // Process method calls
-                ArrayList<TestInformation.MethodCall> methodCalls = methodLoggedInformation.getMethodCalls();
-                for (TestInformation.MethodCall methodCall : methodCalls) {
-                    StringBuilder invokes = new StringBuilder();
-                    invokes.append("invokes(").append("'")
-                            .append(klass).append(":").append(method).append("', ")
-                            .append(methodCall.getPathId()).append(", ")
-                            .append("'").append(methodCall.getProgramPoint()).append("', ")
-                            .append(methodCall.getCallerPC()).append(", ")
-                            .append(methodCall.getCallerEpoch()).append(", ")
-                            .append(methodCall.getPathCondition()).append(", ")
-                            .append("'").append(methodCall.getClassName()).append(":").append(methodCall.getMethodName()).append(":").append(methodCall.getMethodDescriptor()).append("', ")
-                            .append(methodCall.getParameterSet().getParameters())
-                            .append(").");
+            this.datalogOut.println(invokes);
+        }
 
-                    this.datalogOut.println(invokes);
-                }
+        ArrayList<TestInformation.ExceptionThrown> exceptionsThrown = this.testInformation.getExceptionsThrown();
+        for(TestInformation.ExceptionThrown ex : exceptionsThrown) {
+            StringBuilder exception = new StringBuilder();
+            exception.append("exception('")
+                    .append(this.testInformation.getTestClass()).append(":").append(this.testInformation.getTestMethod()).append("', ")
+                    .append("'").append(ex.getExceptionClass()).append("'")
+                    .append(").");
 
-                ArrayList<TestInformation.ExceptionThrown> exceptionsThrown = methodLoggedInformation.getExceptionsThrown();
-                for(TestInformation.ExceptionThrown ex : exceptionsThrown) {
-                    StringBuilder exception = new StringBuilder();
-                    exception.append("exception('")
-                            .append(klass).append(":").append(method).append("', ")
-                            .append("'").append(ex.getExceptionClass()).append("'")
-                            .append(").");
-
-                    this.datalogOut.println(exception);
-                }
-            });
-        });
+            this.datalogOut.println(exception);
+        }
     }
 
     private void inspectMethodCall(State s, String name, Signature callee, ClassFile classFile, String pathId, String programPoint, int callerPC) throws AnalyzerException {
+        if(this.testInformation == null)
+            throw new AnalyzerException("InformationLogger has not been correctly initialized: what test are you running?");
+
         StringBuilder sb = new StringBuilder();
         sb.append("[");
         formatPathCondition(s, sb);
         sb.append("]");
 
         int callerEpoch = this.callerFrame.peek();
-        TestInformation.MethodCall md = this.loggedInformation.get(this.currClass).get(this.currMethod).addMethodCall(name, callerEpoch, callee.getDescriptor(), classFile.getClassName(), pathId, programPoint, callerPC, sb.toString());
+        TestInformation.MethodCall md = this.testInformation.addMethodCall(name, callerEpoch, callee.getDescriptor(), classFile.getClassName(), pathId, programPoint, callerPC, sb.toString());
 
         int numOperands = splitParametersDescriptors(callee.getDescriptor()).length;
         if(numOperands == 0)
@@ -247,7 +219,7 @@ public class InformationLogger {
                             case JAVA_STRING:
                                 final Reference valueRef = (Reference) obj.getFieldValue(JAVA_STRING_VALUE);
                                 final Array value = (Array) s.getObject(valueRef);
-                                sb.append(value.valueString());
+                                sb.append(value.valueString().replaceAll("'", "''")); // Make Prolog happy about ' in strings
                                 break;
                             case JAVA_BYTE:
                                 sb.append(renderSimplex((Simplex) obj.getFieldValue(JAVA_BYTE_VALUE)));
@@ -467,7 +439,6 @@ public class InformationLogger {
                 sb.append(val);
         }
 
-        // TODO: recheck this part
         if (val instanceof ReferenceSymbolic) {
             final ReferenceSymbolic ref = (ReferenceSymbolic) val;
             if (s.resolved(ref)) {
