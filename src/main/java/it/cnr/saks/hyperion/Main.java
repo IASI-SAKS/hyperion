@@ -58,6 +58,9 @@ public class Main {
         for(MethodDescriptor method: methodEnumerator) {
             analyzed++;
 
+            if(analyzed <= configuration.getSkip())
+                continue;
+
             inspector.prepareForNewTestProgram(method.getClassName(), method.getMethodName());
             log.info("[{}/{}] Analysing: {}.{}:{}", analyzed, methodEnumerator.getMethodsCount(), method.getClassName(), method.getMethodName(), method.getMethodDescriptor());
 
