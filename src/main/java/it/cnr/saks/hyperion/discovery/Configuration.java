@@ -24,6 +24,7 @@ public class Configuration {
     private List<String> excludeTracedPackages;
     private Integer depth;
     private Integer timeout;
+    private Integer skip;
     private URL[] classPath;
 
     private Configuration() {}
@@ -137,6 +138,14 @@ public class Configuration {
 
     public void setTimeout(Integer timeout) {
         this.timeout = timeout;
+    }
+
+    public Integer getSkip() {
+        return skip;
+    }
+
+    public void setSkip(Integer skip) {
+        this.skip = skip;
     }
 }
 
