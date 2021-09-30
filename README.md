@@ -86,9 +86,13 @@ configuration file is:
   ],
   "depth": 100,
   "timeout": 5,
-  "skip": 0
+  "skip": 0,
+  "outputFile": "invokes.pl"
 }
 ```
+
+If `outputFile` is not set, the output file is defaulted to `inspection-YYYY-MM-DDTHH:SSZ.pl`, allowing different runs
+to store the generated invokes in a different file.
 
 ## Playing with Prolog
 

@@ -38,11 +38,16 @@ public class AnalyzerRunner {
             return 70; // EX_SOFTWARE
         }
 
-        TimeZone tz = TimeZone.getTimeZone("UTC");
-        DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
-        df.setTimeZone(tz);
-        String nowAsISO = df.format(new Date());
-        String facts = "inspection-" + nowAsISO + ".pl";
+        String facts;
+        if(discoveryConfiguration.getOutputFile() == null) {
+            TimeZone tz = TimeZone.getTimeZone("UTC");
+            DateFormat df = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm'Z'");
+            df.setTimeZone(tz);
+            String nowAsISO = df.format(new Date());
+            facts = "inspection-" + nowAsISO + ".pl";
+        } else {
+            facts = discoveryConfiguration.getOutputFile();
+        }
 
         InformationLogger inspector = new InformationLogger(discoveryConfiguration);
         inspector.setDatalogOutputFile(facts);

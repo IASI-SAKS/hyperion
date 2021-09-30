@@ -25,6 +25,7 @@ public class DiscoveryConfiguration {
     private Integer timeout;
     private Integer skip;
     private URL[] classPath;
+    private String outputFile;
 
     private DiscoveryConfiguration() {}
 
@@ -144,6 +145,14 @@ public class DiscoveryConfiguration {
 
     public void setSkip(Integer skip) {
         this.skip = skip;
+    }
+
+    public String getOutputFile() {
+        return outputFile;
+    }
+
+    public void setOutputFile(String outputFile) {
+        this.outputFile = outputFile;
     }
 }
 
