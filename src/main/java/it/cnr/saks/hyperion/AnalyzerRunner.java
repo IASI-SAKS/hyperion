@@ -1,6 +1,6 @@
 package it.cnr.saks.hyperion;
 
-import it.cnr.saks.hyperion.discovery.Configuration;
+import it.cnr.saks.hyperion.discovery.DiscoveryConfiguration;
 import it.cnr.saks.hyperion.discovery.MethodDescriptor;
 import it.cnr.saks.hyperion.discovery.MethodEnumerator;
 import it.cnr.saks.hyperion.facts.InformationLogger;
@@ -18,29 +18,24 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-public class Main {
-    private static final Logger log = LoggerFactory.getLogger(Main.class);
+public class AnalyzerRunner {
     private static MethodEnumerator methodEnumerator;
-    private static Configuration configuration;
+    private static DiscoveryConfiguration discoveryConfiguration;
+    private static final Logger log = LoggerFactory.getLogger(AnalyzerRunner.class);
 
-    public static void main(String[] args) {
-        if(args.length < 1) {
-            System.err.println("Need a path to the JSON config file");
-            System.exit(64); // EX_USAGE
-        }
-
+    public static int runAnalyzer(File configJsonFile) {
         try {
-            configuration = Configuration.loadConfiguration(args[0]);
+            discoveryConfiguration = DiscoveryConfiguration.loadConfiguration(configJsonFile);
         } catch (AnalyzerException | MalformedURLException e) {
             System.err.println("Error while loading hyperion: " + e.getMessage());
-            System.exit(64); // EX_USAGE
+            return 64; // EX_USAGE
         }
 
         try {
-            methodEnumerator = new MethodEnumerator(configuration);
+            methodEnumerator = new MethodEnumerator(discoveryConfiguration);
         } catch (IOException | AnalyzerException e) {
             System.err.println("Error while enumerating test programs: " + e.getMessage());
-            System.exit(70); // EX_SOFTWARE
+            return 70; // EX_SOFTWARE
         }
 
         TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -49,7 +44,7 @@ public class Main {
         String nowAsISO = df.format(new Date());
         String facts = "inspection-" + nowAsISO + ".pl";
 
-        InformationLogger inspector = new InformationLogger(configuration);
+        InformationLogger inspector = new InformationLogger(discoveryConfiguration);
         inspector.setDatalogOutputFile(facts);
 
         int analyzed = 0;
@@ -58,7 +53,7 @@ public class Main {
         for(MethodDescriptor method: methodEnumerator) {
             analyzed++;
 
-            if(analyzed <= configuration.getSkip())
+            if(analyzed <= discoveryConfiguration.getSkip())
                 continue;
 
             inspector.prepareForNewTestProgram(method.getClassName(), method.getMethodName());
@@ -68,9 +63,9 @@ public class Main {
 
             try {
                 Analyzer a = new Analyzer(inspector)
-                        .withUserClasspath(configuration.getClassPath())
-                        .withTimeout(configuration.getTimeout())
-                        .withDepthScope(configuration.getDepth())
+                        .withUserClasspath(discoveryConfiguration.getClassPath())
+                        .withTimeout(discoveryConfiguration.getTimeout())
+                        .withDepthScope(discoveryConfiguration.getDepth())
                         .withJbseEntryPoint(testProgramSignature)
                         .withTestProgram(testProgramSignature);
 
@@ -87,16 +82,10 @@ public class Main {
             }
         }
 
-//        try {
-//            PrologQuery.init();
-//            PrologQuery.load(facts);
-//        } catch (AnalyzerException e) {
-//            System.err.println(e.getMessage());
-//            System.exit(1);
-//        }
-
         long endTime = System.nanoTime();
         double duration = (double)(endTime - startTime) / 1000000000;
         log.info("Analyzed " + analyzed + " method" + (analyzed > 1 ? "s" : "") + " in " + duration + " seconds.");
+
+        return 0;
     }
 }

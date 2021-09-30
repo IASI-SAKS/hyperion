@@ -39,10 +39,11 @@ The source is organized as a maven project, so running `mvn build` should be eno
 Hyperion can be then run as:
 
 ```bash
-java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Main <path to JSON config file>
+java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Hyperion <path to JSON config file>
 ```
 
-A sample JSON config file is located in `src/main/resources/config.json` in this repository. The structure of the JSON
+A sample JSON config file todrive the analysis of sets of test programs is located at
+src/main/resources/analyze-config.json` in this repository. The structure of this JSON
 configuration file is:
 
 ```json

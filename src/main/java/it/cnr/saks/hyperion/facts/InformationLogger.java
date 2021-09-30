@@ -1,6 +1,6 @@
 package it.cnr.saks.hyperion.facts;
 
-import it.cnr.saks.hyperion.discovery.Configuration;
+import it.cnr.saks.hyperion.discovery.DiscoveryConfiguration;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import jbse.bc.ClassFile;
 import jbse.bc.Signature;
@@ -27,9 +27,9 @@ public class InformationLogger {
     private final List<String> excludePackages;
     private TestInformation testInformation;
 
-    public InformationLogger(Configuration configuration) {
+    public InformationLogger(DiscoveryConfiguration discoveryConfiguration) {
         this.callerFrame.push(this.invocationEpoch++);
-        this.excludePackages = configuration.getExcludeTracedPackages();
+        this.excludePackages = discoveryConfiguration.getExcludeTracedPackages();
     }
 
     public void onThrow(State currentState) throws AnalyzerException {
@@ -50,7 +50,8 @@ public class InformationLogger {
     }
 
     public void onMethodReturn() {
-        this.callerFrame.pop();
+        if(!this.callerFrame.empty())
+            this.callerFrame.pop();
     }
 
     public void onMethodCall(State s) throws AnalyzerException {
