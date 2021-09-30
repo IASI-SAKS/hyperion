@@ -1,6 +1,6 @@
 package it.cnr.saks.hyperion.symbolic;
 
-import it.cnr.saks.hyperion.facts.InformationLogger;
+import it.cnr.saks.hyperion.similarity.InformationLogger;
 import jbse.algo.exc.CannotManageStateException;
 import jbse.bc.Signature;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;

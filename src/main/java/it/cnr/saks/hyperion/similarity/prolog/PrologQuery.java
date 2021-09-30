@@ -1,4 +1,4 @@
-package it.cnr.saks.hyperion.facts;
+package it.cnr.saks.hyperion.similarity.prolog;
 
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.jpl7.*;
@@ -24,7 +24,7 @@ public class PrologQuery {
                                     String.format("-x %s", System.getenv("SWIPL_BOOT_FILE")),
                             System.getenv("SWI_HOME_DIR") == null ? "" :
                                     String.format("--home=%s", System.getenv("SWI_HOME_DIR")));
-            log.info("\nSWIPL initialized with: " + init_swi_config);
+            log.info("SWIPL initialized with: " + init_swi_config);
 
             JPL.setDefaultInitArgs(init_swi_config.split("\\s+"));
         } else
@@ -34,25 +34,16 @@ public class PrologQuery {
         log.info("Prolog engine actual init args: " + Arrays.toString(Prolog.get_actual_init_args()));
 
         new Query("set_prolog_flag(character_escapes,false)").hasSolution();
-
-        // Load the prolog program
-        Query q = new Query(
-                "consult",
-                new Term[] {new Atom(PrologQuery.class.getResource("/sim.pl").getPath())}
-        );
-
-        if(!q.hasSolution())
-            throw new AnalyzerException("Unable to load prolog program.");
     }
 
-    public static void load(String facts) throws AnalyzerException {
+    public static void load(String prologFilePath) throws AnalyzerException {
         Query q = new Query(
                 "consult",
-                new Term[] {new Atom(facts)}
+                new Term[] {new Atom(prologFilePath)}
         );
 
         if(!q.hasSolution())
-            throw new AnalyzerException("Unable to load analysis facts.");
+            throw new AnalyzerException("Unable to load prolog file.");
     }
 
     public static boolean query(String function, String ... arguments) {

@@ -3,7 +3,7 @@ package it.cnr.saks.hyperion;
 import it.cnr.saks.hyperion.discovery.DiscoveryConfiguration;
 import it.cnr.saks.hyperion.discovery.MethodDescriptor;
 import it.cnr.saks.hyperion.discovery.MethodEnumerator;
-import it.cnr.saks.hyperion.facts.InformationLogger;
+import it.cnr.saks.hyperion.similarity.InformationLogger;
 import it.cnr.saks.hyperion.symbolic.Analyzer;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import jbse.bc.Signature;

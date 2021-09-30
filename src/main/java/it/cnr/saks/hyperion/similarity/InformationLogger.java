@@ -1,4 +1,4 @@
-package it.cnr.saks.hyperion.facts;
+package it.cnr.saks.hyperion.similarity;
 
 import it.cnr.saks.hyperion.discovery.DiscoveryConfiguration;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
