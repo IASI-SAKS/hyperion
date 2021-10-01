@@ -15,7 +15,7 @@ public class SimilarityConfiguration {
     private static final Logger log = LoggerFactory.getLogger(SimilarityConfiguration.class);
     private List<String> invokes;
     private String regex;
-
+    private String outputFile;
 
     private SimilarityConfiguration() {}
 
@@ -48,5 +48,13 @@ public class SimilarityConfiguration {
 
     public void setRegex(String regex) {
         this.regex = regex;
+    }
+
+    public String getOutputFile() {
+        return outputFile;
+    }
+
+    public void setOutputFile(String outputFile) {
+        this.outputFile = outputFile;
     }
 }

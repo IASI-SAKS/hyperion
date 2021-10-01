@@ -27,14 +27,14 @@ public class AnalyzerRunner {
         try {
             discoveryConfiguration = DiscoveryConfiguration.loadConfiguration(configJsonFile);
         } catch (AnalyzerException | MalformedURLException e) {
-            System.err.println("Error while loading hyperion: " + e.getMessage());
+            log.error("Error while loading hyperion: " + e.getMessage());
             return 64; // EX_USAGE
         }
 
         try {
             methodEnumerator = new MethodEnumerator(discoveryConfiguration);
         } catch (IOException | AnalyzerException e) {
-            System.err.println("Error while enumerating test programs: " + e.getMessage());
+            log.error("Error while enumerating test programs: " + e.getMessage());
             return 70; // EX_SOFTWARE
         }
 

@@ -20,9 +20,6 @@ public class Hyperion implements Callable<Integer> {
     @Option(names = { "-c", "--extract-similarity" }, paramLabel = "CONF_FILE", description = "The JSON file to configure the similarity extraction")
     File similarityExtractionJson;
 
-    @Option(names = { "-o", "--output" }, paramLabel = "OUT_FILE", description = "Path to store the results of a phase")
-    File outputFile;
-
     @Override
     public Integer call() throws Exception {
         int ret = 64; // EX_USAGE
@@ -31,7 +28,7 @@ public class Hyperion implements Callable<Integer> {
         if(this.analyzeJson != null)
             ret = AnalyzerRunner.runAnalyzer(this.analyzeJson);
         if(this.similarityExtractionJson != null)
-            ret = SimiliarityExtractionRunner.runSimilarityExtraction(this.similarityExtractionJson, this.outputFile);
+            ret = SimilarityExtractionRunner.runSimilarityExtraction(this.similarityExtractionJson);
 
         return ret;
     }
