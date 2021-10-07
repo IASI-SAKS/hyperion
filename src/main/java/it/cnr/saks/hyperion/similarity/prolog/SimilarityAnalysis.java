@@ -14,28 +14,28 @@ public class SimilarityAnalysis {
     private Map<String, Term>[] similarity;
 
     public SimilarityAnalysis() throws AnalyzerException {
-        it.cnr.saks.hyperion.similarity.prolog.PrologQueryHelper.init();
+        PrologQueryHelper.init();
 
         String prologProgram = Objects.requireNonNull(SimilarityAnalysis.class.getResource("/prolog/similarity_relations.pl")).getPath();
-        it.cnr.saks.hyperion.similarity.prolog.PrologQueryHelper.load(prologProgram);
+        PrologQueryHelper.load(prologProgram);
         prologProgram = Objects.requireNonNull(SimilarityAnalysis.class.getResource("/prolog/testing_similarity_relations.pl")).getPath();
-        it.cnr.saks.hyperion.similarity.prolog.PrologQueryHelper.load(prologProgram);
+        PrologQueryHelper.load(prologProgram);
     }
 
     public void loadPrologDataset(String pathToRegexFile, List<String> invokesList) throws AnalyzerException {
 
         log.info("Loading REGEX file for endpoint generation: " + pathToRegexFile);
-        it.cnr.saks.hyperion.similarity.prolog.PrologQueryHelper.load(pathToRegexFile);
+        PrologQueryHelper.load(pathToRegexFile);
 
         for(String invokes: invokesList) {
             log.info("Loading " + invokes);
-            it.cnr.saks.hyperion.similarity.prolog.PrologQueryHelper.load(invokes);
+            PrologQueryHelper.load(invokes);
         }
     }
 
     public void computeSimilarity(String metric) {
         log.info("Running similarity analysis...");
         String[] variables = {"TP1", "TP2", "Score"};
-        this.similarity = it.cnr.saks.hyperion.similarity.prolog.PrologQueryHelper.query("compute_similarity_from_java", variables, "invokes", "trace", metric);
+        this.similarity = PrologQueryHelper.query("compute_similarity_from_java", variables, "invokes", "trace", metric);
     }
 }
