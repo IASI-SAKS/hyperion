@@ -1,74 +1,13 @@
 package it.cnr.saks.hyperion.symbolic;
 
-import static jbse.algo.UtilControlFlow.failExecution;
-import static jbse.apps.run.JAVA_MAP_Utils.classImplementsJavaUtilMap;
-import static jbse.apps.run.JAVA_MAP_Utils.isInitialMapField;
-import static jbse.apps.run.JAVA_MAP_Utils.isSymbolicApplyOnInitialMap;
-import static jbse.bc.Signatures.JAVA_MAP_CONTAINSKEY;
-import static jbse.common.Type.BOOLEAN;
-import static jbse.common.Type.REFERENCE;
-import static jbse.common.Type.TYPEEND;
-import static jbse.common.Type.binaryClassName;
-import static jbse.common.Type.internalClassName;
-import static jbse.common.Type.isPrimitiveOrVoidCanonicalName;
-import static jbse.common.Type.toPrimitiveOrVoidInternalName;
-
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Reader;
-import java.io.Writer;
-import java.nio.file.Path;
-import java.util.*;
-import java.util.function.Supplier;
-
-import com.sun.jdi.AbsentInformationException;
-import com.sun.jdi.ArrayReference;
-import com.sun.jdi.BooleanValue;
-import com.sun.jdi.Bootstrap;
-import com.sun.jdi.ByteValue;
-import com.sun.jdi.CharValue;
-import com.sun.jdi.ClassNotLoadedException;
-import com.sun.jdi.DoubleValue;
-import com.sun.jdi.Field;
-import com.sun.jdi.FloatValue;
-import com.sun.jdi.IncompatibleThreadStateException;
-import com.sun.jdi.IntegerValue;
-import com.sun.jdi.InvalidTypeException;
-import com.sun.jdi.InvocationException;
-import com.sun.jdi.LocalVariable;
-import com.sun.jdi.Location;
-import com.sun.jdi.LongValue;
-import com.sun.jdi.Method;
-import com.sun.jdi.ObjectReference;
-import com.sun.jdi.ReferenceType;
-import com.sun.jdi.ShortValue;
-import com.sun.jdi.StackFrame;
-import com.sun.jdi.ThreadReference;
-import com.sun.jdi.VMDisconnectedException;
 import com.sun.jdi.Value;
-import com.sun.jdi.VirtualMachine;
+import com.sun.jdi.*;
 import com.sun.jdi.connect.Connector;
 import com.sun.jdi.connect.IllegalConnectorArgumentsException;
 import com.sun.jdi.connect.LaunchingConnector;
 import com.sun.jdi.connect.VMStartException;
-import com.sun.jdi.event.BreakpointEvent;
-import com.sun.jdi.event.ClassPrepareEvent;
-import com.sun.jdi.event.Event;
-import com.sun.jdi.event.EventIterator;
-import com.sun.jdi.event.EventQueue;
-import com.sun.jdi.event.EventSet;
-import com.sun.jdi.event.MethodExitEvent;
-import com.sun.jdi.event.StepEvent;
-import com.sun.jdi.request.BreakpointRequest;
-import com.sun.jdi.request.ClassPrepareRequest;
-import com.sun.jdi.request.EventRequest;
-import com.sun.jdi.request.EventRequestManager;
-import com.sun.jdi.request.MethodExitRequest;
-
+import com.sun.jdi.event.*;
+import com.sun.jdi.request.*;
 import jbse.apps.run.ImpureMethodException;
 import jbse.bc.ClassFile;
 import jbse.bc.Offsets;
@@ -82,6 +21,16 @@ import jbse.mem.exc.FrozenStateException;
 import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.val.*;
 import org.jetbrains.annotations.NotNull;
+
+import java.io.*;
+import java.nio.file.Path;
+import java.util.*;
+import java.util.function.Supplier;
+
+import static jbse.algo.UtilControlFlow.failExecution;
+import static jbse.apps.run.JAVA_MAP_Utils.*;
+import static jbse.bc.Signatures.JAVA_MAP_CONTAINSKEY;
+import static jbse.common.Type.*;
 
 /**
  * {@link DecisionProcedureGuidance} that uses the installed JVM accessed via JDI to
@@ -361,16 +310,16 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 			throw new Error("No launching connector");
 		}
 
-		private StackFrame rootFrameConcrete() throws IncompatibleThreadStateException, GuidanceException {
-			final int numFramesFromRoot = numFramesFromRootFrameConcrete();
-			final List<StackFrame> frameStack = getCurrentThread().frames();
-			return frameStack.get(numFramesFromRoot);
-		}
-
-		private StackFrame lastFrameConcrete() throws IncompatibleThreadStateException, GuidanceException {
-			final List<StackFrame> frameStack = getCurrentThread().frames();
-			return frameStack.get(this.numOfFramesAtMethodEntry - 1);
-		}
+//		private StackFrame rootFrameConcrete() throws IncompatibleThreadStateException, GuidanceException {
+//			final int numFramesFromRoot = numFramesFromRootFrameConcrete();
+//			final List<StackFrame> frameStack = getCurrentThread().frames();
+//			return frameStack.get(numFramesFromRoot);
+//		}
+//
+//		private StackFrame lastFrameConcrete() throws IncompatibleThreadStateException, GuidanceException {
+//			final List<StackFrame> frameStack = getCurrentThread().frames();
+//			return frameStack.get(this.numOfFramesAtMethodEntry - 1);
+//		}
 
 		private StackFrame findOuterFrameConcrete(SymbolicLocalVariable var) throws IncompatibleThreadStateException, GuidanceException {
 			if(!(var instanceof ReferenceSymbolicLocalVariable))
@@ -435,7 +384,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		@Override
 		public Object getValue(Symbolic origin) throws GuidanceException, ImpureMethodException {
 			this.valueDependsOnSymbolicApply = false;
-			final com.sun.jdi.Value val = (com.sun.jdi.Value) getJDIValue(origin);
+			final Value val = (Value) getJDIValue(origin);
 			if (val instanceof IntegerValue) {
 				return this.calc.valInt(((IntegerValue) val).intValue());
 			} else if (val instanceof BooleanValue) {
@@ -481,7 +430,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 					final Object o = getJDIValue(((SymbolicMemberField) origin).getContainer());
 					if(o == null)
 						return null;
-					if (!(o instanceof com.sun.jdi.ReferenceType) && !(o instanceof com.sun.jdi.ObjectReference)) {
+					if (!(o instanceof ReferenceType) && !(o instanceof ObjectReference)) {
 						throw new GuidanceException(ERROR_BAD_PATH + origin.asOriginString() + " : Fails because containing object is " + o);
 					}
 					return getJDIValueField(((SymbolicMemberField) origin), o);
@@ -551,7 +500,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 				} else {
 					throw new GuidanceException(ERROR_BAD_PATH + origin.asOriginString());
 				}
-			} catch (IncompatibleThreadStateException | AbsentInformationException | InvocationException | com.sun.jdi.InvalidTypeException | ClassNotLoadedException e) {
+			} catch (IncompatibleThreadStateException | AbsentInformationException | InvocationException | InvalidTypeException | ClassNotLoadedException e) {
 				throw new GuidanceException(e);
 			}
 		}
@@ -603,9 +552,9 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 			occurrences.add(symbolicApplyOperatorCallWithContext);
 		}
 
-		private com.sun.jdi.Value getJDIValueLocalVariable(SymbolicLocalVariable var)
+		private Value getJDIValueLocalVariable(SymbolicLocalVariable var)
 				throws GuidanceException, IncompatibleThreadStateException, AbsentInformationException {
-			final com.sun.jdi.Value val;
+			final Value val;
 			final String varName = var.getVariableName();
 			if ("this".equals(varName)) {
 				val = findOuterFrameConcrete(var).thisObject();
@@ -622,7 +571,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 			return val;
 		}
 
-		private com.sun.jdi.ReferenceType getJDIObjectStatic(String className)
+		private ReferenceType getJDIObjectStatic(String className)
 				throws GuidanceException, IncompatibleThreadStateException, AbsentInformationException {
 			final List<ReferenceType> classes = this.vm.classesByName(className);
 			if (classes.size() == 1) {
@@ -632,15 +581,15 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 			}
 		}
 
-		private com.sun.jdi.Value getJDIValueField(SymbolicMemberField origin, Object o)
+		private Value getJDIValueField(SymbolicMemberField origin, Object o)
 		throws GuidanceException {
 			if (isInitialMapField(this.currentStateSupplier.get().getClassHierarchy(), (jbse.val.Value) origin)) {
 				return cloneInitialMap(getCurrentThread(), o);
 			}
 			final String fieldName = origin.getFieldName();
-			if (o instanceof com.sun.jdi.ReferenceType) {
+			if (o instanceof ReferenceType) {
 				//the field is static
-				final com.sun.jdi.ReferenceType oReferenceType = ((com.sun.jdi.ReferenceType) o);
+				final ReferenceType oReferenceType = ((ReferenceType) o);
 				final Field fld = oReferenceType.fieldByName(fieldName);
 				if (fld == null) {
 					throw new GuidanceException(ERROR_BAD_PATH + origin.asOriginString() + " (missing field " + fieldName + ").");
@@ -652,7 +601,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 				}
 			} else {
 				//the field is not static (note that it can be declared in the superclass)
-				final com.sun.jdi.ObjectReference oReference = ((com.sun.jdi.ObjectReference) o);
+				final ObjectReference oReference = ((ObjectReference) o);
 				final String fieldDeclaringClass = binaryClassName(origin.getFieldClass());
 				final List<Field> fields = oReference.referenceType().allFields();
 				Field fld = null;
@@ -674,7 +623,7 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 		}
 
 		private static Value cloneInitialMap(ThreadReference currentThread, Object o) {
-			final ObjectReference initialMapRef = (com.sun.jdi.ObjectReference) o;
+			final ObjectReference initialMapRef = (ObjectReference) o;
 			try {
 				return initialMapRef.invokeMethod(currentThread, initialMapRef.referenceType().methodsByName("clone").get(0), Collections.emptyList(), ObjectReference.INVOKE_SINGLE_THREADED);
 			} catch (InvalidTypeException | ClassNotLoadedException | IncompatibleThreadStateException | InvocationException e) {

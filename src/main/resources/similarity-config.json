@@ -1,0 +1,7 @@
+{
+  "invokes": [
+    "/home/pellegrini/git/CNR/hyperion/src/test/resources/sose/inspection-invokes.pl"
+  ],
+  "regex": "/home/pellegrini/git/CNR/hyperion/src/test/resources/sose/URI-regex-list.pl",
+  "metric": "nonemptyIntersection"
+}

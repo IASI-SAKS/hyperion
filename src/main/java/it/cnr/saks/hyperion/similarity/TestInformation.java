@@ -1,4 +1,4 @@
-package it.cnr.saks.hyperion.facts;
+package it.cnr.saks.hyperion.similarity;
 
 import java.util.ArrayList;
 

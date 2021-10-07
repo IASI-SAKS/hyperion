@@ -1,0 +1,19 @@
+{
+  "sut": ["../full-teaching/target/classes/"],
+  "testPrograms": ["../full-teaching/target/test-classes/"],
+  "includeTest": [
+    "symbolicStringWithPrefix"
+  ],
+  "excludeTest": [
+
+  ],
+  "additionalClasspath": [
+    "/home/pellegrini/.m2/repository/junit/junit/4.12/junit-4.12.jar"
+  ],
+  "excludeTracedPackages": [
+    "it/cnr/saks/hyperion",
+    "java/",
+    "sun/",
+    "com/google/gson"
+  ]
+}

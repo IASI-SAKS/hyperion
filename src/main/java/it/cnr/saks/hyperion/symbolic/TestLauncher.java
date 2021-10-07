@@ -1,14 +1,8 @@
 package it.cnr.saks.hyperion.symbolic;
 
-import org.junit.Test;
-import org.junit.internal.TextListener;
 import org.junit.runner.JUnitCore;
 import org.junit.runner.Request;
 import org.junit.runner.Result;
-
-import java.io.ByteArrayOutputStream;
-import java.io.PrintStream;
-import java.nio.charset.StandardCharsets;
 
 /* invoked as:
  * java -classpath "..." it.cnr.saks.hyperion.symbolic.HyperionTestLauncher testProgramClass testProgramName
