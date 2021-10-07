@@ -16,6 +16,7 @@ public class SimilarityConfiguration {
     private List<String> invokes;
     private String regex;
     private String outputFile;
+    private String metric;
 
     private SimilarityConfiguration() {}
 
@@ -56,5 +57,13 @@ public class SimilarityConfiguration {
 
     public void setOutputFile(String outputFile) {
         this.outputFile = outputFile;
+    }
+
+    public String getMetric() {
+        return metric;
+    }
+
+    public void setMetric(String metric) {
+        this.metric = metric;
     }
 }

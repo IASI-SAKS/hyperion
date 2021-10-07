@@ -34,9 +34,9 @@ public class SimilarityAnalysis {
         }
     }
 
-    public void computeSimilarity() {
+    public void computeSimilarity(String metric) {
         log.info("Running similarity analysis...");
         String[] variables = {"TP1", "TP2", "Score"};
-        this.similarity = PrologQuery.query("compute_similarity_from_java", variables, "invokes", "trace", "nonemptyIntersection");
+        this.similarity = PrologQuery.query("compute_similarity_from_java", variables, "invokes", "trace", metric);
     }
 }
