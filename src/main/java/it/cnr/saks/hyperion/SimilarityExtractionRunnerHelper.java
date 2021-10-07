@@ -11,8 +11,8 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
 
-public class SimilarityExtractionRunner {
-    private static final Logger log = LoggerFactory.getLogger(SimilarityExtractionRunner.class);
+public class SimilarityExtractionRunnerHelper {
+    private static final Logger log = LoggerFactory.getLogger(SimilarityExtractionRunnerHelper.class);
 
     public static int runSimilarityExtraction(File configJsonFile) throws FileNotFoundException {
 
@@ -42,6 +42,8 @@ public class SimilarityExtractionRunner {
         } else {
             out = new PrintStream(configurationSimilarity.getOutputFile());
         }
+
+        out.println("WIP");
 
         return 0;
     }

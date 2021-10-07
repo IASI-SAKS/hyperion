@@ -129,13 +129,6 @@ public final class Analyzer {
         }
 
         @Override
-        public void atEnd() {
-            if(Analyzer.this.trackingEnabled) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
-            }
-        }
-
-        @Override
         public boolean atStepPre() {
             if(Analyzer.this.trackingEnabled) {
                 try {

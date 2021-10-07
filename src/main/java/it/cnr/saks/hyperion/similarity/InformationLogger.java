@@ -16,7 +16,6 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.*;
 
-import static jbse.algo.Util.valueString;
 import static jbse.bc.Signatures.*;
 import static jbse.common.Type.splitParametersDescriptors;
 
@@ -330,9 +329,7 @@ public class InformationLogger {
         }
         final StringBuilder second = new StringBuilder();
         final boolean someSecondOp = formatValueForPathCondition(secondOp, second, done);
-        if (!someFirstOp || !someSecondOp) {
-            //does nothing
-        } else {
+        if (someFirstOp && someSecondOp) {
             sb.append(", ");
         }
         sb.append(second);

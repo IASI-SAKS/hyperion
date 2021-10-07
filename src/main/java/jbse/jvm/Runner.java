@@ -278,7 +278,7 @@ public class Runner {
          * @param e the {@link FailureException} thrown by the {@link Engine}.
          * @return {@code true} iff the {@link Runner} must stop
          *         {@link Runner#run run}ning.
-         * @throws FailureException.
+         * @throws FailureException
          */
         public boolean atFailureException(FailureException e) 
         throws FailureException { return false; }

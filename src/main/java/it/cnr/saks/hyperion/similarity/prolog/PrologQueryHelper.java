@@ -9,8 +9,8 @@ import org.slf4j.LoggerFactory;
 import java.util.Arrays;
 import java.util.Map;
 
-public class PrologQuery {
-    private static final Logger log = LoggerFactory.getLogger(PrologQuery.class);
+public class PrologQueryHelper {
+    private static final Logger log = LoggerFactory.getLogger(PrologQueryHelper.class);
 
     public static void init() throws AnalyzerException {
         if (System.getenv("SWI_HOME_DIR") != null ||

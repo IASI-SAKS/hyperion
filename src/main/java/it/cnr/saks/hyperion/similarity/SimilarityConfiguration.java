@@ -1,7 +1,6 @@
 package it.cnr.saks.hyperion.similarity;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.cnr.saks.hyperion.discovery.DiscoveryConfiguration;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

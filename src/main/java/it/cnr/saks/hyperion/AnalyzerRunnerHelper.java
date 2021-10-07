@@ -18,10 +18,10 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.TimeZone;
 
-public class AnalyzerRunner {
+public class AnalyzerRunnerHelper {
     private static MethodEnumerator methodEnumerator;
     private static DiscoveryConfiguration discoveryConfiguration;
-    private static final Logger log = LoggerFactory.getLogger(AnalyzerRunner.class);
+    private static final Logger log = LoggerFactory.getLogger(AnalyzerRunnerHelper.class);
 
     public static int runAnalyzer(File configJsonFile) {
         try {

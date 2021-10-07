@@ -40,7 +40,7 @@ public class DiscoveryConfiguration {
             throw new AnalyzerException("Error parsing JSON configuration file " + jsonFile.getPath() + ": " + e.getMessage());
         }
 
-        discoveryConfiguration.initializeClasspath();;
+        discoveryConfiguration.initializeClasspath();
 
         return discoveryConfiguration;
     }

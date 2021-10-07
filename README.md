@@ -14,9 +14,9 @@ generate prolog facts, and carry out multiple analyses on these facts.
 
 There are several dependencies to hyperion:
 
-* JBSE (currently bundled in the project)
-* `z3`
-* SWI Prolog
+*   JBSE (currently bundled in the project)
+*   `z3`
+*   SWI Prolog
 
 `z3` is an external dependency, which should be available in the system path for the tool to correctly run. Similarly,
 SWI Prolog must be manually installed in the system.
@@ -27,23 +27,26 @@ To interact with SWI Prolog, hyperion uses JPL. While java bindings are resolved
 let JPL know how to interact with SWI Prolog. To this end, some environmental variables should be set. Depending on your
 OS, this configuration requires some care. You can refer the official deployment pages, depending on your OS:
 
-* [Linux](https://jpl7.org/DeploymentLinux)
-* [Windows](https://jpl7.org/DeploymentWindows)
-* [Mac OS](https://jpl7.org/DeploymentMacos)
-
+*   [Linux](https://jpl7.org/DeploymentLinux)
+*   [Windows](https://jpl7.org/DeploymentWindows)
+*   [Mac OS](https://jpl7.org/DeploymentMacos)
 
 ## Running
 
 The source is organized as a maven project, so running `mvn build` should be enough to get everything up and running.
 
-Hyperion can be then run as:
+Hyperion can be then run specifying different command line options, as follows.
+
+### Running Symbolic Analysis
+
+To run the symbolic analysis, the command is:
 
 ```bash
-java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar it.cnr.saks.hyperion.Hyperion <path to JSON config file>
+java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar --analyze <path to JSON config file>
 ```
 
-A sample JSON config file todrive the analysis of sets of test programs is located at
-src/main/resources/analyze-config.json` in this repository. The structure of this JSON
+A sample JSON config file to drive the analysis of sets of test programs is located at
+`src/main/resources/analyze-config.json` in this repository. The structure of this JSON
 configuration file is:
 
 ```json
@@ -93,6 +96,35 @@ configuration file is:
 
 If `outputFile` is not set, the output file is defaulted to `inspection-YYYY-MM-DDTHH:SSZ.pl`, allowing different runs
 to store the generated invokes in a different file.
+
+### Computing Similarity Relations
+
+To compute similarity relations, the command is:
+
+```bash
+java -cp target/hyperion-shaded-1.0-SNAPSHOT.jar --extract-similarity <path to JSON config file>
+```
+
+A sample JSON config file to drive the analysis of sets of test programs is located at
+`src/main/resources/similarity-config.json` in this repository. The structure of this JSON
+configuration file is:
+
+```json
+{
+  "invokes": [
+    "path", "to", "list", "of", "invoke", "files", "generated", "from", "analyze", "phase"
+  ],
+  "regex": "path to prolog rules defining regular expressions to match endpoints",
+  "metric": "the name of the similarity metric to run",
+  "outputFile": "file to dump the test similarity groups"
+}
+```
+
+An example of a `regex` file can be found in the repository at `src/main/resources/sose/URI-regex-list.pl`.
+
+The metrics to specify are the ones discussed in the next section about Prolog.
+
+If `outputFile` is not set, the output is directed to `stdout`,
 
 ## Playing with Prolog
 
@@ -161,9 +193,9 @@ To get a pair of similar test programs `TP1` and `TP2`:
 similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2).
 ```
 where:
-* EpSrc specifies the source of the `endpoint` facts,
-* SimCr specifies the criterion to evaluate similarity between `TP1` and `TP2` (it can be substituted for any of these values: `nonemptyEqSet`, `nonemptySubSet`, `nonemptyIntersection`),
-* Es1 and Es2 are nonempty lists of `endpoint` facts generated from the `invokes` facts of `TP1` and `TP2`, respectively, that make the test programs similar.
+*   EpSrc specifies the source of the `endpoint` facts,
+*   SimCr specifies the criterion to evaluate similarity between `TP1` and `TP2` (it can be substituted for any of these values: `nonemptyEqSet`, `nonemptySubSet`, `nonemptyIntersection`),
+*   Es1 and Es2 are nonempty lists of `endpoint` facts generated from the `invokes` facts of `TP1` and `TP2`, respectively, that make the test programs similar.
 
 To get the similarity score between two list of `endpoint` facts:
 
@@ -173,22 +205,22 @@ similarity_score(SimCr,Es1,Es2,Score).
 
 ### Evaluating similarity of test programs: a step-by-step guide
 
-* Step 1. Load `testing_similarity_relations.pl`:
+*   Step 1. Load `testing_similarity_relations.pl`:
 
 ```prolog
 consult('src/main/prolog/testing_similarity_relations.pl').
 ```
 
-* Step 2. Load `rest _api_regex` facts representing regular expressions used to match API URIs (4th component of `endpoint` facts) in evaluating the similarity of `endpoint` facts:
+*   Step 2. Load `rest _api_regex` facts representing regular expressions used to match API URIs (4th component of `endpoint` facts) in evaluating the similarity of `endpoint` facts:
 
 ```prolog
 consult('src/test/resources/report/URI-regex-list.pl').
 ```
 
-* Step 3. Run the following query to:
-  - generate the `endpoint` facts from the execution traces (by using `generate_and_assert_endpoints(EpSrc)`),
-  - evaluate similarity between test programs using the `nonemptyIntersection` criterion (by using `similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2)`), and
-  - compute the similarity score (by using `similarity_score(SimCr,Es1,Es2,Score)`).
+*   Step 3. Run the following query to:
+    *   generate the `endpoint` facts from the execution traces (by using `generate_and_assert_endpoints(EpSrc)`),
+    *   evaluate similarity between test programs using the `nonemptyIntersection` criterion (by using `similar_tp(EpSrc,SimCr,TP1,TP2,Es1,Es2)`), and
+    *   compute the similarity score (by using `similarity_score(SimCr,Es1,Es2,Score)`).
 
 ```prolog
 similarity_from_invokes_file('src/test/resources/report/inspection-invokes.pl',trace,nonemptyIntersection).
@@ -196,8 +228,8 @@ similarity_from_invokes_file('src/test/resources/report/inspection-invokes.pl',t
 
 where `inspection-invokes.pl` is the dataset of `invokes` facts used to generate the `endpoint` facts. The above query generates two files:
 
-- [similarEndpoints-trace-report.csv](src/test/resources/report/similarEndpoints-trace-report.csv), including the pairs of
-  similar programs (3rd and 4th column) together with the corresponding score (5th column);
+*   [similarEndpoints-trace-report.csv](src/test/resources/sose/similarEndpoints-trace-report.csv), including the pairs of
+    similar programs (3rd and 4th column) together with the corresponding score (5th column);
 
-- [similarEndpoints-trace-report.txt](src/test/resources/report/similarEndpoints-trace-report.txt), including the pairs of
-  similar programs together with the lists of `endpoint` facts `Es1` and `Es2` of `TP1` and `TP2`, respectively, that makes the two test programs similar.
+*   [similarEndpoints-trace-report.txt](src/test/resources/sose/similarEndpoints-trace-report.txt), including the pairs of
+    similar programs together with the lists of `endpoint` facts `Es1` and `Es2` of `TP1` and `TP2`, respectively, that makes the two test programs similar.
