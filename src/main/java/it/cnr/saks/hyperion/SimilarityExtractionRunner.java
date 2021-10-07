@@ -28,7 +28,7 @@ public class SimilarityExtractionRunner {
         try {
             // Perform the similarity analysis
             SimilarityAnalysis analysis = new SimilarityAnalysis();
-            analysis.generateEndpoints(configurationSimilarity.getRegex(), configurationSimilarity.getInvokes());
+            analysis.loadPrologDataset(configurationSimilarity.getRegex(), configurationSimilarity.getInvokes());
             analysis.computeSimilarity();
 
         } catch (AnalyzerException e) {

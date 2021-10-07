@@ -69,4 +69,18 @@ public class PrologQuery {
         Query q = new Query(function, terms);
         return q.allSolutions();
     }
+
+    public static Map<String,Term> queryWithVariablesOneSolution(String function, String[] variables, String ... arguments) {
+        Term[] terms = new Term[variables.length + arguments.length];
+
+        for(int i = 0; i < variables.length; i++) {
+            terms[i] = new Variable(variables[i]);
+        }
+        for(int i = 0; i < arguments.length; i++) {
+            terms[variables.length + i] = new Atom(arguments[i]);
+        }
+
+        Query q = new Query(function, terms);
+        return q.oneSolution();
+    }
 }

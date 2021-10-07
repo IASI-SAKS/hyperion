@@ -12,6 +12,7 @@ import java.util.Objects;
 
 public class SimilarityAnalysis {
     private static final Logger log = LoggerFactory.getLogger(SimilarityAnalysis.class);
+    private Map<String, Term>[] similarity;
 
     public SimilarityAnalysis() throws AnalyzerException {
         PrologQuery.init();
@@ -22,7 +23,7 @@ public class SimilarityAnalysis {
         PrologQuery.load(prologProgram);
     }
 
-    public void generateEndpoints(String pathToRegexFile, List<String> invokesList) throws AnalyzerException {
+    public void loadPrologDataset(String pathToRegexFile, List<String> invokesList) throws AnalyzerException {
 
         log.info("Loading REGEX file for endpoint generation: " + pathToRegexFile);
         PrologQuery.load(pathToRegexFile);
@@ -35,9 +36,7 @@ public class SimilarityAnalysis {
 
     public void computeSimilarity() {
         log.info("Running similarity analysis...");
-
-        PrologQuery.query("generate_and_assert_elems", "invokes", "trace");
-        String[] variables = {"TP1", "TP2", "Es1", "Es2", "Score"};
-        Map<String, Term>[] similarity = PrologQuery.query("gimme_a_try", variables, "invokes", "trace", "nonemptyEqSet");
+        String[] variables = {"TP1", "TP2", "Score"};
+        this.similarity = PrologQuery.query("compute_similarity_from_java", variables, "invokes", "trace", "nonemptyIntersection");
     }
 }

@@ -313,7 +313,13 @@ write_endpoints :-
 write_endpoints.
 
 
-gimme_a_try(TP1,TP2,Es1,Es2,Score,T,TSrc,SimCr): -
+
+
+
+
+compute_similarity_from_java(TP1,TP2,Score,T,TSrc,SimCr) :-
+  retractall(counter(_)), assert(counter(1)),
+  generate_and_assert_elems(T,TSrc), !,
   similar_tp(T,TSrc,SimCr,TP1,TP2,Es1,Es2),
-  similarity_score(SimCr,Es1,Es2,Score),
-  fail.
+  similarity_score(SimCr,Es1,Es2,Score).
+
