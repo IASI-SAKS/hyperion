@@ -14,8 +14,11 @@ public class Hyperion implements Callable<Integer> {
     @Option(names = { "-a", "--analyze" }, paramLabel = "CONF_FILE", description = "The JSON file to configure the analysis")
     File analyzeJson;
 
-    @Option(names = { "-c", "--extract-similarity" }, paramLabel = "CONF_FILE", description = "The JSON file to configure the similarity extraction")
+    @Option(names = { "-e", "--extract-similarity" }, paramLabel = "CONF_FILE", description = "The JSON file to configure the similarity extraction")
     File similarityExtractionJson;
+
+    @Option(names = { "-g", "--group-similar-tests" }, paramLabel = "CONF_FILE", description = "The JSON file to configure the test grouping activity")
+    File groupingJson;
 
     @Override
     public Integer call() throws Exception {
@@ -26,6 +29,8 @@ public class Hyperion implements Callable<Integer> {
             ret = AnalyzerRunnerHelper.runAnalyzer(this.analyzeJson);
         if(this.similarityExtractionJson != null)
             ret = SimilarityExtractionRunnerHelper.runSimilarityExtraction(this.similarityExtractionJson);
+        if(this.groupingJson != null)
+            ret = GroupingRunnerHelper.runGrouping(this.groupingJson);
 
         return ret;
     }

@@ -1,0 +1,6 @@
+{
+  "similarityFile": "similarTPs",
+  "policy": "policy 1",
+  "threshold": 0.0,
+  "outputFile": "testGroup"
+}

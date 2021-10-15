@@ -57,7 +57,7 @@ public class SimilarityExtractionRunnerHelper {
             out.println(json);
         } catch (JsonProcessingException e) {
             e.printStackTrace();
-            return 42;
+            return 78; // EX_CONFIG
         }
 
         return 0;
