@@ -12,8 +12,16 @@ import java.util.concurrent.ThreadLocalRandom;
 
 public class Grouping {
     private static final Logger log = LoggerFactory.getLogger(Grouping.class);
+    String policy = null;
 
-    private static TestGroup policy1(List<String> allTests, SimilarTests[] similarTests, double threshold) {
+    // Don't use, we need a policy
+    private Grouping() {}
+
+    public Grouping(String policy) {
+        this.policy = policy;
+    }
+
+    private TestGroup policy1(List<String> allTests, SimilarTests[] similarTests, double threshold) {
         TestGroup result = new TestGroup();
 
         // Build the random group according to this policy
@@ -51,7 +59,7 @@ public class Grouping {
         return result;
     }
 
-    public static TestGroup groupTests(String policy, SimilarTests[] similarTests, double threshold) throws GroupingException {
+    public TestGroup groupTests(SimilarTests[] similarTests, double threshold) throws GroupingException {
         List<String> allTests = new ArrayList<>();
 
         // Build the set of all tests that have a similarity
@@ -65,7 +73,7 @@ public class Grouping {
         log.info("Determining test group according to policy \"{}\"...", policy);
 
         // Pick the corresponding policy
-        if (policy.equals("policy 1")) {
+        if (this.policy.equals("policy 1")) {
             return policy1(allTests, similarTests, threshold);
         }
         throw new GroupingException("Unsupported Grouping Policy");

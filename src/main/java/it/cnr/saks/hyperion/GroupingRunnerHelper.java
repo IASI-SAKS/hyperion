@@ -41,7 +41,8 @@ public class GroupingRunnerHelper {
         }
 
         try {
-            group = Grouping.groupTests(groupingConfiguration.getPolicy(), similarTests, groupingConfiguration.getThreshold());
+            Grouping g = new Grouping(groupingConfiguration.getPolicy());
+            group = g.groupTests(similarTests, groupingConfiguration.getThreshold());
         } catch (GroupingException e) {
             log.error("Error while loading configuration: " + e.getMessage());
             return 64; // EX_USAGE
@@ -53,7 +54,7 @@ public class GroupingRunnerHelper {
             out = System.out;
         } else {
             out = new PrintStream(groupingConfiguration.getOutputFile());
-            log.info("Writing similarity data to \"{}\"", groupingConfiguration.getOutputFile());
+            log.info("Writing test group data to \"{}\"", groupingConfiguration.getOutputFile());
         }
 
         ObjectMapper objectMapper = new ObjectMapper();
