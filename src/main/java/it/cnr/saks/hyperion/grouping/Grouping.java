@@ -39,8 +39,8 @@ public class Grouping {
             outerLoop:
             for (String otherTest : result.getTests()) {
                 for (SimilarTests pair : similarTests) {
-                    if (((pair.getTP1().equals(test) && pair.getTP1().equals(otherTest))
-                            || (pair.getTP1().equals(otherTest) && pair.getTP1().equals(test)))
+                    if (((pair.getTP1().equals(test) && pair.getTP2().equals(otherTest))
+                            || (pair.getTP1().equals(otherTest) && pair.getTP2().equals(test)))
                             && pair.getScore() > threshold) {
                         include = false;
                         break outerLoop;
