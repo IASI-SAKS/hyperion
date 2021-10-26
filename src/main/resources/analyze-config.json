@@ -2,7 +2,6 @@
   "sut": ["../full-teaching/target/classes/"],
   "testPrograms": ["../full-teaching/target/test-classes/"],
   "includeTest": [
-    "symbolicStringWithPrefix"
   ],
   "excludeTest": [
 
@@ -15,5 +14,7 @@
     "java/",
     "sun/",
     "com/google/gson"
-  ]
+  ],
+  "depth": 100,
+  "testProgramsList": "allTPs"
 }

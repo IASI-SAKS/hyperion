@@ -7,10 +7,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
 
 public class GroupingConfiguration {
     private static final Logger log = LoggerFactory.getLogger(GroupingConfiguration.class);
+    private List<String> testPrograms;
     private String similarityFile;
+    private String allTestProgramsFile;
     private String policy;
     private double threshold;
     private String outputFile;
@@ -61,5 +64,21 @@ public class GroupingConfiguration {
 
     public void setOutputFile(String outputFile) {
         this.outputFile = outputFile;
+    }
+
+    public List<String> getTestPrograms() {
+        return testPrograms;
+    }
+
+    public void setTestPrograms(List<String> testPrograms) {
+        this.testPrograms = testPrograms;
+    }
+
+    public String getAllTestProgramsFile() {
+        return allTestProgramsFile;
+    }
+
+    public void setAllTestProgramsFile(String allTestProgramsFile) {
+        this.allTestProgramsFile = allTestProgramsFile;
     }
 }

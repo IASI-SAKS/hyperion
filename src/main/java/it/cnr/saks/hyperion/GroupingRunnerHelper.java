@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import it.cnr.saks.hyperion.discovery.MethodDescriptor;
 import it.cnr.saks.hyperion.grouping.Grouping;
 import it.cnr.saks.hyperion.grouping.GroupingConfiguration;
 import it.cnr.saks.hyperion.grouping.GroupingException;
@@ -16,7 +17,9 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintStream;
+import java.util.List;
 
 public class GroupingRunnerHelper {
     private static final Logger log = LoggerFactory.getLogger(GroupingRunnerHelper.class);
@@ -24,6 +27,7 @@ public class GroupingRunnerHelper {
     public static int runGrouping(File configJsonFile) throws FileNotFoundException {
         GroupingConfiguration groupingConfiguration = null;
         SimilarTests[] similarTests = null;
+        MethodDescriptor[] allTests = null;
         TestGroup group = null;
 
         try {
@@ -40,9 +44,17 @@ public class GroupingRunnerHelper {
             return 65; // EX_DATAERR
         }
 
+        ObjectMapper om = new ObjectMapper();
+        try {
+            allTests = om.readValue(new File(groupingConfiguration.getAllTestProgramsFile()), MethodDescriptor[].class);
+        } catch (IOException e) {
+            log.error("Error parsing JSON file " + groupingConfiguration.getAllTestProgramsFile() + ": " + e.getMessage());
+            return 65; // EX_DATAERR
+        }
+
         try {
             Grouping g = new Grouping(groupingConfiguration.getPolicy());
-            group = g.groupTests(similarTests, groupingConfiguration.getThreshold());
+            group = g.groupTests(allTests, similarTests, groupingConfiguration.getThreshold());
         } catch (GroupingException e) {
             log.error("Error while loading configuration: " + e.getMessage());
             return 64; // EX_USAGE

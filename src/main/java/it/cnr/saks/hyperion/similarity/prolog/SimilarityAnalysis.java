@@ -1,6 +1,7 @@
 package it.cnr.saks.hyperion.similarity.prolog;
 
 import it.cnr.saks.hyperion.similarity.SimilarTests;
+import it.cnr.saks.hyperion.similarity.SimilarityException;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.jpl7.Term;
 import org.slf4j.Logger;
@@ -14,7 +15,7 @@ import java.util.Objects;
 public class SimilarityAnalysis {
     private static final Logger log = LoggerFactory.getLogger(SimilarityAnalysis.class);
 
-    public SimilarityAnalysis() throws AnalyzerException {
+    public SimilarityAnalysis() throws SimilarityException {
         PrologQueryHelper.init();
 
         String prologProgram = Objects.requireNonNull(SimilarityAnalysis.class.getResource("/prolog/similarity_relations.pl")).getPath();
@@ -23,7 +24,7 @@ public class SimilarityAnalysis {
         PrologQueryHelper.load(prologProgram);
     }
 
-    public void loadPrologDataset(String pathToRegexFile, List<String> invokesList) throws AnalyzerException {
+    public void loadPrologDataset(String pathToRegexFile, List<String> invokesList) throws SimilarityException {
 
         log.info("Loading REGEX file for endpoint generation: " + pathToRegexFile);
         PrologQueryHelper.load(pathToRegexFile);

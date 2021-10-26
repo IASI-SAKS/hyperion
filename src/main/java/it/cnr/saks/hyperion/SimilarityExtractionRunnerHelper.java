@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import it.cnr.saks.hyperion.similarity.SimilarTests;
 import it.cnr.saks.hyperion.similarity.SimilarityConfiguration;
+import it.cnr.saks.hyperion.similarity.SimilarityException;
 import it.cnr.saks.hyperion.similarity.prolog.SimilarityAnalysis;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.jpl7.Term;
@@ -38,7 +39,7 @@ public class SimilarityExtractionRunnerHelper {
             analysis.loadPrologDataset(configurationSimilarity.getRegex(), configurationSimilarity.getInvokes());
             results = analysis.computeSimilarity(configurationSimilarity.getMetric());
 
-        } catch (AnalyzerException e) {
+        } catch (SimilarityException e) {
             e.printStackTrace();
         }
 

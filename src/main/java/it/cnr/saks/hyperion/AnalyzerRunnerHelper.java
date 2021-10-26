@@ -1,5 +1,7 @@
 package it.cnr.saks.hyperion;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import it.cnr.saks.hyperion.discovery.DiscoveryConfiguration;
 import it.cnr.saks.hyperion.discovery.MethodDescriptor;
 import it.cnr.saks.hyperion.discovery.MethodEnumerator;
@@ -11,7 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintStream;
 import java.net.MalformedURLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
@@ -38,6 +42,21 @@ public class AnalyzerRunnerHelper {
             return 70; // EX_SOFTWARE
         }
 
+        // Save the file with all test programs to analyze
+        if(discoveryConfiguration.getTestProgramsList() != null) {
+            PrintStream out = null;
+            ObjectMapper objectMapper = new ObjectMapper();
+
+            try {
+                out = new PrintStream(discoveryConfiguration.getTestProgramsList());
+                String json = objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(methodEnumerator.getMethods());
+                out.println(json);
+            } catch (JsonProcessingException | FileNotFoundException e) {
+                e.printStackTrace();
+                return 78; // EX_CONFIG
+            }
+        }
+
         String facts;
         if(discoveryConfiguration.getOutputFile() == null) {
             TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -58,7 +77,7 @@ public class AnalyzerRunnerHelper {
         for(MethodDescriptor method: methodEnumerator) {
             analyzed++;
 
-            if(analyzed <= discoveryConfiguration.getSkip())
+            if(discoveryConfiguration.getSkip() != null && analyzed <= discoveryConfiguration.getSkip())
                 continue;
 
             inspector.prepareForNewTestProgram(method.getClassName(), method.getMethodName());

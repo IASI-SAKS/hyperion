@@ -1,6 +1,7 @@
 package it.cnr.saks.hyperion.grouping;
 
 import it.cnr.saks.hyperion.GroupingRunnerHelper;
+import it.cnr.saks.hyperion.discovery.MethodDescriptor;
 import it.cnr.saks.hyperion.similarity.SimilarTests;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,22 +60,19 @@ public class Grouping {
         return result;
     }
 
-    public TestGroup groupTests(SimilarTests[] similarTests, double threshold) throws GroupingException {
-        List<String> allTests = new ArrayList<>();
+    public TestGroup groupTests(MethodDescriptor[] allTests, SimilarTests[] similarTests, double threshold) throws GroupingException {
+        List<String> allTestsList = new ArrayList<>();
 
-        // Build the set of all tests that have a similarity
-        for(SimilarTests tests: similarTests) {
-            if(!allTests.contains(tests.getTP1()))
-                allTests.add(tests.getTP1());
-            if(!allTests.contains(tests.getTP2()))
-                allTests.add(tests.getTP2());
+        // Build the set of all tests in the test suite
+        for(MethodDescriptor md: allTests) {
+            allTestsList.add(md.getClassName() + ":" + md.getMethodName());
         }
 
         log.info("Determining test group according to policy \"{}\"...", policy);
 
         // Pick the corresponding policy
         if (this.policy.equals("policy 1")) {
-            return policy1(allTests, similarTests, threshold);
+            return policy1(allTestsList, similarTests, threshold);
         }
         throw new GroupingException("Unsupported Grouping Policy");
     }

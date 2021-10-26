@@ -20,6 +20,9 @@ public class Hyperion implements Callable<Integer> {
     @Option(names = { "-g", "--group-similar-tests" }, paramLabel = "CONF_FILE", description = "The JSON file to configure the test grouping activity")
     File groupingJson;
 
+    @Option(names = { "-o", "--orchestrate" }, paramLabel = "CONF_FILE", description = "The JSON file to configure the test orchestration activity")
+    File orchestrationJson;
+
     @Override
     public Integer call() throws Exception {
         int ret = 64; // EX_USAGE
@@ -31,6 +34,8 @@ public class Hyperion implements Callable<Integer> {
             ret = SimilarityExtractionRunnerHelper.runSimilarityExtraction(this.similarityExtractionJson);
         if(this.groupingJson != null)
             ret = GroupingRunnerHelper.runGrouping(this.groupingJson);
+        if(this.orchestrationJson != null)
+            ret = OrchestrationRunnerHelper.runOrchestration(this.orchestrationJson);
 
         return ret;
     }

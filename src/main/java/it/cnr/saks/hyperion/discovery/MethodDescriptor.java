@@ -3,31 +3,39 @@ package it.cnr.saks.hyperion.discovery;
 import java.lang.reflect.Method;
 
 public class MethodDescriptor {
-    private final Method method;
-    private final String methodName;
-    private final String methodDescriptor;
-    private final String className;
+    private String methodName = null;
+    private String methodDescriptor = null;
+    private String className = null;
 
-    public MethodDescriptor(Method method, String methodName, String methodDescriptor, String className) {
-        this.method = method;
+    private MethodDescriptor() {}
+
+    public MethodDescriptor(String methodName, String methodDescriptor, String className) {
         this.methodName = methodName;
         this.methodDescriptor = methodDescriptor;
         this.className = className;
     }
 
-    public Method getMethod() {
-        return method;
+    public String getMethodName() {
+        return methodName;
     }
 
-    public String getClassName() {
-        return className;
+    public void setMethodName(String methodName) {
+        this.methodName = methodName;
     }
 
     public String getMethodDescriptor() {
         return methodDescriptor;
     }
 
-    public String getMethodName() {
-        return methodName;
+    public void setMethodDescriptor(String methodDescriptor) {
+        this.methodDescriptor = methodDescriptor;
+    }
+
+    public String getClassName() {
+        return className;
+    }
+
+    public void setClassName(String className) {
+        this.className = className;
     }
 }
