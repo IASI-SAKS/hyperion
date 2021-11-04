@@ -4,5 +4,6 @@
   ],
   "regex": "/home/pellegrini/git/CNR/hyperion/src/test/resources/sose/URI-regex-list.pl",
   "metric": "nonemptyIntersection",
-  "outputFile": "similarTPs.json"
+  "outputFile": "similarTPs-nonemptyIntersection-invokes.json",
+  "domain": "invokes"
 }

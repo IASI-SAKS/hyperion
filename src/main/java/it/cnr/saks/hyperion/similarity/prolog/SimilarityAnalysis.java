@@ -35,10 +35,10 @@ public class SimilarityAnalysis {
         }
     }
 
-    public SimilarTests[] computeSimilarity(String metric) {
+    public SimilarTests[] computeSimilarity(String metric, String domain) {
         log.info("Running similarity analysis...");
         String[] variables = {"TP1", "TP2", "Score"};
-        Map<String, Term>[] queryResults = PrologQueryHelper.query("compute_similarity_from_java", variables, "invokes", "trace", metric);
+        Map<String, Term>[] queryResults = PrologQueryHelper.query("compute_similarity_from_java", variables, domain, "trace", metric);
         System.out.println("");
 
         // Converto to a JSON-able object
