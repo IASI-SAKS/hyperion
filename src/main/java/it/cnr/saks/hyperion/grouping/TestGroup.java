@@ -4,19 +4,32 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class TestGroup {
-    List<String> tests = new ArrayList<>();
+    private List<String> include = new ArrayList<>();
+    private List<String> exclude = new ArrayList<>();
 
     public TestGroup() {}
 
-    public List<String> getTests() {
-        return tests;
+    public List<String> getInclude() {
+        return include;
     }
 
-    public void setTests(List<String> tests) {
-        this.tests = tests;
+    public void setInclude(List<String> include) {
+        this.include = include;
     }
 
-    public void addTest(String test) {
-        this.tests.add(test);
+    public List<String> getExclude() {
+        return exclude;
+    }
+
+    public void setExclude(List<String> exclude) {
+        this.exclude = exclude;
+    }
+
+    public void addIncludedTest(String test) {
+        this.include.add(test);
+    }
+
+    public void addExcludedTest(String test) {
+        this.exclude.add(test);
     }
 }

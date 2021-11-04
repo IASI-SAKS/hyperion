@@ -1,7 +1,7 @@
 {
-  "similarityFile": "similarTPs",
-  "allTestProgramsFile": "allTPs",
+  "similarityFile": "similarTPs.json",
+  "allTestProgramsFile": "allTPs.json",
   "policy": "policy 1",
-  "threshold": 0.99,
-  "outputFile": "testGroup"
+  "threshold": 0.7,
+  "outputFile": "testGroup.json"
 }

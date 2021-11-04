@@ -16,5 +16,5 @@
     "com/google/gson"
   ],
   "depth": 100,
-  "testProgramsList": "allTPs"
+  "testProgramsList": "allTPs.json"
 }

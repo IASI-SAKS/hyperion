@@ -1,13 +1,11 @@
 package it.cnr.saks.hyperion.grouping;
 
-import it.cnr.saks.hyperion.GroupingRunnerHelper;
 import it.cnr.saks.hyperion.discovery.MethodDescriptor;
 import it.cnr.saks.hyperion.similarity.SimilarTests;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ThreadLocalRandom;
 
@@ -38,7 +36,7 @@ public class Grouping {
                greater than threshold specified by the user
             */
             outerLoop:
-            for (String otherTest : result.getTests()) {
+            for (String otherTest : result.getInclude()) {
                 for (SimilarTests pair : similarTests) {
                     if (((pair.getTP1().equals(test) && pair.getTP2().equals(otherTest))
                             || (pair.getTP1().equals(otherTest) && pair.getTP2().equals(test)))
@@ -50,8 +48,10 @@ public class Grouping {
             }
 
             if(include) {
-                result.addTest(test);
+                result.addIncludedTest(test);
                 log.info("Included {} in the test group.", test);
+            } else {
+                result.addExcludedTest(test);
             }
 
             allTests.remove(test);
