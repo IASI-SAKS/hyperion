@@ -26,6 +26,7 @@ public class DiscoveryConfiguration {
     private Integer skip;
     private URL[] classPath;
     private String outputFile;
+    private String testProgramsList;
 
     private DiscoveryConfiguration() {}
 
@@ -41,6 +42,14 @@ public class DiscoveryConfiguration {
         }
 
         discoveryConfiguration.initializeClasspath();
+
+        // Check defaults or needed values
+        if(discoveryConfiguration.getDepth() == null)
+            discoveryConfiguration.setDepth(10);
+        if(discoveryConfiguration.getTimeout() == null)
+            discoveryConfiguration.setTimeout(0);
+        if(discoveryConfiguration.getSkip() == null)
+            discoveryConfiguration.setSkip(0);
 
         return discoveryConfiguration;
     }
@@ -153,6 +162,14 @@ public class DiscoveryConfiguration {
 
     public void setOutputFile(String outputFile) {
         this.outputFile = outputFile;
+    }
+
+    public String getTestProgramsList() {
+        return testProgramsList;
+    }
+
+    public void setTestProgramsList(String testProgramsList) {
+        this.testProgramsList = testProgramsList;
     }
 }
 

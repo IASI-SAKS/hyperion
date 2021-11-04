@@ -60,10 +60,10 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 if(isBefore) {
                     if(!beforeMethods.containsKey(klass.getName())) {
                         ArrayList<MethodDescriptor> beforeMethods = new ArrayList<>();
-                        beforeMethods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
+                        beforeMethods.add(new MethodDescriptor(currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
                         this.beforeMethods.put(klass.getName(), beforeMethods);
                     } else {
-                        beforeMethods.get(klass.getName()).add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
+                        beforeMethods.get(klass.getName()).add(new MethodDescriptor(currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
                     }
                     continue;
                 }
@@ -71,7 +71,7 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 if(!isTest)
                     continue;
 
-                this.methods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
+                this.methods.add(new MethodDescriptor(currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
             }
         }
 
@@ -127,7 +127,7 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
         return ('L'+klass.getName()+';').replace('.', '/');
     }
 
-    private Method[] getAccessibleMethods(Class klass)
+    public static Method[] getAccessibleMethods(Class klass)
     {
         List<Method> result = new ArrayList<>();
         while (klass != null) {
@@ -189,5 +189,9 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
 
     public int getMethodsCount() {
         return this.methods.size();
+    }
+
+    public List<MethodDescriptor> getMethods() {
+        return methods;
     }
 }
