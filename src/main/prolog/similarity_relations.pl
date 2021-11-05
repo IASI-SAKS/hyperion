@@ -501,8 +501,8 @@ similar_elems(EType,nonemptySubSet,[E1],Es2) :-
   matching(EType,E1,E2).
 similar_elems(EType,nonemptySubSet,[E1|Es1],Es2) :-
   member(E2,Es2),
-  !,
   matching(EType,E1,E2),
+  !
   similar_elems(EType,nonemptySubSet,Es1,Es2).
 % similar_elems(EType,nonemptyIntersection,Es1,Es2) holds if
 similar_elems(EType,nonemptyIntersection,Es1,Es2) :-
