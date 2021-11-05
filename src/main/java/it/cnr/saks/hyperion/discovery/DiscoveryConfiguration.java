@@ -1,7 +1,6 @@
 package it.cnr.saks.hyperion.discovery;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import it.cnr.saks.hyperion.Main;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,8 +13,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 
-public class Configuration {
-    private static final Logger log = LoggerFactory.getLogger(Configuration.class);
+public class DiscoveryConfiguration {
+    private static final Logger log = LoggerFactory.getLogger(DiscoveryConfiguration.class);
     private List<String> sut;
     private List<String> testPrograms;
     private List<String> includeTest;
@@ -26,24 +25,33 @@ public class Configuration {
     private Integer timeout;
     private Integer skip;
     private URL[] classPath;
+    private String outputFile;
+    private String testProgramsList;
 
-    private Configuration() {}
+    private DiscoveryConfiguration() {}
 
-    public static Configuration loadConfiguration(String jsonPath) throws AnalyzerException, MalformedURLException {
-        File jsonFile = new File(jsonPath);
-        Configuration configuration;
+    public static DiscoveryConfiguration loadConfiguration(File jsonFile) throws AnalyzerException, MalformedURLException {
+        DiscoveryConfiguration discoveryConfiguration;
 
         log.info("Loading configuration...");
         ObjectMapper om = new ObjectMapper();
         try {
-            configuration = om.readValue(jsonFile, Configuration.class);
+            discoveryConfiguration = om.readValue(jsonFile, DiscoveryConfiguration.class);
         } catch (IOException e) {
-            throw new AnalyzerException("Error parsing JSON configuration file " + jsonPath + ": " + e.getMessage());
+            throw new AnalyzerException("Error parsing JSON configuration file " + jsonFile.getPath() + ": " + e.getMessage());
         }
 
-        configuration.initializeClasspath();;
+        discoveryConfiguration.initializeClasspath();
 
-        return configuration;
+        // Check defaults or needed values
+        if(discoveryConfiguration.getDepth() == null)
+            discoveryConfiguration.setDepth(10);
+        if(discoveryConfiguration.getTimeout() == null)
+            discoveryConfiguration.setTimeout(0);
+        if(discoveryConfiguration.getSkip() == null)
+            discoveryConfiguration.setSkip(0);
+
+        return discoveryConfiguration;
     }
 
     private void initializeClasspath() throws MalformedURLException {
@@ -146,6 +154,22 @@ public class Configuration {
 
     public void setSkip(Integer skip) {
         this.skip = skip;
+    }
+
+    public String getOutputFile() {
+        return outputFile;
+    }
+
+    public void setOutputFile(String outputFile) {
+        this.outputFile = outputFile;
+    }
+
+    public String getTestProgramsList() {
+        return testProgramsList;
+    }
+
+    public void setTestProgramsList(String testProgramsList) {
+        this.testProgramsList = testProgramsList;
     }
 }
 

@@ -1,6 +1,5 @@
 package it.cnr.saks.hyperion.symbolic;
 
-import it.cnr.saks.hyperion.symbolic.Analyzer;
 import jbse.bc.Signature;
 import jbse.dec.DecisionProcedureAlgorithms;
 import jbse.jvm.RunnerParameters;

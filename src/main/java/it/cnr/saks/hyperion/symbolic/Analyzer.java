@@ -1,6 +1,6 @@
 package it.cnr.saks.hyperion.symbolic;
 
-import it.cnr.saks.hyperion.facts.InformationLogger;
+import it.cnr.saks.hyperion.similarity.InformationLogger;
 import jbse.algo.exc.CannotManageStateException;
 import jbse.bc.Signature;
 import jbse.bc.exc.InvalidClassFileFactoryClassException;
@@ -126,13 +126,6 @@ public final class Analyzer {
         public boolean atInitial() {
             Analyzer.this.trackingEnabled = true;
             return super.atInitial();
-        }
-
-        @Override
-        public void atEnd() {
-            if(Analyzer.this.trackingEnabled) {
-                final State currentState = Analyzer.this.engine.getCurrentState();
-            }
         }
 
         @Override

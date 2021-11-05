@@ -22,11 +22,11 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     private static final Logger log = LoggerFactory.getLogger(MethodEnumerator.class);
     private final List<MethodDescriptor> methods = new ArrayList<>();
     private final Hashtable<String, ArrayList<MethodDescriptor>> beforeMethods = new Hashtable<>();
-    Configuration configuration;
+    DiscoveryConfiguration discoveryConfiguration;
 
-    public MethodEnumerator(Configuration configuration) throws IOException, AnalyzerException {
-        this.configuration = configuration;
-        List<Class> classes = this.enumerateClasses(configuration.getTestPrograms());
+    public MethodEnumerator(DiscoveryConfiguration discoveryConfiguration) throws IOException, AnalyzerException {
+        this.discoveryConfiguration = discoveryConfiguration;
+        List<Class> classes = this.enumerateClasses(discoveryConfiguration.getTestPrograms());
 
         for (Class klass: classes) {
             if(Modifier.isAbstract(klass.getModifiers())) {
@@ -60,10 +60,10 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 if(isBefore) {
                     if(!beforeMethods.containsKey(klass.getName())) {
                         ArrayList<MethodDescriptor> beforeMethods = new ArrayList<>();
-                        beforeMethods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
+                        beforeMethods.add(new MethodDescriptor(currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
                         this.beforeMethods.put(klass.getName(), beforeMethods);
                     } else {
-                        beforeMethods.get(klass.getName()).add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
+                        beforeMethods.get(klass.getName()).add(new MethodDescriptor(currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
                     }
                     continue;
                 }
@@ -71,14 +71,14 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
                 if(!isTest)
                     continue;
 
-                this.methods.add(new MethodDescriptor(currentMethod, currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
+                this.methods.add(new MethodDescriptor(currentMethod.getName(), this.getMethodDescriptor(currentMethod), klass.getName()));
             }
         }
 
         // Refine the list of methods to analyze
-        this.methods.removeIf(method -> configuration.getExcludeTest().contains(method.getMethodName()));
-        if(configuration.getIncludeTest().size() > 0)
-            this.methods.removeIf(method -> !configuration.getIncludeTest().contains(method.getMethodName()));
+        this.methods.removeIf(method -> discoveryConfiguration.getExcludeTest().contains(method.getMethodName()));
+        if(discoveryConfiguration.getIncludeTest().size() > 0)
+            this.methods.removeIf(method -> !discoveryConfiguration.getIncludeTest().contains(method.getMethodName()));
     }
 
     @Override
@@ -127,7 +127,7 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
         return ('L'+klass.getName()+';').replace('.', '/');
     }
 
-    private Method[] getAccessibleMethods(Class klass)
+    public static Method[] getAccessibleMethods(Class klass)
     {
         List<Method> result = new ArrayList<>();
         while (klass != null) {
@@ -156,7 +156,7 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
 
             for (String classFile : paths) {
                 try {
-                    classes.add(loadClass(classFile, classPath, this.configuration.getClassPath()));
+                    classes.add(loadClass(classFile, classPath, this.discoveryConfiguration.getClassPath()));
                 } catch (AnalyzerException ignored) {}
             }
         }
@@ -189,5 +189,9 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
 
     public int getMethodsCount() {
         return this.methods.size();
+    }
+
+    public List<MethodDescriptor> getMethods() {
+        return methods;
     }
 }

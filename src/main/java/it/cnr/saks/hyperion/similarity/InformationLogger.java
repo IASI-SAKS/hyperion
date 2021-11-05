@@ -1,6 +1,6 @@
-package it.cnr.saks.hyperion.facts;
+package it.cnr.saks.hyperion.similarity;
 
-import it.cnr.saks.hyperion.discovery.Configuration;
+import it.cnr.saks.hyperion.discovery.DiscoveryConfiguration;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import jbse.bc.ClassFile;
 import jbse.bc.Signature;
@@ -16,7 +16,6 @@ import java.io.FileNotFoundException;
 import java.io.PrintStream;
 import java.util.*;
 
-import static jbse.algo.Util.valueString;
 import static jbse.bc.Signatures.*;
 import static jbse.common.Type.splitParametersDescriptors;
 
@@ -27,9 +26,9 @@ public class InformationLogger {
     private final List<String> excludePackages;
     private TestInformation testInformation;
 
-    public InformationLogger(Configuration configuration) {
+    public InformationLogger(DiscoveryConfiguration discoveryConfiguration) {
         this.callerFrame.push(this.invocationEpoch++);
-        this.excludePackages = configuration.getExcludeTracedPackages();
+        this.excludePackages = discoveryConfiguration.getExcludeTracedPackages();
     }
 
     public void onThrow(State currentState) throws AnalyzerException {
@@ -50,7 +49,8 @@ public class InformationLogger {
     }
 
     public void onMethodReturn() {
-        this.callerFrame.pop();
+        if(!this.callerFrame.empty())
+            this.callerFrame.pop();
     }
 
     public void onMethodCall(State s) throws AnalyzerException {
@@ -329,9 +329,7 @@ public class InformationLogger {
         }
         final StringBuilder second = new StringBuilder();
         final boolean someSecondOp = formatValueForPathCondition(secondOp, second, done);
-        if (!someFirstOp || !someSecondOp) {
-            //does nothing
-        } else {
+        if (someFirstOp && someSecondOp) {
             sb.append(", ");
         }
         sb.append(second);

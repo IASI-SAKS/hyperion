@@ -81,6 +81,11 @@
             <artifactId>packages-jpl</artifactId>
             <version>V8.3.2</version>	<!-- version 7.6.1 of JPL -->
         </dependency>
+        <dependency>
+          <groupId>info.picocli</groupId>
+          <artifactId>picocli</artifactId>
+          <version>4.6.1</version>
+        </dependency>
 
         <!-- hic sunt leones -->
         <dependency>

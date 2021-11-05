@@ -1,27 +1,12 @@
 package it.cnr.saks.hyperion.symbolic;
 
-import static jbse.algo.UtilClassInitialization.ensureClassInitialized;
-import static jbse.bc.ClassLoaders.CLASSLOADER_APP;
-
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.SortedSet;
-
 import jbse.algo.ExecutionContext;
 import jbse.algo.InterruptException;
 import jbse.apps.run.ImpureMethodException;
 import jbse.bc.ClassFile;
 import jbse.bc.ClassHierarchy;
 import jbse.bc.Signature;
-import jbse.bc.exc.BadClassFileVersionException;
-import jbse.bc.exc.ClassFileIllFormedException;
-import jbse.bc.exc.ClassFileNotAccessibleException;
-import jbse.bc.exc.ClassFileNotFoundException;
-import jbse.bc.exc.IncompatibleClassFileException;
-import jbse.bc.exc.PleaseLoadClassException;
-import jbse.bc.exc.RenameUnsupportedException;
-import jbse.bc.exc.WrongClassNameException;
+import jbse.bc.exc.*;
 import jbse.common.exc.ClasspathException;
 import jbse.common.exc.InvalidInputException;
 import jbse.common.exc.UnexpectedInternalException;
@@ -31,27 +16,24 @@ import jbse.dec.exc.DecisionException;
 import jbse.mem.Clause;
 import jbse.mem.ClauseAssumeExpands;
 import jbse.mem.State;
-import jbse.mem.SwitchTable;
 import jbse.mem.State.Phase;
+import jbse.mem.SwitchTable;
 import jbse.mem.exc.ContradictionException;
 import jbse.mem.exc.FrozenStateException;
 import jbse.mem.exc.HeapMemoryExhaustedException;
 import jbse.mem.exc.ThreadStackEmptyException;
-import jbse.tree.DecisionAlternative_XALOAD;
-import jbse.tree.DecisionAlternative_XALOAD_Unresolved;
-import jbse.tree.DecisionAlternative_XASTORE;
-import jbse.tree.DecisionAlternative_XCMPY;
-import jbse.tree.DecisionAlternative_IFX;
-import jbse.tree.DecisionAlternative_XLOAD_GETX;
-import jbse.tree.DecisionAlternative_XYLOAD_GETX_Unresolved;
-import jbse.tree.DecisionAlternative_XYLOAD_GETX_Aliases;
-import jbse.tree.DecisionAlternative_XYLOAD_GETX_Expands;
-import jbse.tree.DecisionAlternative_XYLOAD_GETX_Null;
-import jbse.tree.DecisionAlternative_XNEWARRAY;
-import jbse.tree.DecisionAlternative_XSWITCH;
+import jbse.tree.*;
 import jbse.val.*;
 import jbse.val.exc.InvalidOperandException;
 import jbse.val.exc.InvalidTypeException;
+
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.SortedSet;
+
+import static jbse.algo.UtilClassInitialization.ensureClassInitialized;
+import static jbse.bc.ClassLoaders.CLASSLOADER_APP;
 
 /**
  * {@link DecisionProcedureAlgorithms} for guided symbolic execution.
@@ -101,14 +83,12 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
     public final void pushAssumption(Clause c)
             throws InvalidInputException, DecisionException, ContradictionException {
         super.pushAssumption(c);
-        if (this.guiding) {
-            if (c instanceof ClauseAssumeExpands) {
-                final ClauseAssumeExpands cExp = (ClauseAssumeExpands) c;
-                try {
-                    markAsSeen(cExp.getReference());
-                } catch (ImpureMethodException e) {
-                    throw new ContradictionException("Expansion clause for symbolic reference " + cExp.getReference().asOriginString() + " violates the assumption that the reference is a pure function application");
-                }
+        if (this.guiding && c instanceof ClauseAssumeExpands) {
+            final ClauseAssumeExpands cExp = (ClauseAssumeExpands) c;
+            try {
+                markAsSeen(cExp.getReference());
+            } catch (ImpureMethodException e) {
+                throw new ContradictionException("Expansion clause for symbolic reference " + cExp.getReference().asOriginString() + " violates the assumption that the reference is a pure function application");
             }
         }
     }
@@ -685,6 +665,7 @@ public abstract class DecisionProcedureGuidance extends DecisionProcedureAlgorit
         protected abstract int getCurrentProgramCounter() throws ThreadStackEmptyException;
 
         protected void close() {
+            // empty
         }
     }
 
