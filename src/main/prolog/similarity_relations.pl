@@ -242,6 +242,16 @@ invokes_component(I,callee,Callee) :-
 invokes_component(I,parameters,Parameters) :-
   I = invokes(_,_,_,_,_,_,_,_,Parameters).
 
+% utility predicates to get the components of endpoint
+endpoint_component(E,testProgram,TestProgram) :-
+  E = endpoint(TestProgram,_,_,_).
+endpoint_component(E,caller,Caller) :-
+  E = endpoint(_,Caller,_,_).
+endpoint_component(E,httpMethod,HTTPMethod) :-
+  E = endpoint(_,_,HTTPMethod,_).
+endpoint_component(E,uri,URI) :-
+  E = endpoint(_,_,_,URI).
+
 % MODE: replace(+CharsIn,+X,+Y,-CharsOut)
 % SEMANTICS: CharsOut is obtained from CharsIn by replacing
 % all occurrences of X by Y
@@ -502,7 +512,7 @@ similar_elems(EType,nonemptySubSet,[E1],Es2) :-
 similar_elems(EType,nonemptySubSet,[E1|Es1],Es2) :-
   member(E2,Es2),
   matching(EType,E1,E2),
-  !
+  !,
   similar_elems(EType,nonemptySubSet,Es1,Es2).
 % similar_elems(EType,nonemptyIntersection,Es1,Es2) holds if
 similar_elems(EType,nonemptyIntersection,Es1,Es2) :-
@@ -561,6 +571,28 @@ matching_URIs(URI1,URI2) :-
 matching_URIs(URI1,URI2) :-
   URI1==URI2.
 
+% MODE: select_common_set(+L,-S)
+% SEMANTICS: if L is a list of invokes/9 facts,
+% S is the set of callees occurring in L
+setOf([I|Is],S) :-
+  functor(I,invokes,9),
+  !,
+  invokes_callees([I|Is],L),
+  sort(L,S).% remove duplicates
+% S is the set of pairs (HTTPMethod,URI)
+setOf([E|Es],S) :-
+  functor(E,endpoint,4),
+  !,
+  setOf_aux([E|Es],L),
+  sort(L,S).
+setOf_aux([],[]).
+setOf_aux([E|Es],[(HTTPMethod,REX)|L]) :-
+  endpoint_component(E,httpMethod,HTTPMethod),
+  endpoint_component(E,uri,URI),
+  atom_string(URI,URIStr),
+  ( ( rest_api_regex(REX), re_match(REX,URIStr) ) ; REX=URI ),
+  setOf_aux(Es,L).
+
 % MODE: select_common_set(+L1,+L2,-C)
 % SEMANTICS: C is a set of elements occurring in L1 and L2.
 select_common_set([],_,[]).
@@ -587,15 +619,14 @@ select_common_seq([_|L1],L2,C) :-
 similarity_score(nonemptyEqSet,_Es1,_Es2,1).
 % |ES1|/|ES2|, if SimCris=nonemptySubSet
 similarity_score(nonemptySubSet,Es1,Es2,Score) :-
-  sort(Es1,S1), length(S1,N1),
-  sort(Es2,S2), length(S2,N2),
+  setOf(Es1,S1), length(S1,N1),
+  setOf(Es2,S2), length(S2,N2),
   Score is N1/N2.
 % |nonemptyIntersection(ES1,ES2)| / min(|ES1|,|ES2|), if SimCris=nonemptyIntersection
 similarity_score(nonemptyIntersection,Es1,Es2,Score) :-
-  sort(Es1,S1), length(S1,N1),
-  sort(Es2,S2), length(S2,N2),
-  % sets are computed in decreasing cardinality order
-  select_common_set(S1,S2,I), !,
+  setOf(Es1,S1), length(S1,N1),
+  setOf(Es2,S2), length(S2,N2),
+  intersection(S1,S2,I), !,
   length(I,N),
   M is min(N1,N2),
   Score is N/M.
