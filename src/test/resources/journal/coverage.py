@@ -59,7 +59,7 @@ def run_symbolic():
         process.wait()
     
 # Generate similarity data
-def generate_simpilarity():
+def generate_similarity():
      print("****** COMPUTING SIMILARITY *******")
      for metric in metrics:
          for domain in domains:
@@ -129,8 +129,8 @@ def get_coverage():
                    process.wait()
 
 prepare_folders()
-run_symbolic()
-#generate_similarity()
+#run_symbolic()
+generate_similarity()
 #test_groups()
 #get_coverage()
 

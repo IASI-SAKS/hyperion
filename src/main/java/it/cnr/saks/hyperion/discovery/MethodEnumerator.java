@@ -165,13 +165,15 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     }
 
     private Class loadClass(String classFile, String path, URL[] urls) throws AnalyzerException {
-        String classPkg = classFile.substring(0, classFile.lastIndexOf('.')).replace(path, "").replace(File.separator, ".");
+	String classFilePkg = classFile.replace(path, "");
+        String classPkg = classFile.substring(0, classFilePkg.lastIndexOf('.')).replace(path, "").replace(File.separator, ".");
 
         ClassLoader cl;
         Class<?> dynamicClass;
 
         try {
             cl = new URLClassLoader(urls);
+	    log.info("Trying to load class {}", classPkg);
             dynamicClass = cl.loadClass(classPkg);
 
             try {
