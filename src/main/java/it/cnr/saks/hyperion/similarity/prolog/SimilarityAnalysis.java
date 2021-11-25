@@ -2,11 +2,14 @@ package it.cnr.saks.hyperion.similarity.prolog;
 
 import it.cnr.saks.hyperion.similarity.SimilarTests;
 import it.cnr.saks.hyperion.similarity.SimilarityException;
-import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.jpl7.Term;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.*;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -15,13 +18,45 @@ import java.util.Objects;
 public class SimilarityAnalysis {
     private static final Logger log = LoggerFactory.getLogger(SimilarityAnalysis.class);
 
+    private String readAll(BufferedReader br) {
+        StringBuilder buffer = new StringBuilder();
+        while (true) {
+            String line;
+            try {
+                line = br.readLine();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            if (line == null) {
+                break;
+            } else {
+                buffer.append(line);
+                buffer.append("\n");
+            }
+        }
+        return buffer.toString();
+    }
+
+    private String toTempFile(BufferedReader br) throws SimilarityException {
+        try {
+            String content = readAll(br);
+            File temp = Files.createTempFile("", ".hyperion").toFile();
+            FileWriter fw = new FileWriter(temp);
+            fw.write(content);
+            fw.close();
+            return temp.getPath();
+        } catch (IOException e) {
+            throw new SimilarityException(e.getMessage());
+        }
+    }
+
     public SimilarityAnalysis() throws SimilarityException {
         PrologQueryHelper.init();
 
-        String prologProgram = Objects.requireNonNull(SimilarityAnalysis.class.getResource("/prolog/similarity_relations.pl")).getPath();
-        PrologQueryHelper.load(prologProgram);
-        prologProgram = Objects.requireNonNull(SimilarityAnalysis.class.getResource("/prolog/testing_similarity_relations.pl")).getPath();
-        PrologQueryHelper.load(prologProgram);
+        BufferedReader prologProgramReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(SimilarityAnalysis.class.getResourceAsStream("/prolog/similarity_relations.pl"))));
+        PrologQueryHelper.load(toTempFile(prologProgramReader));
+        prologProgramReader = new BufferedReader(new InputStreamReader(Objects.requireNonNull(SimilarityAnalysis.class.getResourceAsStream("/prolog/testing_similarity_relations.pl"))));
+        PrologQueryHelper.load(toTempFile(prologProgramReader));
     }
 
     public void loadPrologDataset(String pathToRegexFile, List<String> invokesList) throws SimilarityException {

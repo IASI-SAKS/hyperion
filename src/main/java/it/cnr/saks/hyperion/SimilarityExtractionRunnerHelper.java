@@ -13,14 +13,17 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.Map;
 
 public class SimilarityExtractionRunnerHelper {
     private static final Logger log = LoggerFactory.getLogger(SimilarityExtractionRunnerHelper.class);
 
-    public static int runSimilarityExtraction(File configJsonFile) throws FileNotFoundException {
+    public static int runSimilarityExtraction(File configJsonFile) throws IOException, SimilarityException {
 
         // Load the configuration
         SimilarityConfiguration configurationSimilarity = null;

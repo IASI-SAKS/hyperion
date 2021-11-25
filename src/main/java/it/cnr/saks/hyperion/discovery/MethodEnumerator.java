@@ -177,10 +177,12 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
             try {
                 Class.forName(dynamicClass.getName(), true, dynamicClass.getClassLoader());
             } catch (ClassNotFoundException e) {
+		    log.info("assertion error");
                 throw new AssertionError(e);  // Can't happen
             }
 
         } catch (ClassNotFoundException e) {
+	    log.info("Class {} not found in path {}", classFile, path);
             throw new AnalyzerException("Unable to find class " + e.getMessage());
         }
 
