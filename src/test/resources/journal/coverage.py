@@ -136,7 +136,7 @@ def get_coverage():
 
 prepare_folders()
 run_symbolic()
-generate_similarity()
-test_groups()
-get_coverage()
+#generate_similarity()
+#test_groups()
+#get_coverage()
 
