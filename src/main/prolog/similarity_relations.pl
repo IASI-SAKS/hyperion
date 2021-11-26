@@ -507,12 +507,9 @@ similar_elems(EType,nonemptyEqSet,Es1,Es2) :-
 % similar_elems(EType,nonemptySubSet,Es1,Es2) holds if
 % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
 similar_elems(EType,nonemptySubSet,[E1],Es2) :-
-  member(E2,Es2),
-  matching(EType,E1,E2).
+  exists_matching(EType,E1,Es2).
 similar_elems(EType,nonemptySubSet,[E1|Es1],Es2) :-
-  member(E2,Es2),
-  matching(EType,E1,E2),
-  !,
+  exists_matching(EType,E1,Es2),
   similar_elems(EType,nonemptySubSet,Es1,Es2).
 % similar_elems(EType,nonemptyIntersection,Es1,Es2) holds if
 similar_elems(EType,nonemptyIntersection,Es1,Es2) :-
@@ -530,8 +527,7 @@ similar_elems(EType,nonemptyEqSeq,[E1|Es1],[E2|Es2]) :-
 % similar_elems(EType,nonemptySubSeq,Es1,Es2) holds if
 % Es1 can be obtained from Es2 by deleting some of its elements.
 similar_elems(EType,nonemptySubSeq,[E1],Es2) :-
-  member(E2,Es2),
-  matching(EType,E1,E2).
+  exists_matching(EType,E1,Es2).
 similar_elems(EType,nonemptySubSeq,[E1|Es1],[E2|Es2]) :-
   matching(EType,E1,E2),
   !,
@@ -571,6 +567,14 @@ matching_URIs(URI1,URI2) :-
 matching_URIs(URI1,URI2) :-
   URI1==URI2.
 
+% MODE: exists_matching(+EType,+E1,+Es)
+% SEMANTICS: exists_matching(EType,E1,Es) holds if there exists an element E2
+% (of type EType) in Es s.t. E1 (of type EType) is similar to E2
+exists_matching(EType,E1,Es) :-
+  member(E2,Es),
+  matching(EType,E1,E2),
+  !.
+
 % MODE: select_common_set(+L,-S)
 % SEMANTICS: if L is a list of invokes/9 facts,
 % S is the set of callees occurring in L
@@ -591,6 +595,7 @@ setOf_aux([E|Es],[(HTTPMethod,REX)|L]) :-
   endpoint_component(E,uri,URI),
   atom_string(URI,URIStr),
   ( ( rest_api_regex(REX), re_match(REX,URIStr) ) ; REX=URI ),
+  !,
   setOf_aux(Es,L).
 
 % MODE: select_common_set(+L1,+L2,-C)
