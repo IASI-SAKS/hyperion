@@ -1,5 +1,3 @@
-:- consult(similarity_relations).
-
 :- dynamic setting/1.
 
 setting(endpoints_set(false)).
@@ -321,3 +319,9 @@ write_endpoints :-
   write_term(Endpoints,[quoted(true)]), write('.'), nl,
   fail.
 write_endpoints.
+
+compute_similarity_from_java(TP1,TP2,Score,T,TSrc,SimCr) :-
+  retractall(counter(_)), assert(counter(1)),
+  generate_and_assert_elems(T,TSrc), !,
+  similar_tp(T,TSrc,SimCr,TP1,TP2,Es1,Es2),
+  similarity_score(SimCr,Es1,Es2,Score).

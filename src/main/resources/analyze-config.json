@@ -1,6 +1,6 @@
 {
-  "sut": ["../full-teaching/target/classes/"],
-  "testPrograms": ["../full-teaching/target/test-classes/"],
+  "sut": ["../full-teaching-master/target/classes/"],
+  "testPrograms": ["../full-teaching-master/target/test-classes/"],
   "includeTest": [
   ],
   "excludeTest": [

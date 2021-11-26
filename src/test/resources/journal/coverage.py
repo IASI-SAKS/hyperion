@@ -8,9 +8,12 @@ import json
 hyperion_jar = "./target/hyperion-shaded-1.0-SNAPSHOT.jar"
 sut_path = "../full-teaching-master/"
 
-metrics = ["nonemptyIntersection", "nonemptySubset", "nonemptyEqSet"]
+#metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyEqSeq", "nonemptySubSeq", "nonemptyCommonSeq"]
+#metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet"]
+metrics = ["nonemptyIntersection", "random"]
 domains = ["invokes", "endpoint"]
-similarity_thresholds = [0.3, 0.6, 0.9]
+similarity_thresholds = [0.3, 0.9]
+#similarity_thresholds = [0.3, 0.6, 0.9]
 repetitions = 10
 
 # Make SWI Prolog happy for running
@@ -47,7 +50,8 @@ def run_symbolic():
                 "\"com/google/gson\""
               "],"
               "\"depth\": 100,"
-              "\"testProgramsList\": \"allTPs.json\""
+              "\"testProgramsList\": \"allTPs.json\","
+              "\"outputFile\": \"symbolic.pl\""
             "}"
            )
     with open("conf.json",'w',encoding = 'utf-8') as f:
@@ -62,10 +66,12 @@ def run_symbolic():
 def generate_similarity():
      print("****** COMPUTING SIMILARITY *******")
      for metric in metrics:
+         if metric == "random":
+             continue
          for domain in domains:
              conf = ("{"
                      "\"invokes\": ["
-                     "\"./src/test/resources/sose/inspection-invokes.pl\""
+                     "\"./symbolic.pl\""
                      "],"
                      "\"regex\": \"./src/test/resources/sose/URI-regex-list.pl\","
                      "\"metric\": \"" + metric + "\","
@@ -90,7 +96,7 @@ def test_groups():
                      conf = ("{"
                              "\"similarityFile\": \"experiment/similarTPs-" + metric + "-" + domain +".json\","
                              "\"allTestProgramsFile\": \"allTPs.json\","
-                             "\"policy\": \"policy 1\","
+                             "\"policy\": \""+ metric +"\","
                              "\"threshold\": 0.7,"
                              "\"outputFile\": \"experiment/"+metric+"/"+domain+"-"+str(threshold)+"/"+str(rep)+"/testGroup.json\""
                              "}")
@@ -129,8 +135,8 @@ def get_coverage():
                    process.wait()
 
 prepare_folders()
-#run_symbolic()
+run_symbolic()
 generate_similarity()
-#test_groups()
-#get_coverage()
+test_groups()
+get_coverage()
 

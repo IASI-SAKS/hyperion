@@ -1,7 +1,7 @@
 {
   "similarityFile": "similarTPs-nonemptyIntersection-endpoint.json",
   "allTestProgramsFile": "allTPs.json",
-  "policy": "policy 1",
-  "threshold": 0.7,
+  "policy": "random",
+  "threshold": 70,
   "outputFile": "testGroup.json"
 }

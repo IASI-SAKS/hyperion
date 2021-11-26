@@ -165,26 +165,26 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
     }
 
     private Class loadClass(String classFile, String path, URL[] urls) throws AnalyzerException {
-	String classFilePkg = classFile.replace(path, "");
-        String classPkg = classFile.substring(0, classFilePkg.lastIndexOf('.')).replace(path, "").replace(File.separator, ".");
+	    String classFilePkg = classFile.replace(path, "");
+        String classPkg = classFilePkg.substring(0, classFilePkg.lastIndexOf('.')).replace(path, "").replace(File.separator, ".");
 
         ClassLoader cl;
         Class<?> dynamicClass;
 
         try {
             cl = new URLClassLoader(urls);
-	    log.info("Trying to load class {}", classPkg);
+            log.info("Loading {}...", classPkg);
             dynamicClass = cl.loadClass(classPkg);
 
             try {
                 Class.forName(dynamicClass.getName(), true, dynamicClass.getClassLoader());
             } catch (ClassNotFoundException e) {
-		    log.info("assertion error");
+                log.error("Class {} not found in path {}", classFile, path);
                 throw new AssertionError(e);  // Can't happen
             }
 
         } catch (ClassNotFoundException e) {
-	    log.info("Class {} not found in path {}", classFile, path);
+	        log.error("Class {} not found in path {}", classFile, path);
             throw new AnalyzerException("Unable to find class " + e.getMessage());
         }
 
