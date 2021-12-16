@@ -166,11 +166,13 @@ public final class DecisionProcedureGuidanceJDI extends DecisionProcedureGuidanc
 				final Iterable<Path> classPath = this.analyzerParameters.getRunnerParameters().getClasspath().classPath(); // XXX: userClassPath() ?
 				final ArrayList<String> listClassPath = new ArrayList<>();
 				classPath.forEach(p -> listClassPath.add(p.toString()));
+				listClassPath.removeIf(value -> value.contains("slf4j-simple"));
 				final String stringClassPath = String.join(File.pathSeparator, listClassPath.toArray(new String[0]));
 				final String mainClass = TestLauncher.class.getName();
 				final String testProgramClass = binaryClassName(this.analyzerParameters.getTestProgramSignature().getClassName());
 				final String testProgramName = this.analyzerParameters.getTestProgramSignature().getName();
 				this.launchArguments = "-classpath \"" + stringClassPath + "\" " + mainClass + " " + testProgramClass + " " + testProgramName;
+//				System.out.println(this.launchArguments);
 				return launchTarget(this.launchArguments);
 			} catch (IOException e) {
 				throw new GuidanceException(e);
