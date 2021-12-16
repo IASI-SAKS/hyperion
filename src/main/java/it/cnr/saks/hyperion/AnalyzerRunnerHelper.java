@@ -8,6 +8,8 @@ import it.cnr.saks.hyperion.discovery.MethodEnumerator;
 import it.cnr.saks.hyperion.similarity.InformationLogger;
 import it.cnr.saks.hyperion.symbolic.Analyzer;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
+import it.cnr.saks.hyperion.symbolic.MaydayThread;
+import it.cnr.saks.hyperion.symbolic.ShutdownHook;
 import jbse.bc.Signature;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -73,6 +75,10 @@ public class AnalyzerRunnerHelper {
 
         int analyzed = 0;
         long startTime = System.nanoTime();
+
+        ShutdownHook.setupShutdownHook(inspector);
+        MaydayThread maydayThread = new MaydayThread(inspector);
+        maydayThread.start();
 
         for(MethodDescriptor method: methodEnumerator) {
             analyzed++;
