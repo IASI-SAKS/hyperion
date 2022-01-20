@@ -533,7 +533,7 @@ similar_elems(EType,nonemptySubSeq,[E1|Es1],[E2|Es2]) :-
   !,
   similar_elems(EType,nonemptySubSeq,Es1,Es2).
 similar_elems(EType,nonemptySubSeq,Es1,[_|Es2]) :-
-  similar_elems(EType,subSeq,Es1,Es2).
+  similar_elems(EType,nonemptySubSeq,Es1,Es2).
 % similar_elems(EType,nonemptyCommonSeq,Es1,Es2) holds if
 similar_elems(EType,nonemptyCommonSeq,Es1,Es2) :-
   % nonemptyIntersection holds
