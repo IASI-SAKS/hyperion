@@ -1,5 +1,6 @@
 package it.cnr.saks.hyperion.symbolic;
 
+import it.cnr.saks.hyperion.AnalyzerRunnerHelper;
 import it.cnr.saks.hyperion.similarity.InformationLogger;
 import jbse.algo.exc.CannotManageStateException;
 import jbse.bc.Signature;
@@ -20,6 +21,8 @@ import jbse.mem.exc.ThreadStackEmptyException;
 import jbse.rewr.*;
 import jbse.rules.ClassInitRulesRepo;
 import jbse.rules.LICSRulesRepo;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.URL;
 import java.util.ArrayList;
@@ -28,6 +31,7 @@ import java.util.concurrent.TimeUnit;
 import static jbse.bc.Opcodes.*;
 
 public final class Analyzer {
+    private static final Logger log = LoggerFactory.getLogger(Analyzer.class);
     private boolean trackingEnabled = false;
 
     private Engine engine;
@@ -126,6 +130,11 @@ public final class Analyzer {
         public boolean atInitial() {
             Analyzer.this.trackingEnabled = true;
             return super.atInitial();
+        }
+
+        @Override
+        public void atTimeout() {
+            log.info("Execution timed out with a timeout of {} minutes.", analyzerParameters.getTimeout());
         }
 
         @Override

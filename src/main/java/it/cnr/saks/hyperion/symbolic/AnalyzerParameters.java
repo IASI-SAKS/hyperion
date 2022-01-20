@@ -55,6 +55,10 @@ public class AnalyzerParameters implements Cloneable {
         this.runnerParameters.setTimeout(time, minutes);
     }
 
+    public long getTimeout() {
+        return this.runnerParameters.getTimeout();
+    }
+
     public void addUninterpreted(String methodClassName, String methodDescriptor, String methodName) {
         this.runnerParameters.addUninterpreted(methodClassName, methodDescriptor, methodName);
     }

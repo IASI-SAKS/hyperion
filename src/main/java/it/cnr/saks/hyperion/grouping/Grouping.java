@@ -20,7 +20,7 @@ public class Grouping {
         this.policy = policy;
     }
 
-    private TestGroup policy1(List<String> allTests, SimilarTests[] similarTests, double threshold) {
+    private TestGroup nonemptyPolicies(List<String> allTests, SimilarTests[] similarTests, double threshold) {
         TestGroup result = new TestGroup();
 
         // Build the random group according to this policy
@@ -60,6 +60,32 @@ public class Grouping {
         return result;
     }
 
+    private TestGroup policy_random(List<String> allTests, double threshold) {
+        TestGroup result = new TestGroup();
+
+        int i = 0;
+
+        // Build the random group according to this policy
+        while(allTests.size() > 0) {
+            String test = allTests.get(ThreadLocalRandom.current().nextInt(allTests.size()));
+
+            log.info("Picking {} as a candidate test.", test);
+
+            boolean include = i++ <= (int) threshold;
+
+            if(include) {
+                result.addIncludedTest(test);
+                log.info("Included {} in the test group.", test);
+            } else {
+                result.addExcludedTest(test);
+            }
+
+            allTests.remove(test);
+        }
+
+        return result;
+    }
+
     public TestGroup groupTests(MethodDescriptor[] allTests, SimilarTests[] similarTests, double threshold) throws GroupingException {
         List<String> allTestsList = new ArrayList<>();
 
@@ -71,8 +97,10 @@ public class Grouping {
         log.info("Determining test group according to policy \"{}\"...", policy);
 
         // Pick the corresponding policy
-        if (this.policy.equals("policy 1")) {
-            return policy1(allTestsList, similarTests, threshold);
+        if (this.policy.startsWith("nonempty")) {
+            return nonemptyPolicies(allTestsList, similarTests, threshold);
+        } else if (this.policy.equals("random")) {
+            return policy_random(allTestsList, threshold);
         }
         throw new GroupingException("Unsupported Grouping Policy");
     }

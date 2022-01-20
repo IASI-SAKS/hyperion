@@ -9,6 +9,8 @@ import java.io.IOException;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.nio.file.Files;
@@ -157,30 +159,35 @@ public class MethodEnumerator implements Iterable<MethodDescriptor> {
             for (String classFile : paths) {
                 try {
                     classes.add(loadClass(classFile, classPath, this.discoveryConfiguration.getClassPath()));
-                } catch (AnalyzerException ignored) {}
+                } catch (AnalyzerException | URISyntaxException ignored) {}
             }
         }
 
         return classes;
     }
 
-    private Class loadClass(String classFile, String path, URL[] urls) throws AnalyzerException {
-        String classPkg = classFile.substring(0, classFile.lastIndexOf('.')).replace(path, "").replace(File.separator, ".");
+    private Class loadClass(String classFile, String path, URL[] urls) throws AnalyzerException, URISyntaxException {
+        path = new URI(path).normalize().toString();
+	    String classFilePkg = classFile.replace(path, "");
+        String classPkg = classFilePkg.substring(0, classFilePkg.lastIndexOf('.')).replace(path, "").replace(File.separator, ".");
 
         ClassLoader cl;
         Class<?> dynamicClass;
 
         try {
             cl = new URLClassLoader(urls);
+            log.info("Loading {}...", classPkg);
             dynamicClass = cl.loadClass(classPkg);
 
             try {
                 Class.forName(dynamicClass.getName(), true, dynamicClass.getClassLoader());
             } catch (ClassNotFoundException e) {
+                log.error("Class {} not found in path {}", classFile, path);
                 throw new AssertionError(e);  // Can't happen
             }
 
         } catch (ClassNotFoundException e) {
+	        log.error("Class {} not found in path {}", classFile, path);
             throw new AnalyzerException("Unable to find class " + e.getMessage());
         }
 

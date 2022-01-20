@@ -15,11 +15,12 @@ public class TestLauncher {
 //        String utf8 = StandardCharsets.UTF_8.name();
 
         // The magnitude of this hack compares favorably with that of the public debt
-        Class.forName("org.springframework.web.util.UriComponentsBuilder");
-        Class.forName("org.mockito.internal.matchers.Any");
-        Class.forName("java.util.UUID$Holder");
-        Class.forName("java.util.UUID");
+        Class.forName("org.apache.http.conn.util.InetAddressUtils");
+//        Class.forName("org.mockito.internal.matchers.Any");
+//        Class.forName("java.util.UUID$Holder");
+//        Class.forName("java.util.UUID");
         Class.forName("java.lang.CharacterData00");
+        Class.forName("org.apache.http.client.utils.URLEncodedUtils");
 
 
         final Class<?> testClass = Class.forName(args[0]);

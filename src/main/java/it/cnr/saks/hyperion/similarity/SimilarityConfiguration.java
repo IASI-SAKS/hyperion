@@ -16,6 +16,7 @@ public class SimilarityConfiguration {
     private String regex;
     private String outputFile;
     private String metric;
+    private String domain;
 
     private SimilarityConfiguration() {}
 
@@ -64,5 +65,13 @@ public class SimilarityConfiguration {
 
     public void setMetric(String metric) {
         this.metric = metric;
+    }
+
+    public String getDomain() {
+        return domain;
+    }
+
+    public void setDomain(String domain) {
+        this.domain = domain;
     }
 }

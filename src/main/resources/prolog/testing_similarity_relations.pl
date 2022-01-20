@@ -1,5 +1,3 @@
-:- consult(similarity_relations).
-
 :- dynamic setting/1.
 
 setting(endpoints_set(false)).
@@ -101,6 +99,13 @@ print_qatom_args([L|Ls]) :-
   write(' '''), write(L), write(''','), nl,
   !,
   print_qatom_args(Ls).
+
+%
+filter_wt([],[]).
+filter_wt([endpoint(_,_,HTTPMethod,URI)|Es],[e(HTTPMethod,URI)|F]) :-
+  filter_wt(Es,F).
+filter_wt([invokes(_,_,_,_,_,_,_,Callee,_)|Is],[i(Callee)|F]) :-
+  filter_wt(Is,F).
 
 :- dynamic endpointLst_fact/3,invokesLst_fact/3.
 :- multifile endpointLst_fact/3,invokesLst_fact/3.
@@ -207,7 +212,8 @@ print_similarity(T,TSrc,SimCr) :-
   assert(ln(1)),
   printall_similarity_answers(T,TSrc,SimCr),
   close(Fd1),
-  close(Fd2).
+  close(Fd2),
+  retractall(ln(_)).
 
 % SEMANTICS: gets all answers from similarity predicates and
 % write them to csv and txt files
@@ -238,9 +244,11 @@ write_txt(N,TP1,TP2,Es1,Es2,Score) :-
   set_output(txt),
   write('* ID: '),             write(N),       nl,
   write('* Test Program 1: '), write(TP1),     nl, nl,
-  print_atom_list(Es1),                        nl,
+  filter_wt(Es1,WT1),
+  print_atom_list(WT1),                        nl,
   write('* Test Program 2: '), write(TP2),     nl, nl,
-  print_atom_list(Es2),                        nl, nl,
+  filter_wt(Es2,WT2),
+  print_atom_list(WT2),                        nl, nl,
   !,
   write('* Score: '),          write(Score),   nl, nl,
   write('----------------------------------'), nl.
@@ -312,14 +320,8 @@ write_endpoints :-
   fail.
 write_endpoints.
 
-
-
-
-
-
 compute_similarity_from_java(TP1,TP2,Score,T,TSrc,SimCr) :-
   retractall(counter(_)), assert(counter(1)),
   generate_and_assert_elems(T,TSrc), !,
   similar_tp(T,TSrc,SimCr,TP1,TP2,Es1,Es2),
   similarity_score(SimCr,Es1,Es2,Score).
-
