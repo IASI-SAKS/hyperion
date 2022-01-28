@@ -12,7 +12,7 @@ java -javaagent:./jacoco-0.8.7/lib/jacocoagent.jar -jar ./full-teaching-master/t
 PID=$!
 sleep 30
 cd full-teaching-master
-mvn test
+mvn test -DfailIfNoTests=false
 
 cd ..
 

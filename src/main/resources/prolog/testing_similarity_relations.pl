@@ -1,3 +1,5 @@
+:- consult(similarity_relations).
+
 :- dynamic setting/1.
 
 setting(endpoints_set(false)).
