@@ -20,13 +20,14 @@ public class InspectionAgent {
             log.info("Dumping invokes() facts...");
 
             try {
-                MetricsCollector.instance().printMetrics(OUT_FILE_PATH);
+                int count = MetricsCollector.instance().printMetrics(OUT_FILE_PATH);
+                log.info("Dumped {} facts.", count);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }));
 
         log.info("Registering transformation class");
-        inst.addTransformer(new InspectionClassTransformer(SUT_PACKAGE_PREFIX), true);
+        inst.addTransformer(new InspectionClassTransformer(SUT_PACKAGE_PREFIX, inst), false);
     }
 }
