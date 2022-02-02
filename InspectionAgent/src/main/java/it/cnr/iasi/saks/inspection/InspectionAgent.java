@@ -28,6 +28,6 @@ public class InspectionAgent {
         }));
 
         log.info("Registering transformation class");
-        inst.addTransformer(new InspectionClassTransformer(SUT_PACKAGE_PREFIX, inst), false);
+        inst.addTransformer(new InspectionClassTransformer(SUT_PACKAGE_PREFIX), false);
     }
 }
