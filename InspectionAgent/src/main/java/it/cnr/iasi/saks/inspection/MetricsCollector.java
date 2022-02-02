@@ -63,8 +63,8 @@ public class MetricsCollector {
         this.currentMethod.clear();
     }
 
-    public void printMetrics(String outFilePath) throws IOException {
-        log.trace("printMetrics()");
+    public int printMetrics(String outFilePath) throws IOException {
+        int ret = this.getInvokes().size();
 
         OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(outFilePath, true), StandardCharsets.UTF_8);
 
@@ -76,6 +76,8 @@ public class MetricsCollector {
 
         this.wipe();
         out.close();
+
+        return ret;
     }
 
     public List<SimpleInvokes> getInvokes() {
