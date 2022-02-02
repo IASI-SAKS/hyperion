@@ -10,7 +10,7 @@ import org.springframework.test.context.junit.jupiter.SpringExtension;
 
 import java.util.ArrayList;
 
-//@ExtendWith(SpringExtension.class)
+@ExtendWith(SpringExtension.class)
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT, classes = Application.class)
 public class InvokesTest extends AbstractTest {
     private final ArrayList<String> generatedStrings = new ArrayList<>();
@@ -29,7 +29,7 @@ public class InvokesTest extends AbstractTest {
 
     @Test
     public void invokeSequenceTest() {
-        fakePrint( "Hello World!!!! it.test.cnr.iasi.saks.inspection.App" );
+        fakePrint( "Hello World!!!!" );
         someMethod(2, 0.1f, true, 0.2, 'c');
 
         String[] callers = {
