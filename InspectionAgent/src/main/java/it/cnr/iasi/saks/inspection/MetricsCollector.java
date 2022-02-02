@@ -4,6 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
+import java.nio.channels.FileChannel;
+import java.nio.channels.FileLock;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
@@ -14,10 +16,15 @@ public class MetricsCollector {
     private static final Logger log = LoggerFactory.getLogger(MetricsCollector.class);
 
     private final List<SimpleInvokes> invokes = new ArrayList<>();
+
     private String currentTest = null;
     private final Stack<String> currentMethod = new Stack<>();
     private int seqNum = 1;
     private int frameEpoch = 1;
+
+    private String outputFile = null;
+    private int errorsDumping = 0;
+    private static final int MAX_ERRORS = 10;
 
 
     private MetricsCollector() {}
@@ -38,7 +45,9 @@ public class MetricsCollector {
 
         String callee = className + ":" + methodName;
 
-        this.invokes.add(new SimpleInvokes(this.currentTest, this.seqNum++, this.frameEpoch++, this.currentMethod.peek(), callee, parameters));
+        SimpleInvokes simpleInvokes = new SimpleInvokes(this.currentTest, this.seqNum++, this.frameEpoch++, this.currentMethod.peek(), callee, parameters);
+        this.invokes.add(simpleInvokes);
+        this.dumpInvokes(simpleInvokes);
         this.currentMethod.push(callee);
     }
 
@@ -63,21 +72,30 @@ public class MetricsCollector {
         this.currentMethod.clear();
     }
 
-    public int printMetrics(String outFilePath) throws IOException {
-        int ret = this.getInvokes().size();
+    private void dumpInvokes(SimpleInvokes simpleInvokes) {
+        if(this.outputFile == null)
+            return;
 
-        OutputStreamWriter out = new OutputStreamWriter(new FileOutputStream(outFilePath, true), StandardCharsets.UTF_8);
+        try {
+            FileOutputStream fos = new FileOutputStream(this.outputFile, true);
+            FileChannel channel = fos.getChannel();
+            FileLock lock = channel.lock();
+            OutputStreamWriter out = new OutputStreamWriter(fos, StandardCharsets.UTF_8);
 
-        for(SimpleInvokes inv : this.getInvokes()) {
-            String line = inv.getInvokeString();
+            String line = simpleInvokes.getInvokeString();
             out.write(line + "\n");
-            log.debug(line);
+
+            lock.release();
+            out.close();
+        } catch (IOException e) {
+            log.error("Error dumping invokes fact: {}", e.getMessage());
+            if(++this.errorsDumping == MetricsCollector.MAX_ERRORS) {
+                log.error("Too many errors, dumping is disabled. You will find an incomplete trace in {}", this.outputFile);
+                this.outputFile = null;
+            }
+            e.printStackTrace();
         }
 
-        this.wipe();
-        out.close();
-
-        return ret;
     }
 
     public List<SimpleInvokes> getInvokes() {
@@ -86,5 +104,9 @@ public class MetricsCollector {
 
     public void wipe() {
         this.invokes.clear();
+    }
+
+    public void setOutputFile(String outFilePath) {
+        this.outputFile = outFilePath;
     }
 }

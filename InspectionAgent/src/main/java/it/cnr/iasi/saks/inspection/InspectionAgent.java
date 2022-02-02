@@ -17,17 +17,12 @@ public class InspectionAgent {
     public static void premain(String agentArgs, Instrumentation inst) {
         log.info("Registering shutdown hook");
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            log.info("Dumping invokes() facts...");
-
-            try {
-                int count = MetricsCollector.instance().printMetrics(OUT_FILE_PATH);
-                log.info("Dumped {} facts.", count);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            int count = MetricsCollector.instance().getInvokes().size();
+            log.info("Dumped {} facts.", count);
         }));
 
         log.info("Registering transformation class");
+        MetricsCollector.instance().setOutputFile(OUT_FILE_PATH);
         inst.addTransformer(new InspectionClassTransformer(SUT_PACKAGE_PREFIX), false);
     }
 }

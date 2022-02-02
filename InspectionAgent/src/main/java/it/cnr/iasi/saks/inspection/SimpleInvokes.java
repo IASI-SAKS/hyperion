@@ -43,6 +43,9 @@ public class SimpleInvokes {
     }
 
     private String getRepresentation(Object o) {
+        if(o == null)
+            return "null";
+
         if(o instanceof String)
             return (String)o;
         if(o instanceof Integer)
