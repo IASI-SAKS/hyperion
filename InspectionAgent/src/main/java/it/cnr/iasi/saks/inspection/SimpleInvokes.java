@@ -50,10 +50,10 @@ public class SimpleInvokes {
             return (String)o;
         if(o instanceof Integer)
             return ((Integer)o).toString();
-        if(o instanceof Float)
-            return ((Float)o).toString();
         if(o instanceof Double)
             return ((Double)o).toString();
+        if(o instanceof Float)
+            return ((Float)o).toString();
         if(o instanceof Character)
             return ((Character)o).toString();
         if(o instanceof Boolean)
@@ -74,7 +74,4 @@ public class SimpleInvokes {
         return callee;
     }
 
-    public Object[] getParams() {
-        return params;
-    }
 }

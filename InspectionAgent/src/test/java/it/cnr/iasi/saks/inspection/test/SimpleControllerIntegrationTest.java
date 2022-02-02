@@ -16,7 +16,7 @@ public class SimpleControllerIntegrationTest {
     private TestRestTemplate template;
 
     @Test
-    public void getHelloIntegration() throws Exception {
+    public void getHelloIntegration() {
         ResponseEntity<String> response = template.getForEntity("/", String.class);
         assertThat(response.getBody()).isEqualTo("Greetings from Spring Boot!");
     }

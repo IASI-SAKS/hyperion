@@ -4,8 +4,6 @@ package it.cnr.iasi.saks.inspection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
 import java.lang.instrument.Instrumentation;
 
 public class InspectionAgent {

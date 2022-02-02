@@ -42,28 +42,28 @@ public class InspectionClassTransformer implements ClassFileTransformer {
         if(clazzName.contains("CGLIB$$") || clazzName.contains("$Proxy") || clazzName.contains("$HibernateProxy$"))
             return null;
 
-        // Build a dedicated class pool for this instrumentation and import required packaged
+        // Build a dedicated class pool for this instrumentation and import required packages
         ClassPool pool = new ClassPool();
         pool.appendClassPath(new LoaderClassPath(loader));
         pool.importPackage("it.cnr.iasi.saks.inspection");
         pool.importPackage(this.sutPackagePrefix);
 
         // Build the class representation
-        CtClass cclass;
+        CtClass ctClass;
         try {
-            cclass = pool.makeClass(new ByteArrayInputStream(classfileBuffer));
+            ctClass = pool.makeClass(new ByteArrayInputStream(classfileBuffer));
         } catch (IOException e) {
             log.error("Unable to build CtClass for class: {}", clazzName);
             e.printStackTrace();
             return null;
         }
-        assert cclass != null;
+        assert ctClass != null;
 
         // Skip interfaces
-        if(cclass.isInterface())
+        if(ctClass.isInterface())
             return null;
 
-        for (CtMethod method : cclass.getDeclaredMethods()) {
+        for (CtMethod method : ctClass.getDeclaredMethods()) {
 
             if(Modifier.isNative(method.getModifiers()) || Modifier.isAbstract(method.getModifiers()))
                 continue;
@@ -93,15 +93,15 @@ public class InspectionClassTransformer implements ClassFileTransformer {
         }
 
         try {
-            classfileBuffer = cclass.toBytecode();
-            cclass.detach();
+            classfileBuffer = ctClass.toBytecode();
+            ctClass.detach();
             return classfileBuffer;
         } catch (IOException | CannotCompileException e) {
             log.error("Unable to generate instrumented bytecode for class {}. The class has not been instrumented.", clazzName);
             e.printStackTrace();
         }
 
-        cclass.detach();
+        ctClass.detach();
         return null;
     }
 }

@@ -27,20 +27,22 @@ public class EmployeeEntity implements Serializable {
     @Column(name = "EMAIL", unique = true, nullable = false, length = 100)
     private String email;
 
-    @Column(name = "FIRST_NAME", unique = false, nullable = false, length = 100)
+    @Column(name = "FIRST_NAME", nullable = false, length = 100)
     private String firstName;
 
-    @Column(name = "LAST_NAME", unique = false, nullable = false, length = 100)
+    @Column(name = "LAST_NAME", nullable = false, length = 100)
     private String lastName;
 
     public Integer getEmployeeId() {
         return employeeId;
     }
 
+    @SuppressWarnings("unused")
     public void setEmployeeId(Integer employeeId) {
         this.employeeId = employeeId;
     }
 
+    @SuppressWarnings("unused")
     public String getEmail() {
         return email;
     }
@@ -49,6 +51,7 @@ public class EmployeeEntity implements Serializable {
         this.email = email;
     }
 
+    @SuppressWarnings("unused")
     public String getFirstName() {
         return firstName;
     }
@@ -57,6 +60,7 @@ public class EmployeeEntity implements Serializable {
         this.firstName = firstName;
     }
 
+    @SuppressWarnings("unused")
     public String getLastName() {
         return lastName;
     }

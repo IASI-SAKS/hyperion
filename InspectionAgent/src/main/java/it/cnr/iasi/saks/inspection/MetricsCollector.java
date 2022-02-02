@@ -36,6 +36,7 @@ public class MetricsCollector {
         return instance;
     }
 
+    @SuppressWarnings("unused")
     public void enterMethod(String className, String methodName, Object ... parameters) {
         if(this.currentTest == null) {
             log.debug("[SKIPPED] enterMethod({}, {}): no test is running.", className, methodName);
@@ -51,6 +52,7 @@ public class MetricsCollector {
         this.currentMethod.push(callee);
     }
 
+    @SuppressWarnings("unused")
     public void leaveMethod(String className, String methodName) {
         log.trace("leaveMethod({}, {})", className, methodName);
         if(this.currentMethod.size() > 0)
@@ -58,6 +60,7 @@ public class MetricsCollector {
         assert this.frameEpoch >= 1;
     }
 
+    @SuppressWarnings("unused")
     public void enterTest(String className, String methodName) {
         log.trace("enterTest({}, {})", className, methodName);
         this.currentTest = className + ":" + methodName;
@@ -66,6 +69,7 @@ public class MetricsCollector {
         this.seqNum = 1;
     }
 
+    @SuppressWarnings("unused")
     public void leaveTest(String className, String methodName) {
         log.trace("leaveTest({}, {})", className, methodName);
         this.currentTest = null;
