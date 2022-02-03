@@ -37,14 +37,14 @@ public class MetricsCollector {
     }
 
     @SuppressWarnings("unused")
-    public void enterMethod(String className, String methodName, Object ... parameters) {
+    public void enterMethod(String className, String methodName, String methodDescriptor, Object ... parameters) {
         if(this.currentTest == null) {
             log.debug("[SKIPPED] enterMethod({}, {}): no test is running.", className, methodName);
             return;
         }
-        log.debug("enterMethod({}, {})", className, methodName);
+        log.debug("enterMethod({}, {})", className, methodName, methodDescriptor);
 
-        String callee = className + ":" + methodName;
+        String callee = className + ":" + methodName + methodDescriptor;
 
         SimpleInvokes simpleInvokes = new SimpleInvokes(this.currentTest, this.seqNum++, this.frameEpoch++, this.currentMethod.peek(), callee, parameters);
         this.invokes.add(simpleInvokes);
@@ -53,8 +53,8 @@ public class MetricsCollector {
     }
 
     @SuppressWarnings("unused")
-    public void leaveMethod(String className, String methodName) {
-        log.trace("leaveMethod({}, {})", className, methodName);
+    public void leaveMethod(String className, String methodName, String methodDescriptor) {
+        log.trace("leaveMethod({}, {})", className, methodName, methodDescriptor);
         if(this.currentMethod.size() > 0)
             this.currentMethod.pop();
         assert this.frameEpoch >= 1;
@@ -64,7 +64,7 @@ public class MetricsCollector {
     public void enterTest(String className, String methodName) {
         log.trace("enterTest({}, {})", className, methodName);
         this.currentTest = className + ":" + methodName;
-        this.currentMethod.push(this.currentTest);
+        this.currentMethod.push(this.currentTest + ":()V");
         this.frameEpoch = 1;
         this.seqNum = 1;
     }

@@ -75,7 +75,7 @@ def generate_similarity():
          for domain in domains:
              conf = ("{"
                      "\"invokes\": ["
-                     "\"./src/test/resources/journal/inspection-invokes.pl\""
+                     "\"./src/test/resources/journal/invokes-concrete.pl\""
                      "],"
                      "\"regex\": \"./src/test/resources/sose/URI-regex-list.pl\","
                      "\"metric\": \"" + metric + "\","
@@ -166,7 +166,7 @@ def single_test_coverage():
 
 prepare_folders()
 #run_symbolic()
-#generate_similarity()
+generate_similarity()
 #test_groups()
-get_coverage()
+#get_coverage()
 #single_test_coverage()

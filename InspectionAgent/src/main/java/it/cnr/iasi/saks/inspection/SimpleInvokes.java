@@ -25,11 +25,11 @@ public class SimpleInvokes {
         sb.append("'").append(this.tp).append("', ");
         sb.append("[1], ");
         sb.append(this.seqNum).append(", ");
-        sb.append("'").append(this.caller).append("', ");
+        sb.append("'").append(this.caller.replace('.','/')).append("', ");
         sb.append("1, ");
         sb.append(this.frameEpoch).append(", ");
         sb.append("[], ");
-        sb.append("'").append(this.callee).append("', ");
+        sb.append("'").append(this.callee.replace('.','/')).append("', ");
         sb.append("[");
         boolean doneFirst = false;
         for(Object p: params) {

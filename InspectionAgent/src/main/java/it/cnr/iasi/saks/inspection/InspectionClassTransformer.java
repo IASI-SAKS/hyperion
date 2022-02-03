@@ -82,8 +82,8 @@ public class InspectionClassTransformer implements ClassFileTransformer {
                     method.insertBefore("MetricsCollector.instance().enterTest(\"" + clazzName + "\",\"" + method.getName() + "\");");
                     method.insertAfter("MetricsCollector.instance().leaveTest(\"" + clazzName + "\",\"" + method.getName() + "\");");
                 } else {
-                    method.insertBefore("MetricsCollector.instance().enterMethod(\"" + clazzName + "\",\"" + method.getName() + "\", $args);");
-                    method.insertAfter("MetricsCollector.instance().leaveMethod(\"" + clazzName + "\",\"" + method.getName() + "\");");
+                    method.insertBefore("MetricsCollector.instance().enterMethod(\"" + clazzName + "\",\"" + method.getName() + "\",\"" + method.getMethodInfo().getDescriptor() + "\", $args);");
+                    method.insertAfter("MetricsCollector.instance().leaveMethod(\"" + clazzName + "\",\"" + method.getName() + "\",\"" + method.getMethodInfo().getDescriptor() + "\");");
                 }
             } catch (CannotCompileException e) {
                 log.error("Unable to instrument class {}. The class has not been instrumented.", clazzName);
