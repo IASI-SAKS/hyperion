@@ -1,4 +1,4 @@
-:- consult(similarity_relations).
+%:- consult(similarity_relations).
 
 :- dynamic setting/1.
 
