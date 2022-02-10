@@ -12,12 +12,13 @@ sut_path = "../full-teaching-master/"
 # Simmetriche: nonemptyEqSeq, nonemptyEqSet
 # Asimmetriche: nonemptyIntersection, nonemptySubSet, nonemptySubSeq, nonemptyCommonSeq
 
+#metrics = ["nonemptyCommonSeq"]
 metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyEqSeq", "nonemptySubSeq", "nonemptyCommonSeq"]
 #metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet"]
 #metrics = ["random"]
 domains = ["endpoint"]
-#similarity_thresholds = [8, 9, 13, 19, 22]
-similarity_thresholds = [0.3, 0.9]
+#similarity_thresholds = [24, 25, 31, 32]
+similarity_thresholds = [0.4]
 repetitions = 3
 
 # Make SWI Prolog happy for running
@@ -166,7 +167,7 @@ def single_test_coverage():
 
 prepare_folders()
 #run_symbolic()
-generate_similarity()
-#test_groups()
+#generate_similarity()
+test_groups()
 #get_coverage()
 #single_test_coverage()
