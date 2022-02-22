@@ -39,10 +39,10 @@ public class MetricsCollector {
     @SuppressWarnings("unused")
     public void enterMethod(String className, String methodName, String methodDescriptor, Object ... parameters) {
         if(this.currentTest == null) {
-            log.debug("[SKIPPED] enterMethod({}, {}): no test is running.", className, methodName);
+            log.debug("[SKIPPED] enterMethod({}, {}:{}): no test is running. Check the arguments of the agent to see if relevant packages were correctly set.", className, methodName, methodDescriptor);
             return;
         }
-        log.debug("enterMethod({}, {})", className, methodName, methodDescriptor);
+        log.debug("enterMethod({}, {}:{})", className, methodName, methodDescriptor);
 
         String callee = className + ":" + methodName + methodDescriptor;
 
@@ -54,7 +54,7 @@ public class MetricsCollector {
 
     @SuppressWarnings("unused")
     public void leaveMethod(String className, String methodName, String methodDescriptor) {
-        log.trace("leaveMethod({}, {})", className, methodName, methodDescriptor);
+        log.trace("leaveMethod({}, {}:{})", className, methodName, methodDescriptor);
         if(this.currentMethod.size() > 0)
             this.currentMethod.pop();
         assert this.frameEpoch >= 1;

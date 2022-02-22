@@ -19,8 +19,8 @@ public abstract class AbstractTest {
         String tp = getMethodFromStackTrace(1);
         int i = 0;
 
-        Assertions.assertEquals(callers.length, callees.length);
-        Assertions.assertEquals(invokes.size(), callers.length);
+        Assertions.assertEquals(callees.length, callers.length);
+        Assertions.assertEquals(callers.length, invokes.size());
 
         for(SimpleInvokes invoke : invokes) {
             Assertions.assertEquals(invoke.getTp(), tp);

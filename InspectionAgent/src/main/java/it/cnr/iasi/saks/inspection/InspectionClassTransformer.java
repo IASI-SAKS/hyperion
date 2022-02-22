@@ -7,14 +7,16 @@ import org.slf4j.LoggerFactory;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.lang.instrument.ClassFileTransformer;
+import java.lang.reflect.Array;
 import java.security.ProtectionDomain;
+import java.util.List;
 
 public class InspectionClassTransformer implements ClassFileTransformer {
     private static final Logger log = LoggerFactory.getLogger(InspectionClassTransformer.class);
 
-    private final String sutPackagePrefix;
+    private final String[] sutPackagePrefix;
 
-    public InspectionClassTransformer(String sutPackagePrefix) {
+    public InspectionClassTransformer(String[] sutPackagePrefix) {
         this.sutPackagePrefix = sutPackagePrefix;
     }
 
@@ -24,16 +26,14 @@ public class InspectionClassTransformer implements ClassFileTransformer {
 
         String clazzName = className.replace("/", ".");
 
-        // Skip all agent classes, but instrument the project's test package
+        // Skip all agent classes, but instrument the project's test package if required in the package list
         if (clazzName.startsWith("it.cnr.iasi.saks") && !clazzName.startsWith("it.cnr.iasi.saks.inspection.test")) {
             log.trace("Skipping class {}: belongs to the agent", clazzName);
             return null;
         }
 
         // Skip class if it doesn't belong to our SUT program or relevant code
-        if (!clazzName.startsWith(this.sutPackagePrefix)
-                && !clazzName.startsWith("it.cnr.iasi.saks.inspection.test")
-                && !clazzName.startsWith("org.springframework.test.web.servlet")) {
+        if (!startsWithAny(clazzName, this.sutPackagePrefix)) {
             log.trace("Skipping class {}: not part of the SUT", clazzName);
             return null;
         }
@@ -46,7 +46,6 @@ public class InspectionClassTransformer implements ClassFileTransformer {
         ClassPool pool = new ClassPool();
         pool.appendClassPath(new LoaderClassPath(loader));
         pool.importPackage("it.cnr.iasi.saks.inspection");
-        pool.importPackage(this.sutPackagePrefix);
 
         // Build the class representation
         CtClass ctClass;
@@ -104,4 +103,19 @@ public class InspectionClassTransformer implements ClassFileTransformer {
         ctClass.detach();
         return null;
     }
+
+    private static boolean startsWithAny(final String string, final String... prefixes) {
+        if(string == null || string.length() == 0 || prefixes == null || Array.getLength(prefixes) == 0) {
+            return false;
+        }
+        for(final String searchString : prefixes) {
+            // String lengths might allow to skip a more costly comparison
+            if(searchString.length() > string.length())
+                continue;
+            if(string.regionMatches(true, 0, searchString, 0, searchString.length()))
+                return true;
+        }
+        return false;
+    }
+
 }
