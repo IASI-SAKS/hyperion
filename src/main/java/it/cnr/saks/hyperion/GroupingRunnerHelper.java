@@ -44,13 +44,7 @@ public class GroupingRunnerHelper {
             return 65; // EX_DATAERR
         }
 
-        ObjectMapper om = new ObjectMapper();
-        try {
-            allTests = om.readValue(new File(groupingConfiguration.getAllTestProgramsFile()), MethodDescriptor[].class);
-        } catch (IOException e) {
-            log.error("Error parsing JSON file " + groupingConfiguration.getAllTestProgramsFile() + ": " + e.getMessage());
-            return 65; // EX_DATAERR
-        }
+        allTests = groupingConfiguration.getAllTests();
 
         try {
             Grouping g = new Grouping(groupingConfiguration.getPolicy());

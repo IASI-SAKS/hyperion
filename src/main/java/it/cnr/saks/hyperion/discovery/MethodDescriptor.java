@@ -1,6 +1,7 @@
 package it.cnr.saks.hyperion.discovery;
 
 import java.lang.reflect.Method;
+import java.util.Objects;
 
 public class MethodDescriptor {
     private String methodName = null;
@@ -37,5 +38,18 @@ public class MethodDescriptor {
 
     public void setClassName(String className) {
         this.className = className;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if(this == o) return true;
+        if(o == null || getClass() != o.getClass()) return false;
+        MethodDescriptor that = (MethodDescriptor) o;
+        return methodName.equals(that.methodName) && methodDescriptor.equals(that.methodDescriptor) && className.equals(that.className);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(methodName, methodDescriptor, className);
     }
 }
