@@ -7,7 +7,16 @@ import json
 import copy
 
 hyperion_jar = "./target/hyperion-shaded-1.0-SNAPSHOT.jar"
-sut_path = "../full-teaching-master/"
+
+# fullteaching
+#sut_path = "../full-teaching-master/"
+#prolog_facts = "./src/test/resources/journal/fullteaching-concrete.pl"
+#regex_list = "./src/test/resources/sose/URI-regex-list.pl"
+
+#trainticket
+sut_path = "../train-ticket/"
+prolog_facts = "./src/test/resources/journal/trainticket-concrete.pl"
+regex_list = "./src/test/resources/gauss/URI-regex-list.pl"
 
 # Simmetriche: nonemptyEqSeq, nonemptyEqSet
 # Asimmetriche: nonemptyIntersection, nonemptySubSet, nonemptySubSeq, nonemptyCommonSeq
@@ -18,8 +27,8 @@ metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyE
 #metrics = ["random"]
 domains = ["endpoint"]
 #similarity_thresholds = [24, 25, 31, 32]
-similarity_thresholds = [0.4]
-repetitions = 3
+similarity_thresholds = [0.5]
+repetitions = 1
 
 # Make SWI Prolog happy for running
 my_env = {**os.environ,
@@ -55,8 +64,7 @@ def run_symbolic():
                 "\"com/google/gson\""
               "],"
               "\"depth\": 100,"
-              "\"testProgramsList\": \"allTPs.json\","
-              "\"outputFile\": \"./src/test/resources/journal/inspection-invokes.pl\""
+              "\"outputFile\": \"./src/test/resources/journal/fullteaching-symbolic.pl\""
             "}"
            )
     with open("conf.json",'w',encoding = 'utf-8') as f:
@@ -75,10 +83,9 @@ def generate_similarity():
              continue
          for domain in domains:
              conf = ("{"
-                     "\"invokes\": ["
-                     "\"./src/test/resources/journal/invokes-concrete.pl\""
+                     "\"invokes\": [\"" + prolog_facts + "\""
                      "],"
-                     "\"regex\": \"./src/test/resources/sose/URI-regex-list.pl\","
+                     "\"regex\": \"" + regex_list + "\","
                      "\"metric\": \"" + metric + "\","
                      "\"outputFile\": \"experiment/similarTPs-" + metric + "-" + domain +".json\","
                      "\"domain\": \"" + domain + "\""
@@ -99,8 +106,9 @@ def test_groups():
              for threshold in similarity_thresholds:
                  for rep in range(repetitions):
                      conf = ("{"
+                             "\"invokes\": [\"" + prolog_facts + "\""
+                             "],"
                              "\"similarityFile\": \"experiment/similarTPs-" + metric + "-" + domain +".json\","
-                             "\"allTestProgramsFile\": \"allTPs.json\","
                              "\"policy\": \""+ metric +"\","
                              "\"threshold\": " + str(threshold) + ","
                              "\"outputFile\": \"experiment/"+metric+"/"+domain+"-"+str(threshold)+"/"+str(rep)+"/testGroup.json\""
