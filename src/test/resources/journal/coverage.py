@@ -142,7 +142,7 @@ def get_coverage():
                                     dest.write(test_list)
                                 else:
                                     dest.write(line)
-                    process = subprocess.Popen("./src/test/resources/journal/coverage.sh experiment/"+metric+"/"+domain+"-"+str(threshold)+"/"+str(rep)+"/",
+                    process = subprocess.Popen("./src/test/resources/journal/coverage-trainticket.sh experiment/"+metric+"/"+domain+"-"+str(threshold)+"/"+str(rep)+"/",
                                                shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT,
                                                env = my_env)
                     process.wait()
@@ -167,7 +167,7 @@ def single_test_coverage():
                         dest.write(testString)
                     else:
                         dest.write(line)
-        process = subprocess.Popen("./src/test/resources/journal/coverage.sh experiment/single-test/"+testString+"/",
+        process = subprocess.Popen("./src/test/resources/journal/coverage-fullteaching.sh experiment/single-test/"+testString+"/",
                                    shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT,
                                    env = my_env)
         process.wait()
@@ -176,6 +176,6 @@ def single_test_coverage():
 prepare_folders()
 #run_symbolic()
 #generate_similarity()
-test_groups()
-#get_coverage()
+#test_groups()
+get_coverage()
 #single_test_coverage()
