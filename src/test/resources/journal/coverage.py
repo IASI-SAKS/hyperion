@@ -22,13 +22,14 @@ regex_list = "./src/test/resources/gauss/URI-regex-list.pl"
 # Asimmetriche: nonemptyIntersection, nonemptySubSet, nonemptySubSeq, nonemptyCommonSeq
 
 #metrics = ["nonemptyCommonSeq"]
-metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyEqSeq", "nonemptySubSeq", "nonemptyCommonSeq"]
+# metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyEqSeq", "nonemptySubSeq", "nonemptyCommonSeq"]
 #metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet"]
-#metrics = ["random"]
-domains = ["endpoint"]
-#similarity_thresholds = [24, 25, 31, 32]
-similarity_thresholds = [0.5]
-repetitions = 1
+metrics = ["random"]
+#domains = ["endpoint"]
+domains = ["invokes"]
+similarity_thresholds = range(10,620,20)
+#similarity_thresholds = [0.5]
+repetitions = 10
 
 # Make SWI Prolog happy for running
 my_env = {**os.environ,
