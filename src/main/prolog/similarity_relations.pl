@@ -401,6 +401,11 @@ isHttpMethod(A) :-
 isHttpMethod(A) :-
   sub_atom(A,0,_,_,'org/springframework/web/client/RestTemplate:exchange:').
 
+% MODE: notIn(+Caller,+CallerBLst)
+% SEMANTICS: Caller does not belong to CallerBLst.
+notIn(Caller,CallerBLst) :-
+  \+ memberchk(Caller,CallerBLst).
+
 %%% user defined predicates to be used as 4th argument of filter/6
 % MODE: head(+L,-H)
 % SEMANTICS:
@@ -475,6 +480,36 @@ endpoints(InvokesLst,EndpointLst) :-
     [testProgram,method(caller),httpMethod(callee,parameters),head(parameters)],
     endpoint,
     EndpointLst
+  ).
+
+% MODE: filtered_invokes(+InvokesLstI,+CallerBLst,+CalleeBLst,-InvokesLstO)
+% SEMANTICS: InvokesLstO is the list of invokes in InvokesLstI  whose caller
+% and callee do not belong to CallerBLst and CalleeBLst, respectively.
+filtered_invokes(InvokesLstI,CallerBLst,CalleeBLst,InvokesLstO) :-
+  filter(
+    InvokesLstI,
+    invokes(testProgram,
+            branchPoint,
+            branchSequenceNumber,
+            caller,
+            callerProgramCounter,
+            frameEpoch,
+            pathCondition,
+            callee,
+            parameters),
+    [ notIn(caller,CallerBLst), notIn(callee,CalleeBLst) ],
+    [ testProgram,
+      branchPoint,
+      branchSequenceNumber,
+      caller,
+      callerProgramCounter,
+      frameEpoch,
+      pathCondition,
+      callee,
+      parameters
+    ],
+    invokes,
+    InvokesLstO
   ).
 
 %% SIMILARITY RELATION ---------------------------------------------------------
