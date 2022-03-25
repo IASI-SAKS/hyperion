@@ -1,9 +1,10 @@
 {
   "invokes": [
-    "/home/pellegrini/git/CNR/hyperion/src/test/resources/sose/inspection-invokes.pl"
+    "/home/pellegrini/git/CNR/hyperion/src/test/resources/journal/fullteaching-concrete.pl"
   ],
   "regex": "/home/pellegrini/git/CNR/hyperion/src/test/resources/sose/URI-regex-list.pl",
-  "metric": "nonemptyEqSet",
-  "outputFile": "similarTPs-nonemptyEqSet-invokes.json",
-  "domain": "invokes"
+  "metric": "nonemptySubSet",
+  "outputFile": "similarTPs-nonemptySubSet-endpoint.json",
+  "domain": "endpoint",
+  "invokesBlackList" : "org/springframework/test"
 }

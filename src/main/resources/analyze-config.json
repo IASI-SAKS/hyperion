@@ -2,9 +2,40 @@
   "sut": ["../full-teaching-master/target/classes/"],
   "testPrograms": ["../full-teaching-master/target/test-classes/"],
   "includeTest": [
+    "testChangeUserPassword",
+    "testCreateUserOk",
+    "newCommentTest",
+    "replyCommentTest",
+    "addAttenders2CourseTest",
+    "deleteAttenderFromCourseTest",
+    "delteteCourseTest",
+    "getCourseByIdTest",
+    "getCoursesFromUserTest",
+    "modifyCourseTest",
+    "newCourseTest",
+    "newForumEntryControllerTest",
+    "fileDownloadTest",
+    "fileUploadTest",
+    "pictureUploadTest",
+    "testDeleteFile",
+    "testDeleteFileGroup",
+    "testEditFileOrder",
+    "testModifyFile",
+    "testModifyFileGroup",
+    "testNewFileGroup",
+    "toggleForumTest",
+    "checkAuthorizationTest",
+    "checkAuthorizationUsersTest",
+    "checkBackendLoggedTest",
+    "logInSecurityTest",
+    "logOutSecurityTest",
+    "deleteSessionTest",
+    "modifySessionTest",
+    "newSessionTest",
+    "controllerNewUserTest",
+    "userChangePasswordTest"
   ],
   "excludeTest": [
-
   ],
   "additionalClasspath": [
     "/home/pellegrini/.m2/repository/junit/junit/4.12/junit-4.12.jar"
@@ -16,5 +47,7 @@
     "com/google/gson"
   ],
   "depth": 100,
-  "testProgramsList": "allTPs.json"
+  "testProgramsList": "allTPs.json",
+  "skip": 0,
+  "timeout": 20
 }

@@ -13,6 +13,8 @@ public class AnalyzerParameters implements Cloneable {
 
     public AnalyzerParameters() {
         this.runnerParameters = new RunnerParameters();
+        this.runnerParameters.setMakePreInitClassesSymbolic(false);
+        this.runnerParameters.addClassInvariantAfterInitializationPattern(".*");
     }
 
     public RunnerParameters getRunnerParameters() {

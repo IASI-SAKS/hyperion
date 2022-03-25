@@ -7,18 +7,13 @@ import it.cnr.saks.hyperion.similarity.SimilarityConfiguration;
 import it.cnr.saks.hyperion.similarity.SimilarityException;
 import it.cnr.saks.hyperion.similarity.prolog.SimilarityAnalysis;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
-import org.jpl7.Term;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintStream;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Map;
 
 public class SimilarityExtractionRunnerHelper {
     private static final Logger log = LoggerFactory.getLogger(SimilarityExtractionRunnerHelper.class);
@@ -40,7 +35,7 @@ public class SimilarityExtractionRunnerHelper {
             // Perform the similarity analysis
             SimilarityAnalysis analysis = new SimilarityAnalysis();
             analysis.loadPrologDataset(configurationSimilarity.getRegex(), configurationSimilarity.getInvokes());
-            results = analysis.computeSimilarity(configurationSimilarity.getMetric(), configurationSimilarity.getDomain());
+            results = analysis.computeSimilarity(configurationSimilarity.getMetric(), configurationSimilarity.getDomain(), configurationSimilarity.getInvokesBlackList());
 
         } catch (SimilarityException e) {
             e.printStackTrace();

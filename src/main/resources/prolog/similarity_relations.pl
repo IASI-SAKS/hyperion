@@ -401,6 +401,15 @@ isHttpMethod(A) :-
 isHttpMethod(A) :-
   sub_atom(A,0,_,_,'org/springframework/web/client/RestTemplate:exchange:').
 
+% MODE: notIn(+Caller,+CallerBLst)
+% SEMANTICS: Caller does not start with an element of CallerBLst.
+notIn(Caller,CallerBLst) :-
+  \+ exists_prefix(Caller,CallerBLst).
+%
+exists_prefix(Caller,CallerBLst) :-
+  member(Prefix,CallerBLst),
+  sub_atom(Caller,0,_,_,Prefix).
+
 %%% user defined predicates to be used as 4th argument of filter/6
 % MODE: head(+L,-H)
 % SEMANTICS:
@@ -477,6 +486,39 @@ endpoints(InvokesLst,EndpointLst) :-
     EndpointLst
   ).
 
+% MODE: filtered_invokes(+InvokesLstI,+CallerBLst,+CalleeBLst,-InvokesLstO)
+% SEMANTICS: InvokesLstO is the list of invokes in InvokesLstI  whose caller
+% and callee do not belong to CallerBLst and CalleeBLst, respectively.
+filtered_invokes(InvokesLstI,[],[],InvokesLstO) :-
+  !,
+  InvokesLstI = InvokesLstO.
+filtered_invokes(InvokesLstI,CallerBLst,CalleeBLst,InvokesLstO) :-
+  filter(
+    InvokesLstI,
+    invokes(testProgram,
+            branchPoint,
+            branchSequenceNumber,
+            caller,
+            callerProgramCounter,
+            frameEpoch,
+            pathCondition,
+            callee,
+            parameters),
+    [ notIn(caller,CallerBLst), notIn(callee,CalleeBLst) ],
+    [ testProgram,
+      branchPoint,
+      branchSequenceNumber,
+      caller,
+      callerProgramCounter,
+      frameEpoch,
+      pathCondition,
+      callee,
+      parameters
+    ],
+    invokes,
+    InvokesLstO
+  ).
+
 %% SIMILARITY RELATION ---------------------------------------------------------
 % MODE: similar_tp(+T,+TSrc,+SimCr,-TP1,-TP2,-WT1,-WT2)
 % SEMANTICS: WT1 and WT2 are lists of elements of type T that makes the test
@@ -507,12 +549,9 @@ similar_elems(EType,nonemptyEqSet,Es1,Es2) :-
 % similar_elems(EType,nonemptySubSet,Es1,Es2) holds if
 % for all E1 in Es1, there exists a E2 in Es2 s.t E1 is similar to E2
 similar_elems(EType,nonemptySubSet,[E1],Es2) :-
-  member(E2,Es2),
-  matching(EType,E1,E2).
+  exists_matching(EType,E1,Es2).
 similar_elems(EType,nonemptySubSet,[E1|Es1],Es2) :-
-  member(E2,Es2),
-  matching(EType,E1,E2),
-  !,
+  exists_matching(EType,E1,Es2),
   similar_elems(EType,nonemptySubSet,Es1,Es2).
 % similar_elems(EType,nonemptyIntersection,Es1,Es2) holds if
 similar_elems(EType,nonemptyIntersection,Es1,Es2) :-
@@ -530,14 +569,13 @@ similar_elems(EType,nonemptyEqSeq,[E1|Es1],[E2|Es2]) :-
 % similar_elems(EType,nonemptySubSeq,Es1,Es2) holds if
 % Es1 can be obtained from Es2 by deleting some of its elements.
 similar_elems(EType,nonemptySubSeq,[E1],Es2) :-
-  member(E2,Es2),
-  matching(EType,E1,E2).
+  exists_matching(EType,E1,Es2).
 similar_elems(EType,nonemptySubSeq,[E1|Es1],[E2|Es2]) :-
   matching(EType,E1,E2),
   !,
   similar_elems(EType,nonemptySubSeq,Es1,Es2).
 similar_elems(EType,nonemptySubSeq,Es1,[_|Es2]) :-
-  similar_elems(EType,subSeq,Es1,Es2).
+  similar_elems(EType,nonemptySubSeq,Es1,Es2).
 % similar_elems(EType,nonemptyCommonSeq,Es1,Es2) holds if
 similar_elems(EType,nonemptyCommonSeq,Es1,Es2) :-
   % nonemptyIntersection holds
@@ -571,6 +609,14 @@ matching_URIs(URI1,URI2) :-
 matching_URIs(URI1,URI2) :-
   URI1==URI2.
 
+% MODE: exists_matching(+EType,+E1,+Es)
+% SEMANTICS: exists_matching(EType,E1,Es) holds if there exists an element E2
+% (of type EType) in Es s.t. E1 (of type EType) is similar to E2
+exists_matching(EType,E1,Es) :-
+  member(E2,Es),
+  matching(EType,E1,E2),
+  !.
+
 % MODE: select_common_set(+L,-S)
 % SEMANTICS: if L is a list of invokes/9 facts,
 % S is the set of callees occurring in L
@@ -591,6 +637,7 @@ setOf_aux([E|Es],[(HTTPMethod,REX)|L]) :-
   endpoint_component(E,uri,URI),
   atom_string(URI,URIStr),
   ( ( rest_api_regex(REX), re_match(REX,URIStr) ) ; REX=URI ),
+  !,
   setOf_aux(Es,L).
 
 % MODE: select_common_set(+L1,+L2,-C)

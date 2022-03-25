@@ -7,13 +7,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.*;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.FileSystemNotFoundException;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -74,10 +68,11 @@ public class SimilarityAnalysis {
         }
     }
 
-    public SimilarTests[] computeSimilarity(String metric, String domain) {
+    public SimilarTests[] computeSimilarity(String metric, String domain, String invokesBlackList) {
         log.info("Running similarity analysis...");
         String[] variables = {"TP1", "TP2", "Score"};
-        Map<String, Term>[] queryResults = PrologQueryHelper.query("compute_similarity_from_java", variables, domain, "trace", metric);
+
+        Map<String, Term>[] queryResults = PrologQueryHelper.query("compute_similarity_from_java", variables, domain, "trace", metric, "");
         System.out.println("");
 
         // Converto to a JSON-able object

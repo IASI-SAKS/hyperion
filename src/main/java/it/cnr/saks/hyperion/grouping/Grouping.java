@@ -72,6 +72,7 @@ public class Grouping {
             log.info("Picking {} as a candidate test.", test);
 
             boolean include = i++ <= (int) threshold;
+            System.out.println("i is " + i + " - threshold is " + threshold);
 
             if(include) {
                 result.addIncludedTest(test);
