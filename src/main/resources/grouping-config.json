@@ -1,6 +1,8 @@
 {
-  "similarityFile": "similarTPs-nonemptyIntersection-endpoint.json",
-  "allTestProgramsFile": "allTPs.json",
+  "invokes": [
+    "/home/pellegrini/git/CNR/hyperion/src/test/resources/journal/trainticket-concrete.pl"
+  ],
+  "similarityFile": "experiment/similarTPs-nonemptyIntersection-endpoint.json",
   "policy": "random",
   "threshold": 100,
   "outputFile": "testGroup.json"

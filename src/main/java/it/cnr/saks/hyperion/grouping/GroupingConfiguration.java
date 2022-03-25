@@ -1,19 +1,21 @@
 package it.cnr.saks.hyperion.grouping;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import it.cnr.saks.hyperion.discovery.MethodDescriptor;
 import it.cnr.saks.hyperion.symbolic.AnalyzerException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.IOException;
+import java.io.*;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Scanner;
 
 public class GroupingConfiguration {
     private static final Logger log = LoggerFactory.getLogger(GroupingConfiguration.class);
     private List<String> testPrograms;
+    private List<String> invokes;
     private String similarityFile;
-    private String allTestProgramsFile;
     private String policy;
     private double threshold;
     private String outputFile;
@@ -74,11 +76,36 @@ public class GroupingConfiguration {
         this.testPrograms = testPrograms;
     }
 
-    public String getAllTestProgramsFile() {
-        return allTestProgramsFile;
+    public List<String> getInvokes() {
+        return invokes;
     }
 
-    public void setAllTestProgramsFile(String allTestProgramsFile) {
-        this.allTestProgramsFile = allTestProgramsFile;
+    public void setInvokes(List<String> invokes) {
+        this.invokes = invokes;
+    }
+
+    public MethodDescriptor[] getAllTests() {
+        List<MethodDescriptor> methods = new ArrayList<>();
+
+        // Load all invokes facts
+        for(String invokesFile : this.invokes) {
+            try {
+                Scanner scanner = new Scanner(new File(invokesFile));
+                while (scanner.hasNextLine()) {
+                    String methodFromInvokes = scanner.nextLine().split(",")[0];
+                    methodFromInvokes = methodFromInvokes.replace("invokes(", "");
+                    methodFromInvokes = methodFromInvokes.replaceAll("'", "");
+                    String[] methodAndClass = methodFromInvokes.split(":");
+                    MethodDescriptor methodDescriptor = new MethodDescriptor(methodAndClass[1], "()V", methodAndClass[0]);
+                    if(!methods.contains(methodDescriptor))
+                        methods.add(methodDescriptor);
+                }
+                scanner.close();
+            } catch(FileNotFoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        return methods.toArray(new MethodDescriptor[0]);
     }
 }

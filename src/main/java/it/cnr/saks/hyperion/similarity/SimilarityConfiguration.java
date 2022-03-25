@@ -17,6 +17,7 @@ public class SimilarityConfiguration {
     private String outputFile;
     private String metric;
     private String domain;
+    private String invokesBlackList;
 
     private SimilarityConfiguration() {}
 
@@ -73,5 +74,13 @@ public class SimilarityConfiguration {
 
     public void setDomain(String domain) {
         this.domain = domain;
+    }
+
+    public String getInvokesBlackList() {
+        return invokesBlackList;
+    }
+
+    public void setInvokesBlackList(String invokesBlackList) {
+        this.invokesBlackList = invokesBlackList;
     }
 }

@@ -4,21 +4,32 @@ import os
 import subprocess
 import sys
 import json
-import copy
 
 hyperion_jar = "./target/hyperion-shaded-1.0-SNAPSHOT.jar"
+
+# fullteaching
 sut_path = "../full-teaching-master/"
+prolog_facts = "./src/test/resources/journal/fullteaching-concrete.pl"
+regex_list = "./src/test/resources/sose/URI-regex-list.pl"
+
+#trainticket
+#sut_path = "../train-ticket/"
+#prolog_facts = "./src/test/resources/journal/trainticket-concrete.pl"
+#prolog_facts = "./src/test/resources/gauss/inspection-trainticket-2.pl"
+#regex_list = "./src/test/resources/gauss/URI-regex-list.pl"
 
 # Simmetriche: nonemptyEqSeq, nonemptyEqSet
 # Asimmetriche: nonemptyIntersection, nonemptySubSet, nonemptySubSeq, nonemptyCommonSeq
 
-metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyEqSeq", "nonemptySubSeq", "nonemptyCommonSeq"]
+#metrics = ["nonemptyCommonSeq"]
+#metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyEqSeq", "nonemptySubSeq", "nonemptyCommonSeq"]
 #metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet"]
-#metrics = ["random"]
+metrics = ["random"]
+# domains = ["endpoint"]
 domains = ["endpoint"]
-#similarity_thresholds = [8, 9, 13, 19, 22]
-similarity_thresholds = [0.3, 0.9]
-repetitions = 3
+similarity_thresholds = [4, 8, 12, 16, 20, 24, 28, 32]
+#similarity_thresholds = [0.5]
+repetitions = 10
 
 # Make SWI Prolog happy for running
 my_env = {**os.environ,
@@ -54,8 +65,7 @@ def run_symbolic():
                 "\"com/google/gson\""
               "],"
               "\"depth\": 100,"
-              "\"testProgramsList\": \"allTPs.json\","
-              "\"outputFile\": \"./src/test/resources/journal/inspection-invokes.pl\""
+              "\"outputFile\": \"./src/test/resources/journal/fullteaching-symbolic.pl\""
             "}"
            )
     with open("conf.json",'w',encoding = 'utf-8') as f:
@@ -74,13 +84,13 @@ def generate_similarity():
              continue
          for domain in domains:
              conf = ("{"
-                     "\"invokes\": ["
-                     "\"./src/test/resources/journal/inspection-invokes.pl\""
+                     "\"invokes\": [\"" + prolog_facts + "\""
                      "],"
-                     "\"regex\": \"./src/test/resources/sose/URI-regex-list.pl\","
+                     "\"regex\": \"" + regex_list + "\","
                      "\"metric\": \"" + metric + "\","
                      "\"outputFile\": \"experiment/similarTPs-" + metric + "-" + domain +".json\","
-                     "\"domain\": \"" + domain + "\""
+                     "\"domain\": \"" + domain + "\","
+                     "\"invokesBlackList\": \"org/springframework/test\""
                      "}")
              with open("conf.json",'w',encoding = 'utf-8') as f:
                  f.write(conf)
@@ -98,8 +108,9 @@ def test_groups():
              for threshold in similarity_thresholds:
                  for rep in range(repetitions):
                      conf = ("{"
+                             "\"invokes\": [\"" + prolog_facts + "\""
+                             "],"
                              "\"similarityFile\": \"experiment/similarTPs-" + metric + "-" + domain +".json\","
-                             "\"allTestProgramsFile\": \"allTPs.json\","
                              "\"policy\": \""+ metric +"\","
                              "\"threshold\": " + str(threshold) + ","
                              "\"outputFile\": \"experiment/"+metric+"/"+domain+"-"+str(threshold)+"/"+str(rep)+"/testGroup.json\""
@@ -133,7 +144,7 @@ def get_coverage():
                                     dest.write(test_list)
                                 else:
                                     dest.write(line)
-                    process = subprocess.Popen("./src/test/resources/journal/coverage.sh experiment/"+metric+"/"+domain+"-"+str(threshold)+"/"+str(rep)+"/",
+                    process = subprocess.Popen("./src/test/resources/journal/coverage-fullteaching.sh experiment/"+metric+"/"+domain+"-"+str(threshold)+"/"+str(rep)+"/",
                                                shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT,
                                                env = my_env)
                     process.wait()
@@ -158,7 +169,7 @@ def single_test_coverage():
                         dest.write(testString)
                     else:
                         dest.write(line)
-        process = subprocess.Popen("./src/test/resources/journal/coverage.sh experiment/single-test/"+testString+"/",
+        process = subprocess.Popen("./src/test/resources/journal/coverage-fullteaching.sh experiment/single-test/"+testString+"/",
                                    shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT,
                                    env = my_env)
         process.wait()
@@ -166,7 +177,7 @@ def single_test_coverage():
 
 prepare_folders()
 #run_symbolic()
-#generate_similarity()
+generate_similarity()
 #test_groups()
 get_coverage()
 #single_test_coverage()

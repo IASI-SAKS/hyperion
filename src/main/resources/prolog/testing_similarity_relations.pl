@@ -1,4 +1,4 @@
-:- consult(similarity_relations).
+%:- consult(similarity_relations).
 
 :- dynamic setting/1.
 
@@ -121,7 +121,7 @@ similarity_from_invokes_file(File,T,TSrc,SimCr) :-
   consult(File),
   retractall(counter(_)), assert(counter(1)),
   write('Generating {endpointLst,invokesLst}_fact/3 facts. '), nl, flush_output,
-  generate_and_assert_elems(T,TSrc),
+  generate_and_assert_elems(T,TSrc,[],[]),
   write('done.'), flush_output,
   print_similarity(T,TSrc,SimCr).
 
@@ -149,15 +149,16 @@ similarity_from_invokes_file(File,T,TSrc,SimCr) :-
 
 % SEMANTICS: generates the invokes/endpoints either
 % from all the traces of all test programs, or
-generate_and_assert_elems(invokes,trace) :-
+generate_and_assert_elems(invokes,trace,CallerBLst,CalleeBLst) :-
   testPrograms(TPs),
   member(TP,TPs),
-  trace(TP,Trace),
+  trace(TP,TraceI),
   retract(counter(N)), M is N+1, assert(counter(M)),
   write(N), write(' '), flush_output,
-  assert_elem(invokesLst_fact(trace,TP,Trace)),
+  filtered_invokes(TraceI,CallerBLst,CalleeBLst,TraceO),
+  assert_elem(invokesLst_fact(trace,TP,TraceO)),
   fail.
-generate_and_assert_elems(endpoint,trace) :-
+generate_and_assert_elems(endpoint,trace,_,_) :-
   testPrograms(TPs),
   member(TP,TPs),
   trace(TP,Trace),
@@ -167,16 +168,17 @@ generate_and_assert_elems(endpoint,trace) :-
   assert_elem(endpointLst_fact(trace,TP,ESeq)),
   fail.
 % from all the invoke sequences of all entry points
-generate_and_assert_elems(invokes,iseq) :-
+generate_and_assert_elems(invokes,iseq,CallerBLst,CalleeBLst) :-
   testPrograms(TPs),
   member(TP,TPs),
   testProgram_entry_point_caller(TP,Caller),
-  invoke_sequence(TP,Caller,ISeq),
+  invoke_sequence(TP,Caller,ISeqI),
   retract(counter(N)), M is N+1, assert(counter(M)),
   write(N), write(' '), flush_output,
-  assert_elem(invokesLst_fact(trace,TP,ISeq)),
+  filtered_invokes(ISeqI,CallerBLst,CalleeBLst,ISeqO),
+  assert_elem(invokesLst_fact(trace,TP,ISeqO)),
   fail.
-generate_and_assert_elems(endpoint,iseq) :-
+generate_and_assert_elems(endpoint,iseq,_,_) :-
   testPrograms(TPs),
   member(TP,TPs),
   testProgram_entry_point_caller(TP,Caller),
@@ -186,7 +188,7 @@ generate_and_assert_elems(endpoint,iseq) :-
   endpoints(ISeq,ESeq),
   assert_elem(endpointLst_fact(iseq,TP,ESeq)),
   fail.
-generate_and_assert_elems(_,_) :-
+generate_and_assert_elems(_,_,_,_) :-
   retractall(counter(_)).
 
 %
@@ -293,26 +295,26 @@ partition_invokes_testProgram(_TP).
 % SEMANTICS: for each file InFile in Dir,
 % create a file endpoints__InFile including the endpoits facts generated from
 % the EpSrc source of invokes facts in InFile.
-generate_and_write_endpoints_dir(Dir,EpSrc) :-
-  directory_files(Dir,Files),
-  delete(Files,'.',Files1),
-  delete(Files1,'..',InFiles),
-  member(InFileName,InFiles),
-  atom_concat(Dir,InFileName,InFile),
-  retractall(endpointLst_fact(_,_,_)),
-  retractall(invokes(_,_,_,_,_,_,_,_,_)),
-  consult(InFile),
-  write('Generating endpoints from: '), writeln(InFileName), flush_output,
-  retractall(counter(_)), assert(counter(1)),
-  generate_and_assert_elems(EpSrc),
-  writeln('done.'), flush_output,
-  atom_concat('endpoints__',InFileName,OutFileName),
-  atom_concat(Dir,OutFileName,OutFile),
-  tell(OutFile),
-  write_endpoints,
-  told,
-  fail.
-generate_and_write_endpoints_dir(_Dir,_EpSrc).
+% generate_and_write_endpoints_dir(Dir,EpSrc) :-
+%   directory_files(Dir,Files),
+%   delete(Files,'.',Files1),
+%   delete(Files1,'..',InFiles),
+%   member(InFileName,InFiles),
+%   atom_concat(Dir,InFileName,InFile),
+%   retractall(endpointLst_fact(_,_,_)),
+%   retractall(invokes(_,_,_,_,_,_,_,_,_)),
+%   consult(InFile),
+%   write('Generating endpoints from: '), writeln(InFileName), flush_output,
+%   retractall(counter(_)), assert(counter(1)),
+%   generate_and_assert_elems(EpSrc),
+%   writeln('done.'), flush_output,
+%   atom_concat('endpoints__',InFileName,OutFileName),
+%   atom_concat(Dir,OutFileName,OutFile),
+%   tell(OutFile),
+%   write_endpoints,
+%   told,
+%   fail.
+% generate_and_write_endpoints_dir(_Dir,_EpSrc).
 
 % SEMANTICS: write endpoints facts.
 write_endpoints :-
@@ -322,8 +324,9 @@ write_endpoints :-
   fail.
 write_endpoints.
 
-compute_similarity_from_java(TP1,TP2,Score,T,TSrc,SimCr) :-
+% TODO: pass actual lists
+compute_similarity_from_java(TP1,TP2,Score,T,TSrc,SimCr,BLst) :-
   retractall(counter(_)), assert(counter(1)),
-  generate_and_assert_elems(T,TSrc), !,
+  generate_and_assert_elems(T,TSrc,[BLst],[BLst]), !,
   similar_tp(T,TSrc,SimCr,TP1,TP2,Es1,Es2),
   similarity_score(SimCr,Es1,Es2,Score).

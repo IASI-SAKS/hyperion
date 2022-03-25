@@ -401,6 +401,15 @@ isHttpMethod(A) :-
 isHttpMethod(A) :-
   sub_atom(A,0,_,_,'org/springframework/web/client/RestTemplate:exchange:').
 
+% MODE: notIn(+Caller,+CallerBLst)
+% SEMANTICS: Caller does not start with an element of CallerBLst.
+notIn(Caller,CallerBLst) :-
+  \+ exists_prefix(Caller,CallerBLst).
+%
+exists_prefix(Caller,CallerBLst) :-
+  member(Prefix,CallerBLst),
+  sub_atom(Caller,0,_,_,Prefix).
+
 %%% user defined predicates to be used as 4th argument of filter/6
 % MODE: head(+L,-H)
 % SEMANTICS:
@@ -477,6 +486,39 @@ endpoints(InvokesLst,EndpointLst) :-
     EndpointLst
   ).
 
+% MODE: filtered_invokes(+InvokesLstI,+CallerBLst,+CalleeBLst,-InvokesLstO)
+% SEMANTICS: InvokesLstO is the list of invokes in InvokesLstI  whose caller
+% and callee do not belong to CallerBLst and CalleeBLst, respectively.
+filtered_invokes(InvokesLstI,[],[],InvokesLstO) :-
+  !,
+  InvokesLstI = InvokesLstO.
+filtered_invokes(InvokesLstI,CallerBLst,CalleeBLst,InvokesLstO) :-
+  filter(
+    InvokesLstI,
+    invokes(testProgram,
+            branchPoint,
+            branchSequenceNumber,
+            caller,
+            callerProgramCounter,
+            frameEpoch,
+            pathCondition,
+            callee,
+            parameters),
+    [ notIn(caller,CallerBLst), notIn(callee,CalleeBLst) ],
+    [ testProgram,
+      branchPoint,
+      branchSequenceNumber,
+      caller,
+      callerProgramCounter,
+      frameEpoch,
+      pathCondition,
+      callee,
+      parameters
+    ],
+    invokes,
+    InvokesLstO
+  ).
+
 %% SIMILARITY RELATION ---------------------------------------------------------
 % MODE: similar_tp(+T,+TSrc,+SimCr,-TP1,-TP2,-WT1,-WT2)
 % SEMANTICS: WT1 and WT2 are lists of elements of type T that makes the test
@@ -533,7 +575,7 @@ similar_elems(EType,nonemptySubSeq,[E1|Es1],[E2|Es2]) :-
   !,
   similar_elems(EType,nonemptySubSeq,Es1,Es2).
 similar_elems(EType,nonemptySubSeq,Es1,[_|Es2]) :-
-  similar_elems(EType,subSeq,Es1,Es2).
+  similar_elems(EType,nonemptySubSeq,Es1,Es2).
 % similar_elems(EType,nonemptyCommonSeq,Es1,Es2) holds if
 similar_elems(EType,nonemptyCommonSeq,Es1,Es2) :-
   % nonemptyIntersection holds
