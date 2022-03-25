@@ -4,30 +4,30 @@ import os
 import subprocess
 import sys
 import json
-import copy
 
 hyperion_jar = "./target/hyperion-shaded-1.0-SNAPSHOT.jar"
 
 # fullteaching
-#sut_path = "../full-teaching-master/"
-#prolog_facts = "./src/test/resources/journal/fullteaching-concrete.pl"
-#regex_list = "./src/test/resources/sose/URI-regex-list.pl"
+sut_path = "../full-teaching-master/"
+prolog_facts = "./src/test/resources/journal/fullteaching-concrete.pl"
+regex_list = "./src/test/resources/sose/URI-regex-list.pl"
 
 #trainticket
-sut_path = "../train-ticket/"
-prolog_facts = "./src/test/resources/journal/trainticket-concrete.pl"
-regex_list = "./src/test/resources/gauss/URI-regex-list.pl"
+#sut_path = "../train-ticket/"
+#prolog_facts = "./src/test/resources/journal/trainticket-concrete.pl"
+#prolog_facts = "./src/test/resources/gauss/inspection-trainticket-2.pl"
+#regex_list = "./src/test/resources/gauss/URI-regex-list.pl"
 
 # Simmetriche: nonemptyEqSeq, nonemptyEqSet
 # Asimmetriche: nonemptyIntersection, nonemptySubSet, nonemptySubSeq, nonemptyCommonSeq
 
 #metrics = ["nonemptyCommonSeq"]
-# metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyEqSeq", "nonemptySubSeq", "nonemptyCommonSeq"]
+#metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyEqSeq", "nonemptySubSeq", "nonemptyCommonSeq"]
 #metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet"]
 metrics = ["random"]
-#domains = ["endpoint"]
-domains = ["invokes"]
-similarity_thresholds = range(10,620,20)
+# domains = ["endpoint"]
+domains = ["endpoint"]
+similarity_thresholds = [4, 8, 12, 16, 20, 24, 28, 32]
 #similarity_thresholds = [0.5]
 repetitions = 10
 
@@ -89,7 +89,8 @@ def generate_similarity():
                      "\"regex\": \"" + regex_list + "\","
                      "\"metric\": \"" + metric + "\","
                      "\"outputFile\": \"experiment/similarTPs-" + metric + "-" + domain +".json\","
-                     "\"domain\": \"" + domain + "\""
+                     "\"domain\": \"" + domain + "\","
+                     "\"invokesBlackList\": \"org/springframework/test\""
                      "}")
              with open("conf.json",'w',encoding = 'utf-8') as f:
                  f.write(conf)
@@ -143,7 +144,7 @@ def get_coverage():
                                     dest.write(test_list)
                                 else:
                                     dest.write(line)
-                    process = subprocess.Popen("./src/test/resources/journal/coverage-trainticket.sh experiment/"+metric+"/"+domain+"-"+str(threshold)+"/"+str(rep)+"/",
+                    process = subprocess.Popen("./src/test/resources/journal/coverage-fullteaching.sh experiment/"+metric+"/"+domain+"-"+str(threshold)+"/"+str(rep)+"/",
                                                shell=True, stdout=sys.stdout, stderr=subprocess.STDOUT,
                                                env = my_env)
                     process.wait()
@@ -176,7 +177,7 @@ def single_test_coverage():
 
 prepare_folders()
 #run_symbolic()
-#generate_similarity()
+generate_similarity()
 #test_groups()
 get_coverage()
 #single_test_coverage()
