@@ -1,10 +1,10 @@
 {
   "invokes": [
-    "/home/pellegrini/git/CNR/hyperion/src/test/resources/journal/fullteaching-concrete.pl"
+    "/home/pellegrini/git/CNR/hyperion/src/test/resources/journal/trainticket-concrete.pl"
   ],
-  "regex": "/home/pellegrini/git/CNR/hyperion/src/test/resources/sose/URI-regex-list.pl",
-  "metric": "nonemptySubSet",
-  "outputFile": "similarTPs-nonemptySubSet-endpoint.json",
-  "domain": "endpoint",
+  "regex": "/home/pellegrini/git/CNR/hyperion/src/test/resources/gauss/URI-regex-list.pl",
+  "metric": "nonemptyCommonSeq",
+  "outputFile": "similarTPs-nonemptyCommonSeq-invokes.json",
+  "domain": "invokes",
   "invokesBlackList" : "org/springframework/test"
 }

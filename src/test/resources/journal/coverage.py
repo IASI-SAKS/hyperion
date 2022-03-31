@@ -24,12 +24,13 @@ regex_list = "./src/test/resources/sose/URI-regex-list.pl"
 #metrics = ["nonemptyCommonSeq"]
 #metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet", "nonemptyEqSeq", "nonemptySubSeq", "nonemptyCommonSeq"]
 #metrics = ["nonemptyIntersection", "nonemptySubSet", "nonemptyEqSet"]
-metrics = ["random"]
+metrics = ["nonemptyCommonSeq", "nonemptyIntersection"]
+#metrics = ["random"]
 # domains = ["endpoint"]
-domains = ["endpoint"]
-similarity_thresholds = [4, 8, 12, 16, 20, 24, 28, 32]
-#similarity_thresholds = [0.5]
-repetitions = 10
+domains = ["invokes"]
+#similarity_thresholds = [4, 8, 12, 16, 20, 24, 28, 32]
+similarity_thresholds = [0.3]
+repetitions = 3
 
 # Make SWI Prolog happy for running
 my_env = {**os.environ,
@@ -177,7 +178,7 @@ def single_test_coverage():
 
 prepare_folders()
 #run_symbolic()
-generate_similarity()
+#generate_similarity()
 #test_groups()
 get_coverage()
 #single_test_coverage()

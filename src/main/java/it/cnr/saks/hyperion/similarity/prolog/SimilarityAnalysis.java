@@ -72,7 +72,7 @@ public class SimilarityAnalysis {
         log.info("Running similarity analysis...");
         String[] variables = {"TP1", "TP2", "Score"};
 
-        Map<String, Term>[] queryResults = PrologQueryHelper.query("compute_similarity_from_java", variables, domain, "trace", metric, "");
+        Map<String, Term>[] queryResults = PrologQueryHelper.query("compute_similarity_from_java", variables, domain, "trace", metric, invokesBlackList);
         System.out.println("");
 
         // Converto to a JSON-able object
